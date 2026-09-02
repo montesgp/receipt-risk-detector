@@ -1,0 +1,74 @@
+/* DESIGN.md §6.2 (typography), §6.3 (color tokens), §6.4 (spacing/grid).
+   The [data-theme='dark'] override block is added in slice 2. */
+
+:root {
+  --color-canvas: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-text: #141414;
+  --color-text-muted: #666666;
+  --color-border: #deded9;
+  --color-action: #171717;
+  --color-action-text: #ffffff;
+  --color-risk-low: #247a52;
+  --color-risk-review: #8a6500;
+  --color-risk-high: #a33a32;
+  --color-focus: #346beb;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --content-max-width: 1120px;
+  --reading-max-width: 760px;
+  --radius: 10px;
+
+  --font-sans:
+    'Geist Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.page {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+}

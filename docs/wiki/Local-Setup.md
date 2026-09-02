@@ -32,8 +32,25 @@ is implemented.
 
 ## Web
 
-`apps/web` is not scaffolded yet. Track it in
-[Issues](https://github.com/montesgp/receipt-risk-detector/issues).
+The frontend calls the API directly cross-origin (no dev-server proxy), so the API must allow
+the web dev server's origin before `npm run dev` can reach it:
+
+    cd apps/api
+    RECEIPT_RISK_CORS_ALLOWED_ORIGINS=http://localhost:5173 uv run uvicorn receipt_risk.bootstrap.app:app --reload
+
+Then, in another terminal:
+
+    cd apps/web
+    npm install
+    npm run dev
+
+    Web: http://localhost:5173
+
+`apps/web/.env` sets `PUBLIC_API_BASE_URL` (defaults to `http://localhost:8000`); copy
+`apps/web/env.sample` to `apps/web/.env` if it is missing locally. Without
+`RECEIPT_RISK_CORS_ALLOWED_ORIGINS` set to the web dev server's origin, every request from the
+browser fails as a network error indistinguishable from the API being down — set it explicitly
+rather than debugging a CORS rejection as if it were an outage.
 
 ## Whole stack
 

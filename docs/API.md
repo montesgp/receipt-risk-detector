@@ -81,25 +81,19 @@ MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart 
   "extracted_data": {
     "amount": {
       "value": "125000.00",
-      "currency": "ARS",
       "confidence": 0.97
     },
     "date_time": {
       "value": "2026-09-01T14:43:00-03:00",
       "confidence": 0.88
     },
-    "beneficiary_name": {
-      "value": "PATRICIO MONTES",
-      "confidence": 0.91
-    },
     "destination_cbu": {
       "masked_value": "**************5678",
-      "confidence": 0.94,
-      "is_checksum_valid": false
+      "confidence": 0.94
     },
-    "operation_id": {
-      "value": "483927183",
-      "confidence": 0.89
+    "cuit": {
+      "masked_value": "*******4321",
+      "confidence": 0.9
     }
   },
   "analyzer_statuses": [
@@ -115,6 +109,13 @@ MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart 
   "duration_ms": 2310
 }
 ```
+
+`extracted_data` is a map of generic field objects (`value`, `masked_value`,
+`confidence`, `is_checksum_valid`); there is no per-field schema and no
+`currency`, `beneficiary_name`, or `operation_id` field — those are not
+extracted in MVP 1. `is_checksum_valid` is part of the model but is not
+currently populated by any analyzer; clients MUST treat it as optional and
+never assume its presence alongside a masked identifier.
 
 ## 4. Enumerations
 
