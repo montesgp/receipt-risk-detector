@@ -77,15 +77,15 @@ Chain strategy: size-exception
 
 **Only after human review of the PR from the phase above.** Not assigned to `sdd-apply` — no `mcp__github__*` tools are available there. Order below is load-bearing (design "Migration / Rollout"): applying protection before branches exist returns 404.
 
-- [ ] L1. **Init and first push to `main`**: `git init`, `git add -A`, initial commit (conventional, e.g. `chore: initial repository scaffold`). Manual `git`/`gh` CLI — no MCP git-init tool exists.
-- [ ] L2. **Create the GitHub repository**: `mcp__github__create_repository` (name `receipt-risk-detector`, owner `montesgp`, `public`, Apache-2.0) — or manual `gh repo create` if tool scope is restricted. Then `git remote add origin ...` and `git push -u origin main`.
-- [ ] L3. **Create `dev` branch**: `mcp__github__create_branch` (base `main`) — or `git checkout -b dev && git push -u origin dev`.
-- [ ] L4. **Set `dev` as default branch + repo-level settings**: `mcp__github__update_repository` (or direct `PATCH /repos/{owner}/{repo}`) applying `default_branch: dev`, `has_issues: true`, `has_wiki: true`, `allow_merge_commit: false`, `allow_squash_merge: true`, `allow_rebase_merge: true`, `allow_auto_merge: true`, `delete_branch_on_merge: true` per design T0.
-- [ ] L5. **Bootstrap labels**: manual `gh` CLI — run `.github/labels.sh montesgp/receipt-risk-detector` (requires `gh` admin auth + `jq`). No `mcp__github__*` label-creation tool exists (flagged risk A3); must run before L6 needs `type:*` labels.
-- [ ] L6. **Apply branch protection, `main` then `dev`**: `mcp__github__update_branch_protection` (or `PUT /repos/{owner}/{repo}/branches/main/protection`) with the T0 `main` payload (required checks, PR-only, linear history), then the same for `dev` with the T0 `dev` payload (no required checks, force-push/deletion blocked).
-- [ ] L7. **Publish issues**: `mcp__github__create_issue` once per draft in `issue-drafts.md` (6 issues) with the specified `type:*`/`capability:*`/`area:*`/`mvp1`/`status:needs-triage` labels; then apply `status:approved` to the first issue selected to unblock work (`mcp__github__update_issue` or label add).
-- [ ] L8. **Publish wiki pages**: manual — clone `https://github.com/montesgp/receipt-risk-detector.wiki.git`, copy `docs/wiki/*.md` in as page names, commit, push. No MCP wiki-publish tool exists.
-- [ ] L9. **Railway linkage** (manual, out of design control): create the Railway project via the Railway UI, connect the GitHub repo, create `staging` (watches `dev`) and `production` (watches `main`) environments, set env vars, enable "wait for CI to pass."
+- [x] L1. **Init and first push to `main`**: done via `git init` + commit `4f1ea15` (`chore: initial repository scaffold`). `mcp__github__*` tools returned "Bad credentials" (MCP GitHub token misconfigured) — executed via authenticated `gh` CLI (`montesgp`) instead.
+- [x] L2. **Create the GitHub repository**: done via `gh repo create montesgp/receipt-risk-detector --public`. Live at https://github.com/montesgp/receipt-risk-detector. `main` pushed.
+- [x] L3. **Create `dev` branch**: done, pushed to origin.
+- [x] L4. **Set `dev` as default branch + repo-level settings**: done via `gh api PATCH`; all T0 fields confirmed applied.
+- [x] L5. **Bootstrap labels**: done via `.github/labels.sh montesgp/receipt-risk-detector` — 26 labels synced.
+- [x] L6. **Apply branch protection, `main` then `dev`**: done via `gh api PUT .../branches/{main,dev}/protection` with the exact T0 payloads; confirmed via read-back.
+- [x] L7. **Publish issues**: done — 6 issues created (#1-#6), one per capability spec, labels per draft. `status:approved` applied to #1 (receipt-analysis) to unblock work.
+- [ ] L8. **Publish wiki pages**: BLOCKED — GitHub only creates the `.wiki.git` remote after a human manually creates the first page via the web UI (Wiki tab → "Create the first page"); there is no API/git-push path to initialize it, confirmed by a failed clone/push attempt ("Repository not found"). Once the user does that one click, push `docs/wiki/*.md` as page names to `https://github.com/montesgp/receipt-risk-detector.wiki.git`.
+- [ ] L9. **Railway linkage** (manual, out of design control, unchanged from design): create the Railway project via the Railway UI, connect the GitHub repo, create `staging` (watches `dev`) and `production` (watches `main`) environments, set env vars, enable "wait for CI to pass."
 
 ## Key Learnings
 
