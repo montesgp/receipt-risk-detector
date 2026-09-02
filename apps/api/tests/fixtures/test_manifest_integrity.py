@@ -12,7 +12,7 @@ import hashlib
 import json
 from pathlib import Path
 
-SAMPLES_DIR = Path(__file__).resolve().parents[2] / "samples"
+SAMPLES_DIR = Path(__file__).resolve().parents[4] / "samples"
 MANIFEST_PATH = SAMPLES_DIR / "manifest.json"
 
 

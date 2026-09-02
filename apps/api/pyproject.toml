@@ -51,6 +51,6 @@ select = ["E", "F", "I", "UP", "B", "TID"]
 "src/receipt_risk/adapters/**" = ["TID251"]
 "src/receipt_risk/bootstrap/**" = ["TID251"]
 "tests/**" = ["TID251"]
-# samples/generate.py is fixture-authoring tooling (test/dev only), not production
-# code, so it may import Pillow directly to render deterministic fixture images.
-"samples/**" = ["TID251"]
+# Note: samples/ lives at the repo root (sibling of apps/), outside this
+# project's ruff scan root — it never needs a per-file-ignore here. See
+# /samples/generate.py for the fixture-authoring script.
