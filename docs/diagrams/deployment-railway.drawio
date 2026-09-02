@@ -1,0 +1,113 @@
+<mxfile host="65bd71144e">
+    <diagram id="deployment-railway" name="Deployment — Railway (dev/staging + production)">
+        <mxGraphModel dx="758" dy="744" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="Deployment view — Railway, two environments" style="text;html=1;fontSize=18;fontStyle=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="700" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="Railway is the MVP 1 deployment preference, not an architecture dependency (ARCHITECTURE.md §12). Both environments run the same two containers with different env config." style="text;html=1;fontSize=11;fontColor=#666666;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="48" width="1000" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="repo" value="Git repository&#xa;(GitHub — created in future change repo-github-setup)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#f7f7f5;strokeColor=#141414;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="90" width="240" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="br-dev" value="branch: dev" style="rounded=16;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8a6500;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="190" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="br-main" value="branch: main" style="rounded=16;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#247a52;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="500" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="er1" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="1" source="repo" target="br-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="er2" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="1" source="repo" target="br-main" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="prflow" value="PR: feature → dev → main&#xa;(gitflow policy D5)" style="text;html=1;fontSize=10;fontColor=#666666;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="250" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="env-dev" value="Railway environment: staging (auto-deploy from dev)" style="swimlane;whiteSpace=wrap;html=1;startSize=28;fillColor=#f7f7f5;strokeColor=#8a6500;align=left;spacingLeft=10;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="140" width="840" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-edge" value="Railway edge&#xa;TLS termination, public domain,&#xa;body-size limit" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="env-dev" vertex="1">
+                    <mxGeometry x="30" y="60" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-web" value="Service: web&#xa;SvelteKit container / static&#xa;env: PUBLIC_API_BASE_URL (staging)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="env-dev" vertex="1">
+                    <mxGeometry x="290" y="33" width="230" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-api" value="Service: api&#xa;FastAPI container (uvicorn, single process)&#xa;env: CORS_ALLOWED_ORIGINS, RATE_LIMIT_*&#xa;in-process token bucket (per instance)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="env-dev" vertex="1">
+                    <mxGeometry x="290" y="140" width="230" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-tmp" value="Ephemeral private filesystem&#xa;(temp dir, deleted per request)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#666666;" parent="env-dev" vertex="1">
+                    <mxGeometry x="600" y="160" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-ocr" value="Local OCR model / runtime&#xa;(baked into the image)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" parent="env-dev" vertex="1">
+                    <mxGeometry x="590" y="33" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="de1" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-dev" source="d-edge" target="d-web" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="de2" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-dev" source="d-edge" target="d-api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="de3" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-dev" source="d-api" target="d-tmp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="de4" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-dev" source="d-api" target="d-ocr" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="405" y="130"/>
+                            <mxPoint x="690" y="130"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="env-prod" value="Railway environment: production (deploy from main)" style="swimlane;whiteSpace=wrap;html=1;startSize=28;fillColor=#f7f7f5;strokeColor=#247a52;align=left;spacingLeft=10;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="350" y="460" width="840" height="270" as="geometry"/>
+                </mxCell>
+                <mxCell id="p-edge" value="Railway edge&#xa;TLS termination, custom domain,&#xa;body-size limit" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="env-prod" vertex="1">
+                    <mxGeometry x="30" y="60" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p-web" value="Service: web&#xa;SvelteKit container / static&#xa;env: PUBLIC_API_BASE_URL (production)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="env-prod" vertex="1">
+                    <mxGeometry x="290" y="35" width="230" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p-api" value="Service: api&#xa;FastAPI container (uvicorn, single process)&#xa;env: CORS_ALLOWED_ORIGINS, RATE_LIMIT_*&#xa;in-process token bucket (per instance)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="env-prod" vertex="1">
+                    <mxGeometry x="290" y="140" width="230" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="p-tmp" value="Ephemeral private filesystem&#xa;(temp dir, deleted per request)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#ffffff;strokeColor=#666666;" parent="env-prod" vertex="1">
+                    <mxGeometry x="590" y="160" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="p-ocr" value="Local OCR model / runtime&#xa;(baked into the image)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" parent="env-prod" vertex="1">
+                    <mxGeometry x="590" y="35" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe1" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-prod" source="p-edge" target="p-web" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe2" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-prod" source="p-edge" target="p-api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe3" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-prod" source="p-api" target="p-tmp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="pe4" style="edgeStyle=orthogonalEdgeStyle;html=1;" parent="env-prod" source="p-api" target="p-ocr" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="405" y="130"/>
+                            <mxPoint x="690" y="130"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="dep1" value="auto-deploy" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#8a6500;" parent="1" source="br-dev" target="env-dev" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dep2" value="deploy on merge" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#247a52;" parent="1" source="br-main" target="env-prod" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="limitnote" value="MVP 1 limitation: the token bucket is per process. Horizontal scaling or a container restart resets and&#xa;fragments the limit. Shared-store limiting is deferred to the authentication phase (proposal risk register)." style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#f7f7f5;strokeColor=#a33a32;align=left;verticalAlign=top;spacing=8;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="10" y="600" width="290" height="120" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

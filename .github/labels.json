@@ -1,0 +1,32 @@
+[
+  { "name": "type:bug",              "color": "d73a4a", "description": "Defect in existing behavior" },
+  { "name": "type:feature",          "color": "0e8a16", "description": "New user-facing capability" },
+  { "name": "type:docs",             "color": "0075ca", "description": "Documentation-only change" },
+  { "name": "type:refactor",         "color": "5319e7", "description": "Internal restructuring, no behavior change" },
+  { "name": "type:chore",            "color": "fef2c0", "description": "Tooling, CI, dependencies, maintenance" },
+  { "name": "type:breaking-change",  "color": "b60205", "description": "Backward-incompatible change" },
+
+  { "name": "status:needs-triage",   "color": "ededed", "description": "Awaiting maintainer review" },
+  { "name": "status:needs-info",     "color": "d4c5f9", "description": "Blocked on missing evidence from the reporter" },
+  { "name": "status:approved",       "color": "0e8a16", "description": "Approved for implementation; required before any PR links it" },
+  { "name": "status:in-progress",    "color": "fbca04", "description": "Actively being implemented" },
+  { "name": "status:blocked",        "color": "b60205", "description": "Blocked by an external dependency or decision" },
+  { "name": "status:wontfix",        "color": "ffffff", "description": "Out of scope; will not be implemented" },
+
+  { "name": "capability:receipt-analysis",            "color": "1d76db", "description": "openspec/specs/receipt-analysis" },
+  { "name": "capability:public-api-contract",         "color": "1d76db", "description": "openspec/specs/public-api-contract" },
+  { "name": "capability:api-rate-limiting",           "color": "1d76db", "description": "openspec/specs/api-rate-limiting" },
+  { "name": "capability:data-retention",              "color": "1d76db", "description": "openspec/specs/data-retention" },
+  { "name": "capability:ui-localization-and-theming", "color": "1d76db", "description": "openspec/specs/ui-localization-and-theming" },
+  { "name": "capability:architecture-documentation",  "color": "1d76db", "description": "openspec/specs/architecture-documentation" },
+
+  { "name": "area:api",   "color": "c5def5", "description": "apps/api" },
+  { "name": "area:web",   "color": "c5def5", "description": "apps/web" },
+  { "name": "area:docs",  "color": "c5def5", "description": "docs/ and openspec/" },
+  { "name": "area:infra", "color": "c5def5", "description": ".github/, Docker, Railway" },
+
+  { "name": "mvp1",           "color": "5319e7", "description": "In MVP 1 scope" },
+  { "name": "roadmap",        "color": "bfd4f2", "description": "Post-MVP 1; must not leak into MVP 1" },
+  { "name": "good first issue","color": "7057ff", "description": "Suitable for a first-time contributor" },
+  { "name": "size:exception", "color": "e99695", "description": "Explicitly accepted breach of the 400-line review budget" }
+]

@@ -1,0 +1,67 @@
+schema: spec-driven
+
+context: |
+  Project: receipt-risk-detector (not yet a git repo)
+  Intended stack (docs-only, nothing scaffolded): Python 3.12+ / FastAPI / Pydantic
+  API; SvelteKit 5 + TypeScript web client; pytest / Vitest / Playwright testing;
+  uv + Docker / Docker Compose packaging. No persistence in MVP1.
+  Architecture: modular monolith (see docs/ARCHITECTURE.md); domain/application
+  code must not import FastAPI, PaddleOCR, ExifTool, OpenCV, or storage adapters.
+  Docs present: README.md, AGENTS.md, CONTRIBUTING.md, SECURITY.md, docs/PRD.md,
+  docs/ARCHITECTURE.md, docs/API.md, docs/DESIGN.md, docs/ROADMAP.md.
+  Feature artifact convention (per AGENTS.md): docs/features/<name>/{SDD.md,TDD.md,RDD.md},
+  plus one ADR under docs/adr/ for irreversible/cross-cutting decisions.
+
+strict_tdd: true
+
+testing:
+  status: "no test runner scaffolded yet — intended, not detected"
+  intended_runner: "pytest (API), Vitest (SvelteKit unit), Playwright (E2E)"
+  detected_runner: none
+  layers:
+    unit: { available: false, tool: "pytest / Vitest (intended)" }
+    integration: { available: false, tool: "httpx / testing-library (intended)" }
+    e2e: { available: false, tool: "Playwright (intended)" }
+  coverage: { available: false, command: null }
+  quality:
+    linter: { available: false, command: null }
+    type_checker: { available: false, command: null }
+    formatter: { available: false, command: null }
+  note: >
+    strict_tdd is forced true by the global agent marker (CLAUDE.md: "Strict TDD
+    Mode: enabled"), but no test runner exists yet in this repo. RED-GREEN-REFACTOR
+    cannot be mechanically enforced until pytest/Vitest/Playwright are scaffolded.
+    sdd-apply must scaffold the intended runner as part of the first implementation
+    change before writing production code, and must treat the absence of a runner
+    as a blocker for TDD enforcement, not as license to skip tests.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Never introduce absolute authenticity verdicts (is_real/is_fake/authentic) per AGENTS.md MVP1 invariants
+    - No database or durable receipt storage in MVP1
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Every risk_score contribution must map to an explainable ValidationSignal
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Domain/application layers must not import FastAPI, PaddleOCR, ExifTool, OpenCV, or storage adapters
+    - Mirror feature docs into docs/features/<name>/{SDD.md,TDD.md,RDD.md} per AGENTS.md
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+    - First task of the first change must scaffold the intended test runner(s)
+  apply:
+    guidelines:
+      - Follow existing code patterns once scaffolded
+      - Prefer synthetic/anonymized fixtures; never commit real receipts with personal or banking data
+    tdd: true
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/montesgp/receipt-risk-detector/wiki
+    about: Read the process wiki before opening an issue.
+  - name: Discussions
+    url: https://github.com/montesgp/receipt-risk-detector/discussions
+    about: Ask a question or propose an idea before filing an issue.

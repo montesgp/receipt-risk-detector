@@ -1,0 +1,145 @@
+<mxfile host="65bd71144e">
+    <diagram id="container-view" name="Container and component view">
+        <mxGraphModel dx="758" dy="744" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="Container / component view — layered modular monolith" style="text;html=1;fontSize=18;fontStyle=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="700" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="Dependency direction is one-way: Adapters → Application → Domain. Domain and Application never import FastAPI, PaddleOCR, ExifTool, OpenCV or storage." style="text;html=1;fontSize=11;fontColor=#666666;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="50" width="900" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="g-clients" value="Clients" style="swimlane;whiteSpace=wrap;html=1;startSize=26;fillColor=#f7f7f5;strokeColor=#deded9;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="90" width="240" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="c-web" value="SvelteKit web client&#xa;src/lib/{api,components,features,i18n}" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-clients" vertex="1">
+                    <mxGeometry x="10" y="40" width="210" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="c-bot" value="n8n / bots / backends&#xa;server-side HTTP consumers" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-clients" vertex="1">
+                    <mxGeometry x="15" y="120" width="200" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="g-adapters" value="Adapters — receipt_risk.adapters" style="swimlane;whiteSpace=wrap;html=1;startSize=26;fillColor=#f7f7f5;strokeColor=#deded9;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="90" width="300" height="480" as="geometry"/>
+                </mxCell>
+                <mxCell id="ad-mw" value="RateLimitMiddleware&#xa;per-IP token bucket (in-process)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#a33a32;" parent="g-adapters" vertex="1">
+                    <mxGeometry x="20" y="40" width="260" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="ad-http" value="HTTP adapters (FastAPI routers)&#xa;request/response models, problem+json" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-adapters" vertex="1">
+                    <mxGeometry x="20" y="105" width="260" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ad-pre" value="Safe file preprocessor&#xa;decode, dimension guard, SHA-256, temp dir" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-adapters" vertex="1">
+                    <mxGeometry x="20" y="175" width="260" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ad-meta" value="Metadata adapter (ExifTool)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-adapters" vertex="1">
+                    <mxGeometry x="20" y="250" width="260" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="ad-prov" value="Provenance adapter (C2PA)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-adapters" vertex="1">
+                    <mxGeometry x="20" y="300" width="260" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="ad-ocr" value="OCR adapter (PaddleOCR / Tesseract)" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-adapters" vertex="1">
+                    <mxGeometry x="20" y="350" width="260" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="ad-boot" value="bootstrap — composition root&#xa;wires ports to adapters, reads config" style="rounded=8;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#666666;" parent="g-adapters" vertex="1">
+                    <mxGeometry x="20" y="405" width="260" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="g-app" value="Application — receipt_risk.application" style="swimlane;whiteSpace=wrap;html=1;startSize=26;fillColor=#f7f7f5;strokeColor=#deded9;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="90" width="280" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="ap-uc" value="AnalyzeReceipt use case&#xa;time budgets, cleanup coordination" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-app" vertex="1">
+                    <mxGeometry x="20" y="40" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ap-orch" value="Analyzer orchestrator&#xa;bounded concurrency, partial results" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-app" vertex="1">
+                    <mxGeometry x="20" y="110" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ap-ports" value="Analyzer ports (interfaces)&#xa;MetadataPort · ProvenancePort · OcrPort&#xa;returns AnalyzerResult" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#f7f7f5;strokeColor=#346beb;dashed=1;" parent="g-app" vertex="1">
+                    <mxGeometry x="20" y="180" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="g-domain" value="Domain — receipt_risk.domain" style="swimlane;whiteSpace=wrap;html=1;startSize=26;fillColor=#f7f7f5;strokeColor=#deded9;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="420" width="280" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-risk" value="Deterministic risk engine&#xa;versioned ruleset, score cap 0..100" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-domain" vertex="1">
+                    <mxGeometry x="20" y="50" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-fin" value="Financial validators&#xa;CBU/CVU check digit, CUIT/CUIL, amounts" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-domain" vertex="1">
+                    <mxGeometry x="20" y="120" width="240" height="58" as="geometry"/>
+                </mxCell>
+                <mxCell id="d-model" value="FraudAssessment · ValidationSignal&#xa;classifications · severity · value types" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-domain" vertex="1">
+                    <mxGeometry x="20" y="184" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="v1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="c-web" target="ad-mw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="c-bot" target="ad-mw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="ad-mw" target="ad-http" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v3l" value="allow / 429 RATE_LIMITED" style="edgeLabel;html=1;fontSize=10;" parent="v3" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="ad-http" target="ap-uc" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="ap-uc" target="ad-pre" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="820" y="190"/>
+                            <mxPoint x="480" y="190"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="v6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="ap-uc" target="ap-orch" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="ap-orch" target="ap-ports" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=0;" parent="1" source="ad-meta" target="ap-ports" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=0;" parent="1" source="ad-prov" target="ap-ports" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=0;" parent="1" source="ad-ocr" target="ap-ports" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v10l" value="implements" style="edgeLabel;html=1;fontSize=10;fontColor=#346beb;" parent="v10" vertex="1" connectable="0">
+                    <mxGeometry x="-0.1" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="ap-orch" target="d-fin" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v11l" value="normalized OCR fields" style="edgeLabel;html=1;fontSize=10;" parent="v11" vertex="1" connectable="0">
+                    <mxGeometry x="-0.2" relative="1" as="geometry">
+                        <mxPoint x="10" y="2" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="v12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" parent="1" source="ap-uc" target="d-risk" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v12l" value="normalized signals + analyzer statuses" style="edgeLabel;html=1;fontSize=10;" parent="v12" vertex="1" connectable="0">
+                    <mxGeometry x="0.2" relative="1" as="geometry">
+                        <mxPoint x="10" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="v13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" parent="1" source="d-risk" target="ad-http" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v13l" value="FraudAssessment" style="edgeLabel;html=1;fontSize=10;" parent="v13" vertex="1" connectable="0">
+                    <mxGeometry x="0.3" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="v14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="610" y="524.5" as="sourcePoint"/>
+                        <mxPoint x="820" y="342" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="v14l" value="injects" style="edgeLabel;html=1;fontSize=10;" parent="v14" vertex="1" connectable="0">
+                    <mxGeometry x="-0.2" relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
