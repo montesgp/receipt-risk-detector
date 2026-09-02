@@ -3,10 +3,11 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "apps/api/Dockerfile",
+    "dockerContext": "apps/api",
     "watchPatterns": ["apps/api/**"]
   },
   "deploy": {
-    "startCommand": "uv run uvicorn receipt_risk.bootstrap.app:app --host 0.0.0.0 --port ${PORT}",
+    "startCommand": "uvicorn receipt_risk.bootstrap.app:app --host 0.0.0.0 --port ${PORT}",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
