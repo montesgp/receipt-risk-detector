@@ -70,3 +70,97 @@ Breakdown: binary/generated files (font, images, license, uv.lock) excluded from
 3. Slice 1 temp-file cleanup design creates temp files only after all validation gates pass, so rejection paths never leak files by construction; one residual gap is an unhandled mid-write I/O exception.
 4. Zero logging statements exist in slice 1 source tree, so the privacy no-PII-in-logs rule is vacuously satisfied and correctly deferred to slice 4 log-scan test.
 5. PR 7 actual authored diff of approximately 1114 lines confirms tasks.md pre-declared High 400-line-budget risk forecast for slice 1 was accurate.
+
+## Slice 2: Metadata + C2PA
+
+Verdict: PASS (0 CRITICAL, 0 WARNING, 1 SUGGESTION)
+
+### 1. Spec scenario to test mapping (receipt-analysis capability, Slice 2 scope)
+
+| Scenario | Covering test(s) | Result |
+|---|---|---|
+| Missing metadata is neutral | test_missing_metadata_is_neutral_zero_signals_status_completed (exiftool, mocked, zero signals + status=completed); test_exiftool_inspects_real_fixture_without_metadata_neutrally (real binary, integration); test_c2pa_missing_manifest_emits_no_signal; test_c2pa_reader_inspects_real_fixture_without_manifest_neutrally (real Reader, integration) | PASS |
+| Valid AI-generated provenance claim | test_c2pa_valid_ai_generated_claim_emits_critical_signal (asserts SignalCode.VALID_AI_GENERATED_CLAIM + Severity.CRITICAL + SignalCategory.PROVENANCE); test_valid_ai_generated_claim_signal_is_critical_severity (domain shape test) | PASS |
+
+Both Slice 2 GWT scenarios have passing, runtime-verified covering tests (unit + integration). "Absence must not reduce risk score" is honored structurally: the neutral path returns zero signals; no scorer exists yet (slice 4), so the invariant is enforced by construction.
+
+### 2. Independent re-run (not trusting apply report)
+
+- uv run pytest -q -rs: 35 passed, 2 skipped (both tests/integration/test_metadata_provenance_integration.py, exiftool absent from this Windows sandbox PATH - matches documented skipif reason).
+- uv run ruff check .: All checks passed.
+- uv run ruff format --check .: 31 files already formatted.
+
+### 3. Layering boundary (grep, not claim)
+
+grep for import subprocess / import c2pa / from c2pa over apps/api/src/receipt_risk/: matches confined to exactly adapters/metadata/exiftool.py and adapters/provenance/c2pa_reader.py. Zero matches in domain/ or application/. Ruff's flake8-tidy-imports banned-api additionally bans both names outside adapters/** at lint time (ruff check . passed, confirming the rule is active, not dead config).
+
+### 4. Subprocess safety (adapters/metadata/exiftool.py, _run_exiftool) - read directly, not trusted
+
+- Argv is a literal Python list: [_EXIFTOOL, "-json", "-n", "-charset", "utf8", "-fast2", "--", str(path)] - never a shell string.
+- shell=False explicit keyword (also verified by test_exiftool_argv_never_contains_client_supplied_filename, which asserts captured kwargs shell is False).
+- timeout=timeout_s is a mandatory constructor parameter (DEFAULT_TIMEOUT_S = 2.0); subprocess.TimeoutExpired is caught and converted to status=timed_out, never left to propagate or orphan a process (subprocess.run with timeout kills the child via Popen.communicate internally per Python's documented contract).
+- A double-dash end-of-options marker sits immediately before str(path), closing the -execute / argfile (-@) and any other leading-dash option-injection surface described in the threat matrix; test_exiftool_leading_dash_filename_no_option_injection proves a dash-prefixed temp filename is still treated as a literal filename.
+- _EXIFTOOL is resolved once via shutil.which("exiftool") at import time (absolute path, never a bare command name reliant on a possibly-poisoned PATH at call time); env={"PATH": os.defpath, "LANG": "C"} further pins the subprocess's own PATH to the OS default rather than inheriting the parent process environment.
+- The client-supplied filename never reaches this module: SafeImageRef.path is a server-generated temp path assigned by application/ingestion.py (slice 1); the adapter only ever sees that generated path. Confirmed by test_exiftool_argv_never_contains_client_supplied_filename, which asserts the malicious declared name is absent from the joined argv and the real temp path is the last argv element.
+- No -@ argfile flag appears anywhere in the fixed argv, so ExifTool's own argfile-injection vector is structurally unreachable (the flag is simply never emitted, not merely sanitized).
+
+All 4 threat-matrix adversarial cases (shell metacharacters in filename, leading-dash filename, hung binary, missing binary) have a dedicated RED test, and all 4 pass.
+
+### 5. Skip-marked integration tests - confirmed via CI logs, not the apply report's claim
+
+- Local: uv run pytest -q -rs shows both test_metadata_provenance_integration.py tests skipped with reason "exiftool binary not on PATH - CI installs it, this sandbox does not" - clean skip, no error.
+- CI (gh run view 33601691863 --log, job "API Lint and Test"): the "Install system dependencies" step installs libimage-exiftool-perl and runs exiftool -ver successfully before the Test step. The Test step output is "35 passed in 1.07s" with 35 dots and zero s (skip) markers - pytest --collect-only -q independently confirms exactly 35 tests total are collected in this suite (2+2+4+1+2+6+2+11+5). Since local runs produce 33 passed + 2 skipped = 35 total, and CI produces 35 passed + 0 skipped = 35 total, the only consistent explanation is that CI's exiftool presence flips the skipif condition to False and both integration tests execute for real and pass - pytest always emits an explicit s marker for a skip regardless of environment, so its absence in the CI log confirms real execution, not silent omission. Claim confirmed by direct log inspection, not accepted on the apply report's word.
+
+### 6. Privacy: no raw bytes / EXIF dumps / C2PA manifest PII in logs or exceptions
+
+- grep for log./logging./logger. over adapters/metadata/ and adapters/provenance/: zero matches - neither adapter logs anything.
+- exiftool.py: except ExifToolUnavailable / except subprocess.TimeoutExpired convert to a typed AnalyzerResult carrying only a status and error_code string - the raw stdout/tags dict is never included in any exception path. The only place tags are used is _derive_signals, which extracts a single lower-cased software string into evidence={"software": software} - a name string, not a raw EXIF dump.
+- c2pa_reader.py: except Exception: return None swallows the underlying c2pa.Reader exception entirely (no re-raise, no logging of its message) - a broken/malformed manifest never surfaces its content. evidence on both signal types carries only {"active_manifest": str(active_label)} (a manifest UUID/label string), never the manifest JSON body.
+- Both adapters return AnalyzerResult (a domain type) exclusively, per application/ports.py's own docstring contract that no port signature mentions dict/JSON so raw tool output can never cross the boundary - confirmed true by direct inspection of both inspect() methods, which never return or leak the parsed tags/manifest dict itself.
+
+### 7. Business-logic scope check - no premature OCR/scoring/endpoint work
+
+- grep for OcrPort/risk_score/def score/router/analyze_receipt/FraudAssessment/ScoringRuleset/financial over apps/api/src/: only matches are domain/signals.py (the SignalCode enum, expected in-scope), application/ports.py (docstrings referencing future slices by name, not implementing them), and adapters/api/__init__.py, whose entire content is a one-line docstring placeholder with zero code - matches slice 4's design.md note that adapters/api/router.py and bootstrap/app.py stay untouched until slice 4.
+- No domain/financial/*, no domain/ruleset.py or domain/scoring.py, no application/analyze_receipt.py, no OCR adapter files exist on this branch. git diff --stat dev...HEAD confirms the changed-file set is exactly the slice-2 file list from design.md's Slice Boundaries table - no slice-3/4 files appear.
+
+### 8. Design/config diffs verified byte-for-byte against design.md's literal specification
+
+git diff dev...HEAD for pyproject.toml, Dockerfile, ci.yml matches design.md's "exact additions" sections: c2pa-python>=0.7 dependency; S602/S604/S605/S607 added to ruff.lint.select with the documented no-per-file-ignore comment; subprocess/c2pa banned-api entries with the documented messages; libimage-exiftool-perl apt layer in the Dockerfile at the documented location (before pip install uv, in the runtime stage); the CI "Install system dependencies" step inserted immediately after actions/checkout@v4, exactly as design.md specifies. No unexplained drift.
+
+### 9. Resolution of the 3 flagged "known deviations"
+
+1. 3rd signal code PROVENANCE_VALIDATION_FAILED - CONFIRMED SOUND, not scope drift. design.md's "Provenance adapter" prose states verbatim: "A manifest that fails validation emits a separate lower-severity signal; a missing manifest emits nothing." - read directly in this verification, not taken on the apply report's word. design.md's domain-signals interface table only lists the 2 AI-claim-critical codes because that table is explicitly the domain-signals code enum snapshot for slice 1's file, annotated "codes extended in 2/3/4" - it was never meant to be an exhaustive per-slice checklist; the prose is the authoritative requirement and the code was correctly derived from it, not invented.
+2. Substring-match heuristic for algorithmic-source detection - CONFIRMED REASONABLE. _ALGORITHMIC_SOURCE_MARKERS is a 3-entry tuple matched case-insensitively against the full IPTC digitalSourceType URI string. It is clearly commented as a non-exhaustive "documented default" in both the adapter docstring and inline above the tuple, cross-referencing the proposal's "reasonable defaults, not fake precision" stance verbatim. It is never presented as authoritative elsewhere (no claim of completeness in any test name, docstring, or public surface). Matches the same pattern already used and accepted for _EDITOR_SOFTWARE_MARKERS in the ExifTool adapter.
+3. ~760-line diff vs ~350 forecast - CONFIRMED NOT SCOPE CREEP. git diff --stat dev...HEAD shows exactly the slice-2 file set (10 source/test files + 3 config files + uv.lock + tasks.md checkbox updates); no slice-3/4 file exists on this branch (see item 7). The excess is entirely attributable to test volume: 6 tests in test_exiftool_adapter.py (4 threat-matrix RED tests + neutral-path + editor-signal test) at 180 lines, 4 tests in test_c2pa_reader.py at 100 lines, plus the new integration file (61 lines) - all traced 1:1 to spec scenarios or the design.md threat matrix, not speculative extra coverage. uv.lock's +363 lines (from c2pa-python's transitive dependency tree) is excluded from the authored-line review budget per the project's own generated-artifact exclusion rule; excluding it, authored additions are roughly 404 lines, modestly over the 350 forecast - consistent with, not contradicting, tasks.md's own advance warning to "watch test volume."
+
+### 10. git diff --stat against dev (independently run)
+
+.github/workflows/ci.yml: 6 lines added
+apps/api/Dockerfile: 5 lines added
+apps/api/pyproject.toml: 8 lines changed
+apps/api/src/receipt_risk/adapters/metadata/exiftool.py: 144 lines added (new file)
+apps/api/src/receipt_risk/adapters/provenance/c2pa_reader.py: 128 lines added (new file)
+apps/api/src/receipt_risk/application/ports.py: 35 lines changed
+apps/api/src/receipt_risk/domain/signals.py: 5 lines added
+apps/api/tests/integration/test_metadata_provenance_integration.py: 61 lines added (new file)
+apps/api/tests/unit/test_c2pa_reader.py: 100 lines added (new file)
+apps/api/tests/unit/test_domain_signals.py: 42 lines added (new file)
+apps/api/tests/unit/test_exiftool_adapter.py: 180 lines added (new file)
+apps/api/tests/unit/test_ports.py: 46 lines changed
+apps/api/uv.lock: 363 lines added (generated, excluded from authored budget)
+openspec/changes/receipt-analysis-implementation/tasks.md: 36 lines changed (checkbox updates)
+Total: 14 files changed, 1130 insertions, 29 deletions.
+
+Matches design.md's Slice 2 file list exactly (metadata + provenance adapters, ports.py/signals.py extensions, pyproject.toml/Dockerfile/ci.yml config, plus tests). No file outside this set was touched.
+
+### 11. SUGGESTION (non-blocking)
+
+The algorithmic-source and editor-software marker lists have no regression test asserting they stay in sync with the code comment claiming "not exhaustive, revisit with real-world samples" - a future slice (or a dedicated follow-up) could add a golden/property test enumerating known IPTC digitalSourceType codes to catch silent marker-list drift. Not blocking Slice 2 merge; purely a forward-looking hardening note.
+
+## Key Learnings
+
+1. design.md's domain-signals interface table is a per-slice code snapshot, not an exhaustive checklist - its own prose is the authoritative source for PROVENANCE_VALIDATION_FAILED, and the apply-time deviation is correctly derived from that prose, not invented.
+2. CI's "35 passed, 0 skipped" vs local's "33 passed, 2 skipped" (both against 35 total collected tests) is the correct signature proving the two exiftool-dependent integration tests genuinely execute for real in CI rather than being silently dropped - pytest always emits an explicit skip marker, so its absence in CI confirms real execution.
+3. ExifTool subprocess safety is enforced structurally (fixed argv list, shell=False, end-of-options guard, shutil.which-resolved absolute path, pinned subprocess environment, mandatory timeout) rather than by sanitizing the untrusted client filename, which never reaches the adapter at all because ingestion discards it before this layer runs.
+4. Both slice-2 adapters return only the domain AnalyzerResult type and swallow tool exceptions without logging or re-raising their content, so raw EXIF/C2PA manifest bytes structurally cannot leak into logs or error responses.
+5. The ~760-line actual diff vs ~350-line forecast is fully explained by threat-matrix test volume across two new adapters, not by any slice-3/4 code appearing early, confirmed by both a file-set diff and a scope grep finding zero premature OCR/scoring/router code.
