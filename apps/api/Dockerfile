@@ -6,8 +6,11 @@
 # build; it is intentionally not optimized for image size or build cache until the
 # real analyzer dependencies (OpenCV, PaddleOCR, ExifTool) land.
 #
-# Build context is apps/api (see railway.json's dockerContext) — paths below are
-# relative to this directory, not the repo root.
+# Build context is the REPO ROOT, not apps/api. Railway's top-level `build` object
+# has no `dockerContext` property (confirmed against railway.schema.json — it only
+# exists per-service inside a multi-service `services[]` array, which this single-
+# service repo does not use), so it always builds from root regardless of
+# `dockerfilePath`. Paths below are relative to the repo root accordingly.
 
 FROM python:3.12-slim
 
@@ -20,8 +23,8 @@ WORKDIR /app
 # `src/` silently produces a dist-info with no importable module (confirmed by a
 # local `docker run` smoke test raising `ModuleNotFoundError: No module named
 # 'receipt_risk'`). This trades away a dependency-only cache layer for correctness.
-COPY pyproject.toml uv.lock README.md ./
-COPY src ./src
+COPY apps/api/pyproject.toml apps/api/uv.lock apps/api/README.md ./
+COPY apps/api/src ./src
 RUN uv sync --frozen --no-dev --extra server
 
 # Invoke uvicorn directly from the synced venv instead of `uv run` — `uv run` re-

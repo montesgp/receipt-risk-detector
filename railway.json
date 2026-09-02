@@ -3,7 +3,6 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "apps/api/Dockerfile",
-    "dockerContext": "apps/api",
     "watchPatterns": ["apps/api/**"]
   },
   "deploy": {
