@@ -168,8 +168,16 @@ Expected errors:
 | 415 | `UNSUPPORTED_IMAGE` |
 | 422 | `IMAGE_DIMENSIONS_EXCEEDED` |
 | 429 | `RATE_LIMITED` |
-| 503 | `ANALYZER_UNAVAILABLE` |
 | 504 | `ANALYSIS_TIMEOUT` |
+
+**`ANALYZER_UNAVAILABLE` is not a response status.** A failed or unavailable
+analyzer (e.g. OCR models missing, ExifTool binary absent) never aborts the
+request — per the locked "never abort, always signal" decision, it surfaces
+as a `CORE_FIELD_EXTRACTION_FAILED`-style `ValidationSignal` inside a normal
+`200` `FraudAssessment`, contributing to `risk_score`, and can push
+`classification` to `INCONCLUSIVE` if overall evidence coverage falls below
+threshold (see `openspec/specs/receipt-analysis/spec.md`). `ANALYZER_UNAVAILABLE`
+only appears internally as an `AnalyzerResult.error_code`, never on the wire.
 
 ## 5b. Rate limiting
 

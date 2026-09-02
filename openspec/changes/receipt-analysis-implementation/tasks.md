@@ -180,6 +180,7 @@ present, forbidden-vocabulary check, identical-input determinism.
 ### Apply-time addition (not in the original 28-task list)
 
 - [x] 4.29 Implement `adapters/api/rate_limit/{bucket,config}.py` + `adapters/api/middleware/rate_limit.py`: in-process per-IP token-bucket rate limiting per the frozen `api-rate-limiting` spec, wired into `bootstrap/app.py`. Added because `POST /v1/receipts/analyze` becomes publicly reachable for the first time in this slice, and the spec's requirement applies from first exposure — see `docs/features/receipt-analysis/TDD.md` "Known deviations".
+- [x] 4.30 (sdd-verify corrective pass) Implement `adapters/api/cors_config.py` + wire `CORSMiddleware` in `bootstrap/app.py`, registered AFTER `RateLimitMiddleware` so CORS is outermost (docs/API.md §5's "rate limiter runs inside the CORS middleware" contract). Fixes a gap `sdd-verify` found: the frozen `public-api-contract` spec's "CORS allowlist" requirement had zero implementation despite this slice being the first to expose the endpoint publicly. Also corrected `docs/API.md`'s stale `503 ANALYZER_UNAVAILABLE` entry, which is structurally unreachable per the "never abort, always signal" decision.
 
 ## Key Learnings
 

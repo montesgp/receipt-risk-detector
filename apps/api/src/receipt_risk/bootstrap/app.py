@@ -16,7 +16,9 @@ import tempfile
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from receipt_risk.adapters.api.cors_config import allowed_origins
 from receipt_risk.adapters.api.dependencies import get_use_case
 from receipt_risk.adapters.api.middleware.rate_limit import RateLimitMiddleware
 from receipt_risk.adapters.api.router import router
@@ -31,10 +33,22 @@ from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
 
 app = FastAPI(title="Transfer Receipt Risk Engine")
 app.include_router(router)
-# Registered after include_router: Starlette applies middleware in
-# reverse-registration order, so this still runs before body parsing for
-# every request (DD5).
+# Registration order matters: Starlette applies middleware in REVERSE
+# registration order, so the one added LAST becomes OUTERMOST. Rate limiter
+# first, CORS last -> CORS wraps the rate limiter, so an allowlisted origin
+# gets Access-Control-Allow-Origin even on a 429 (docs/API.md §5's
+# documented contract: "the rate limiter runs inside the CORS middleware,
+# not in front of it"). Server-side clients (n8n, bots) are unaffected by
+# CORS either way -- it is a browser-only enforcement mechanism. An empty
+# allowlist (the default; see cors_config.py) means no browser origin can
+# read the response until RECEIPT_RISK_CORS_ALLOWED_ORIGINS is configured.
 app.add_middleware(RateLimitMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins(),
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 _temp_dir = Path(tempfile.gettempdir()) / "receipt-risk-uploads"
 _ocr = PaddleOnnxOcrAdapter()

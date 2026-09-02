@@ -335,3 +335,124 @@ No Engram apply-progress observation exists for slice 3b specifically (the last 
 - SUGGESTION: none beyond what's already noted inline.
 
 All spec scenarios, locked decisions, and threat-matrix cases for slice 3b are backed by a passing runtime test that this verify pass re-ran independently. Model pins are real, correct, and reproducible. The expanduser fix and the network-blocking test's loopback/outbound discrimination both hold under direct reproduction. Safe to proceed to slice 4 once the orchestrator addresses the apply-progress backfill.
+
+## Slice 4 (final): Risk engine + response assembly
+
+Verdict: PASS WITH WARNINGS.
+
+### 1. Spec scenario to test mapping
+
+| Scenario / requirement | Covering test | Result |
+|---|---|---|
+| receipt-analysis: Deterministic score for identical input | test_deterministic_score_same_input_and_ruleset_twice_identical_triple plus my own independent re-run | PASS |
+| receipt-analysis: No absolute verdict | test_response_never_contains_forbidden_verdict_vocabulary plus my own grep over adapters/api and docs/API.md | PASS |
+| Locked decision: OCR fails, others succeed, NOT INCONCLUSIVE | test_confidence_independent_of_risk_ocr_fails_others_succeed_not_inconclusive plus my own constructed scenario | PASS, LOW_RISK not INCONCLUSIVE, confidence_score=50 |
+| Locked decision: all analyzers fail, INCONCLUSIVE | test_inconclusive_when_all_analyzers_fail_coverage_zero plus my own re-run | PASS, confidence_score=0, INCONCLUSIVE |
+| CORE_FIELD_EXTRACTION_FAILED contributes to risk_score | verified independently by A/B comparison with and without the signal | PASS, risk_score rose from 0 to 15 |
+| public-api-contract: Analysis endpoint works without session | test_post_analyze_returns_full_assessment_with_ruleset_and_engine_version plus my own TestClient smoke test | PASS |
+| public-api-contract: Version endpoint reports engine and ruleset | my own smoke test of GET /version | PASS |
+| public-api-contract: Stable error contract | test_api_error_contract.py plus my own smoke test | PASS for 5 reachable ingestion codes plus RATE_LIMITED; ANALYZER_UNAVAILABLE structurally unreachable, disclosed, see item 7 |
+| public-api-contract: CORS allowlist scenarios | none | FAIL, no covering test, no implementation, see item 11 |
+| api-rate-limiting: default and analyze-endpoint limits, 429 with Retry-After | test_rate_limit.py, test_rate_limit_middleware.py plus my own independent 11-request run against the real app | PASS, 429 on request 11 |
+| api-rate-limiting: env-configurable limits, documented single-instance limitation | config.py env vars, docs/API.md section 5b | PASS |
+| data-retention: sensitive fields masked in logs | test_log_privacy.py caplog scan | PASS |
+
+### 2. Independent re-run (not trusting the apply report)
+
+- cd apps/api && uv run pytest --tb=no -rs: 122 passed, 4 skipped (2 exiftool-absent, 2 OCR-model-dir-absent, same pre-existing sandbox skip pattern as slices 2 and 3b).
+- uv run ruff check .: All checks passed.
+- uv run ruff format --check .: 81 files already formatted.
+
+### 3. Determinism, independently re-implemented
+
+Called domain.assessment.assemble() twice with byte-identical signals/results/ruleset but different duration_ms (100 vs 999). Diffed (risk_score, confidence_score, classification): identical, (54, 100, SUSPICIOUS) both times.
+
+### 4. INCONCLUSIVE correctness, independently constructed
+
+Built an AnalyzerResult list with ocr.status=failed and metadata/provenance both completed, plus the CORE_FIELD_EXTRACTION_FAILED signal. Result: classification=LOW_RISK (not INCONCLUSIVE), confidence_score=50 (0.20 metadata + 0.30 provenance = 0.50 coverage, matches design.md worked example exactly), risk_score=15. Re-ran with all three analyzers failed and zero signals: classification=INCONCLUSIVE, confidence_score=0. Both match design.md locked-decision worked example verbatim.
+
+### 5. CORE_FIELD_EXTRACTION_FAILED risk contribution, independently confirmed by A/B
+
+Same ocr-failed analyzer-status set scored twice: with vs without the signal. risk_score went from 0 to 15 solely from the signal (weight 15 times severity_multiplier MEDIUM 1.0 times confidence 1.00 equals 15).
+
+### 6. Rate limiting, independently exceeded
+
+Fired 11 real POST /v1/receipts/analyze requests against the actual bootstrap.app.app. Request 11 returned 429, Retry-After 6, and the documented problem+json body with code RATE_LIMITED, matching docs/API.md section 5b exactly. Confirms the 10/min analyze bucket fired, since the looser 30/min default bucket would not trip until request 31.
+
+### 7. ANALYZER_UNAVAILABLE 503 structural unreachability, confirmed accurate and honestly disclosed
+
+Traced every exception/timeout branch in application/analyze_receipt.py guarded(): every branch returns an AnalyzerResult, none re-raises. router.py only catches IngestionError and AnalysisTimeoutError. There is no code path that can ever return a 503 from POST /v1/receipts/analyze. This is a real spec/documentation mismatch (docs/API.md section 5 still lists 503 ANALYZER_UNAVAILABLE as an expected error) but it is the direct correct consequence of the locked never-abort decision, and it is explicitly disclosed in docs/features/receipt-analysis/TDD.md and the PR body as a known contract gap. WARNING, not CRITICAL: recommend a documentation fast-follow.
+
+### 8. Full endpoint smoke test, run myself
+
+TestClient against the real receipt_risk.bootstrap.app.app: GET /health returns 200 status ok; GET /ready returns 200 with analyzer identities; GET /version returns 200 with engine_version 0.1.0 and ruleset_version 2026-09-01; POST /v1/receipts/analyze with the real clean_valid_transfer.png fixture bytes returns 200 with a full FraudAssessment shape matching docs/API.md section 3 top-level keys (OCR and exiftool genuinely failed locally since this sandbox lacks the binary and models; c2pa succeeded for real, confirming the never-abort contract end to end against the real router).
+
+### 9. Layering, grepped not asserted
+
+Grep for fastapi/starlette imports over domain/ and application/: zero matches in both, for slice 4 new files.
+
+### 10. bootstrap/app.py dependency_overrides pattern, definitive verdict per the orchestrator request
+
+Facts confirmed by reading dependencies.py, router.py, bootstrap/app.py, and every test that constructs a FastAPI app:
+
+- get_use_case() is a placeholder that unconditionally raises RuntimeError; it exists purely as a Depends() identity key, never meant to execute.
+- router.py handler takes use_case: AnalyzeReceiptUseCase = Depends(get_use_case).
+- bootstrap/app.py creates exactly one module-level FastAPI() instance, constructs the real use case singleton once at import time, and sets app.dependency_overrides[get_use_case] = lambda: _use_case immediately after, before any route is served.
+- dependency_overrides is a plain instance dict on that one app object, not shared class-level or module-level global state.
+- Every test that exercises the router (test_router.py, test_analyze_endpoint_e2e.py) constructs its own separate FastAPI() instance with its own dependency_overrides dict. There is zero shared mutable state between the production bootstrap.app.app singleton and any test app instance.
+- The one test that touches bootstrap.app.app directly only calls .openapi(), a read-only call that never mutates dependency_overrides.
+
+Multi-worker risk assessed explicitly: under uvicorn with multiple workers, each worker is a separate OS process, so bootstrap/app.py is imported fresh per process, producing an independent app, use case, and override dict per worker; no cross-worker interference is possible. Under pytest running many modules in one process, Python module caching means bootstrap.app is imported at most once per session, and since no test mutates its dependency_overrides, there is no cross-test pollution, observed or theoretical.
+
+Verdict: this pattern is stylistically backward and unconventional, but functionally correct with no actual runtime hazard, under single-worker or multi-worker deployment, and under the test suite as written. The idiomatic fix is to make get_use_case itself a real factory, or to add a small composition-root function that closes over the real instance, which would remove the reading friction the orchestrator correctly flagged, but this is a recommended follow-up refactor, not a merge blocker.
+
+### 11. CORS gap, found while tracing the public-exposure boundary
+
+Grep for CORSMiddleware or CORS anywhere in apps/api/src returns zero matches. openspec/specs/public-api-contract/spec.md, which is frozen, has a CORS allowlist requirement with two GWT scenarios: Allowed browser origin and Disallowed browser origin. Neither scenario has any implementation or covering test anywhere in this codebase.
+
+This is not merely an unimplemented nice-to-have. openspec/changes/archive/2026-09-01-mvp-init-foundation/design.md, an already-accepted prior design, contains an explicit instruction under its rate-limiting decision stating that CORS middleware must wrap the rate limiter so a 429 still carries Access-Control-Allow-Origin, worded as part of the acceptance contract handed to the implementation change that ships the rate limiter. This PR is exactly that implementation change, since task 4.29 ships the rate limiter for the first time, yet only the rate limiter half of that paired instruction was implemented. The CORS half was not implemented, and unlike the ANALYZER_UNAVAILABLE gap, this omission is not mentioned anywhere: not in tasks.md, not in TDD.md Known deviations section, not in the PR body.
+
+Practical consequence: POST /v1/receipts/analyze is now genuinely public with no auth, for the first time. multipart/form-data is a CORS-safelisted content type, so a cross-origin browser POST from any third-party site executes server-side, consuming rate-limit budget and compute, even though the response would be unreadable to the calling page without a matching Access-Control-Allow-Origin header. This is a real, if narrow, availability and abuse consideration on a launch whose only other access control is the per-IP token bucket. It also means the web client own legitimate cross-origin calls, if the SvelteKit UI is ever served from a different origin per docs/ARCHITECTURE.md, would currently be silently blocked by the browser rather than allowed, since no origin is ever allowlisted.
+
+Issue 1, the most significant finding of this verify pass: public-api-contract CORS allowlist requirement has zero implementation and zero test coverage on the exact PR that makes the endpoint public for the first time, despite a prior accepted design document specifically pairing it with the rate limiter this PR does ship. Unlike the ANALYZER_UNAVAILABLE gap, this is an undisclosed gap against a still-frozen, unmodified spec requirement. Recommend either adding CORSMiddleware wired from an env-configurable allowlist before merge, matching docs/API.md section 5b own claim that CORS wraps the rate limiter, or explicitly documenting this as an accepted disclosed MVP1 gap and filing a tracked follow-up before this PR merges. The silence is the actual defect here, not necessarily the missing code by itself.
+
+### 12. extracted_data and analyzer_statuses nested-shape drift vs docs/API.md, found independently
+
+test_analyze_response_schema_matches_docs_api_md_field_for_field (task 4.18) only asserts the top-level response key set matches docs/API.md; it does not assert nested field shapes. Reading docs/API.md section 3 example against adapters/api/schemas.py and mappers.py directly surfaces three drifts:
+
+1. docs/API.md extracted_data.amount example includes a currency field; ExtractedFieldModel has no currency field at all, so it can never appear in a real response.
+2. docs/API.md extracted_data.destination_cbu example shows is_checksum_valid populated as false; mappers.py never sets is_checksum_valid on any ExtractedFieldModel, so it is always null in the real response.
+3. docs/API.md analyzer_statuses analyzer example shows generic role names such as ocr; the real mapper emits concrete adapter names such as paddleocr-onnx, exiftool, c2pa, confirmed by my own smoke test actual response body above.
+
+WARNING, non-blocking: these are genuine documentation and implementation contract mismatches that would confuse a third-party integrator coding against the documented example literally, for example filtering analyzer_statuses by ocr would never match. Task 4.28 found and fixed one drift (recommended_action) but the top-level-only contract test could not surface these nested ones. Recommend a fast-follow to either implement currency and is_checksum_valid, or correct docs/API.md example to match the real shape, and to either emit the documented generic role name or update the docs to show the concrete adapter name.
+
+### 13. request_id hardcoded, SUGGESTION only
+
+errors.py and middleware/rate_limit.py both hardcode request_id to a constant placeholder rather than generating a real per-request correlation ID. No spec scenario in any of the four read specs mandates real request-ID generation, so this is not a spec violation, but it reduces the practical debugging value of request_id for support and log correlation across concurrent requests.
+
+### 14. git diff --stat against dev, independently run
+
+37 files changed, 2442 insertions, 34 deletions. File set matches design.md Slice 4 File Changes and Slice Boundaries tables exactly, plus the disclosed rate-limiting addition (task 4.29). No file beyond this set appears; there is no slice 5.
+
+### 15. PR metadata
+
+gh pr view 11 confirms baseRefName dev, headRefName feat/receipt-analysis-risk-engine, and the PR body contains the literal text Closes #1, which is correct for the final slice.
+
+### Summary
+
+- Most significant finding: Issue 1, the CORS allowlist requirement from the frozen public-api-contract spec is wholly unimplemented and untested on the exact PR that makes the endpoint public for the first time, and unlike every other deviation in this slice it is undisclosed anywhere, despite a prior accepted design document explicitly pairing it with the rate limiter this PR does ship.
+- WARNING: the docs/API.md 503 ANALYZER_UNAVAILABLE row is genuinely unreachable through the router, correctly disclosed as a locked-decision consequence, but the docs should still be corrected in a fast-follow.
+- WARNING: extracted_data and analyzer_statuses nested shape drifts vs docs/API.md literal example, undetected by task 4.18 top-level-only contract test.
+- SUGGESTION: request_id is hardcoded to a constant placeholder rather than generated per request.
+- The bootstrap/app.py dependency_overrides production-wiring pattern is unconventional but functionally correct with no actual runtime hazard, since each FastAPI instance owns an independent dependency_overrides dict with zero shared mutable state; recommend a follow-up refactor for maintainability, not a merge blocker.
+- All independently-constructed determinism, INCONCLUSIVE-coverage, CORE_FIELD_EXTRACTION_FAILED-contributes-to-risk, and rate-limit-429 checks passed on real runtime execution, not on trusting the existing tests assertions alone.
+- uv run pytest (122 passed, 4 skipped, same pre-existing environment-driven skip pattern as slices 2 and 3b), ruff check, and ruff format --check all independently re-run clean.
+- PR body correctly says Closes #1.
+
+## Key Learnings
+
+1. domain.assessment.assemble worked example from design.md, OCR fails while metadata and provenance complete giving coverage 0.50 and confidence 50 and not INCONCLUSIVE, reproduces exactly under independent direct construction.
+2. A prior accepted design document can hand an explicit paired acceptance contract to a future implementation change, and when only half of that pair ships without disclosure it becomes a silent spec gap even though the other half is fully implemented and tested.
+3. A field-for-field contract test that only asserts top-level response keys can pass while nested field shapes silently drift from the documented example, so top-level key-set equality is not sufficient proof of full contract compliance.
+4. dependency_overrides used in production bootstrap code is safe in this codebase specifically because exactly one FastAPI instance is created per process and every test constructs its own separate instance with its own override dict; the pattern safety depends on that per-instance isolation holding.
+5. multipart form-data is a CORS-safelisted content type, so a public endpoint accepting multipart uploads without CORS middleware can still be triggered cross-origin by any third-party page even though the response body would be unreadable to that page.
