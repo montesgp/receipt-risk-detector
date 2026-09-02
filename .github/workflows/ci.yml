@@ -23,6 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libimage-exiftool-perl libglib2.0-0
+          exiftool -ver
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -41,5 +47,16 @@ jobs:
       - name: Format check
         run: uv run ruff format --check .
 
+      - name: Cache OCR models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/receipt-risk/ocr-models
+          key: ocr-models-${{ hashFiles('apps/api/scripts/fetch_ocr_models.py') }}
+
+      - name: Fetch OCR models
+        run: uv run python scripts/fetch_ocr_models.py --dest ~/.cache/receipt-risk/ocr-models --verify
+
       - name: Test
+        env:
+          RECEIPT_RISK_OCR_MODEL_DIR: ~/.cache/receipt-risk/ocr-models
         run: uv run pytest

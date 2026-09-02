@@ -8,6 +8,15 @@ license = { text = "Apache-2.0" }
 dependencies = [
     "fastapi>=0.115",
     "pydantic>=2.9",
+    "Pillow>=11.0",
+    "c2pa-python>=0.7",
+    "onnxruntime>=1.20",
+    "opencv-python-headless>=4.10",
+    "rapidocr-onnxruntime>=1.4",
+    # POST /v1/receipts/analyze accepts multipart/form-data (docs/API.md
+    # §2) -- FastAPI's UploadFile parsing requires this at runtime, not
+    # only in tests.
+    "python-multipart>=0.0.12",
 ]
 
 [project.optional-dependencies]
@@ -17,6 +26,12 @@ server = ["uvicorn[standard]>=0.32"]
 dev = [
     "pytest>=8.3",
     "ruff>=0.8",
+    # scripts/fetch_ocr_models.py's only dependency -- build/CI-time only,
+    # never imported by the application itself (the runtime image installs
+    # it separately in the Dockerfile's ocr-models stage, before uv sync).
+    "requests==2.32.3",
+    # FastAPI's TestClient (slice 4 contract/router tests) requires httpx.
+    "httpx>=0.27",
 ]
 
 [build-system]
@@ -35,7 +50,10 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "TID"]
+# S602/S604/S605/S607 have NO per-file-ignore on purpose: adapters/** is
+# exempt from TID251 but must still never reach a shell or a partial-path
+# executable (design.md "pyproject.toml — exact additions").
+select = ["E", "F", "I", "UP", "B", "TID", "S602", "S604", "S605", "S607"]
 
 # AGENTS.md architecture rule: domain and application code must not import
 # FastAPI, PaddleOCR, ExifTool, OpenCV or storage implementations.
@@ -45,8 +63,15 @@ select = ["E", "F", "I", "UP", "B", "TID"]
 "cv2".msg = "OpenCV is an adapter-only dependency."
 "paddleocr".msg = "PaddleOCR is an adapter-only dependency."
 "PIL".msg = "Pillow is an adapter-only dependency."
+"subprocess".msg = "Subprocess execution is adapter-only; fixed argv, shell=False, always a timeout."
+"c2pa".msg = "C2PA is an adapter-only dependency."
+"onnxruntime".msg = "ONNX Runtime is an adapter-only dependency."
+"rapidocr_onnxruntime".msg = "The OCR engine is an adapter-only dependency."
 
 [tool.ruff.lint.per-file-ignores]
 "src/receipt_risk/adapters/**" = ["TID251"]
 "src/receipt_risk/bootstrap/**" = ["TID251"]
 "tests/**" = ["TID251"]
+# Note: samples/ lives at the repo root (sibling of apps/), outside this
+# project's ruff scan root — it never needs a per-file-ignore here. See
+# /samples/generate.py for the fixture-authoring script.

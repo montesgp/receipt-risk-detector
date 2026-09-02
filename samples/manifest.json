@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "generator": {
+    "script": "samples/generate.py",
+    "pillow": "11.0.0",
+    "font": "samples/fonts/DejaVuSans.ttf"
+  },
+  "fixtures": [
+    {
+      "id": "clean_valid_transfer",
+      "path": "images/clean_valid_transfer.png",
+      "sha256": "217791e4631fc1b04fda1d827a10a4e432507d71e78c7e03ce802155d2d890f6",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "currency": "ARS",
+        "date_time": "2026-09-01T14:43:00-03:00",
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "operation_id": "483927183"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "Baseline: all core fields legible, valid check digits, no provenance claim."
+    },
+    {
+      "id": "invalid_cbu_check_digit",
+      "path": "images/invalid_cbu_check_digit.png",
+      "sha256": "bbdadec3f26edf3afe9a87d9cc835fe0e4a8230b2c855cb533b573fe4df60aa0",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "destination_cbu": "2850590940090418135202",
+        "amount": "125000.00"
+      },
+      "expected_signals": [
+        {
+          "code": "INVALID_CBU_CHECK_DIGIT",
+          "category": "financial_consistency",
+          "severity": "high"
+        }
+      ],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed"
+      },
+      "expected_classification": "REVIEW_RECOMMENDED",
+      "notes": "Identical render to the baseline with only the block-2 check digit mutated 1 -> 2."
+    },
+    {
+      "id": "low_quality_skewed",
+      "path": "images/low_quality_skewed.jpg",
+      "sha256": "d0b2f0f376e1f57a8f82e8cfdae2d4f8847bdcaf72aa41470902cbcd4d8d9c12",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "Rotated, contrast-reduced, blurred, low-quality JPEG re-encode of the baseline; exercises the OCR adapter's single preprocessing retry (slice 3)."
+    },
+    {
+      "id": "corrupted_truncated",
+      "path": "images/corrupted_truncated.jpg",
+      "sha256": "9165c51830a3a63043c0c537477932de6ade40e6dbd9e52ee34a67b62a589766",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "n/a"
+      },
+      "declared_fields": {},
+      "expected_signals": [],
+      "expected_error": {
+        "status": 415,
+        "code": "UNSUPPORTED_IMAGE"
+      },
+      "notes": "First 2 KB of a valid JPEG; must be rejected at ingestion before any analyzer runs."
+    }
+  ]
+}
