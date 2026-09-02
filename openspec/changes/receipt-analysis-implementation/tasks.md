@@ -70,24 +70,24 @@ Traces to spec scenarios: *Valid image accepted*, *Oversized or corrupt image re
 Traces to spec scenarios: *Missing metadata is neutral*, *Valid AI-generated provenance claim*.
 Traces to threat matrix: Subprocess invocation (ExifTool) — all 4 adversarial cases.
 
-- [ ] 2.1 RED: `test_metadata_port_protocol_shape`, `test_provenance_port_protocol_shape`
-- [ ] 2.2 GREEN: extend `application/ports.py` with `MetadataPort`, `ProvenancePort`
-- [ ] 2.3 RED: `test_metadata_editor_software_signal_shape`, `test_valid_ai_generated_claim_signal_is_critical_severity`
-- [ ] 2.4 GREEN: extend `domain/signals.py::SignalCode` with `METADATA_EDITOR_SOFTWARE`, `VALID_AI_GENERATED_CLAIM`
-- [ ] 2.5 RED (threat a): `test_exiftool_argv_never_contains_client_supplied_filename` (upload named `; rm -rf /.jpg`)
-- [ ] 2.6 RED (threat b): `test_exiftool_leading_dash_filename_no_option_injection` (filename `-ver.jpg`, `--` guard)
-- [ ] 2.7 RED (threat c): `test_exiftool_hung_binary_times_out_no_orphan_process`
-- [ ] 2.8 RED (threat d): `test_exiftool_binary_absent_returns_failed_status_request_still_200`
-- [ ] 2.9 GREEN: create `adapters/metadata/exiftool.py::_run_exiftool` per design (fixed argv, `shell=False`, `--`, mandatory `timeout`, `shutil.which`-resolved path)
-- [ ] 2.10 RED: `test_missing_metadata_is_neutral_zero_signals_status_completed` (Scenario: Missing metadata is neutral)
-- [ ] 2.11 GREEN: complete `exiftool.py` neutral-absence path, wire adapter to `MetadataPort`
-- [ ] 2.12 RED: `test_c2pa_missing_manifest_emits_no_signal`
-- [ ] 2.13 RED: `test_c2pa_valid_ai_generated_claim_emits_critical_signal` (Scenario: Valid AI-generated provenance claim)
-- [ ] 2.14 RED: `test_c2pa_failed_validation_emits_lower_severity_non_critical_signal`
-- [ ] 2.15 GREEN: create `adapters/provenance/c2pa_reader.py::_read_manifest` (Reader-only) + signal derivation for 2.12-2.14
-- [ ] 2.16 Modify `apps/api/pyproject.toml`: add `c2pa-python>=0.7`; ban `subprocess`/`c2pa` outside `adapters/**`
-- [ ] 2.17 Modify `apps/api/Dockerfile`: add `libimage-exiftool-perl` apt layer
-- [ ] 2.18 Modify `.github/workflows/ci.yml`: insert "Install system dependencies" step after checkout
+- [x] 2.1 RED: `test_metadata_port_protocol_shape`, `test_provenance_port_protocol_shape`
+- [x] 2.2 GREEN: extend `application/ports.py` with `MetadataPort`, `ProvenancePort`
+- [x] 2.3 RED: `test_metadata_editor_software_signal_shape`, `test_valid_ai_generated_claim_signal_is_critical_severity`
+- [x] 2.4 GREEN: extend `domain/signals.py::SignalCode` with `METADATA_EDITOR_SOFTWARE`, `VALID_AI_GENERATED_CLAIM`
+- [x] 2.5 RED (threat a): `test_exiftool_argv_never_contains_client_supplied_filename` (upload named `; rm -rf /.jpg`)
+- [x] 2.6 RED (threat b): `test_exiftool_leading_dash_filename_no_option_injection` (filename `-ver.jpg`, `--` guard)
+- [x] 2.7 RED (threat c): `test_exiftool_hung_binary_times_out_no_orphan_process`
+- [x] 2.8 RED (threat d): `test_exiftool_binary_absent_returns_failed_status_request_still_200`
+- [x] 2.9 GREEN: create `adapters/metadata/exiftool.py::_run_exiftool` per design (fixed argv, `shell=False`, `--`, mandatory `timeout`, `shutil.which`-resolved path)
+- [x] 2.10 RED: `test_missing_metadata_is_neutral_zero_signals_status_completed` (Scenario: Missing metadata is neutral)
+- [x] 2.11 GREEN: complete `exiftool.py` neutral-absence path, wire adapter to `MetadataPort`
+- [x] 2.12 RED: `test_c2pa_missing_manifest_emits_no_signal`
+- [x] 2.13 RED: `test_c2pa_valid_ai_generated_claim_emits_critical_signal` (Scenario: Valid AI-generated provenance claim)
+- [x] 2.14 RED: `test_c2pa_failed_validation_emits_lower_severity_non_critical_signal`
+- [x] 2.15 GREEN: create `adapters/provenance/c2pa_reader.py::_read_manifest` (Reader-only) + signal derivation for 2.12-2.14
+- [x] 2.16 Modify `apps/api/pyproject.toml`: add `c2pa-python>=0.7`; ban `subprocess`/`c2pa` outside `adapters/**`
+- [x] 2.17 Modify `apps/api/Dockerfile`: add `libimage-exiftool-perl` apt layer
+- [x] 2.18 Modify `.github/workflows/ci.yml`: insert "Install system dependencies" step after checkout
 
 ## Slice 3a: Financial validators (pure domain, no new deps)
 
