@@ -60,3 +60,32 @@ jobs:
         env:
           RECEIPT_RISK_OCR_MODEL_DIR: ~/.cache/receipt-risk/ocr-models
         run: uv run pytest
+
+  web:
+    name: Web Lint and Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        env:
+          PUBLIC_API_BASE_URL: http://localhost:8000
+        run: npx svelte-check --tsconfig ./tsconfig.json
+
+      - name: Test
+        env:
+          PUBLIC_API_BASE_URL: http://localhost:8000
+        run: npx vitest run
