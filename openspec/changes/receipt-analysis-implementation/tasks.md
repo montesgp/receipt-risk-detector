@@ -148,34 +148,39 @@ Traces to locked product decisions: whole-request `INCONCLUSIVE` coverage thresh
 failed analyzer → signal not abort. Traces to success criteria: `ruleset_version`/`engine_version`
 present, forbidden-vocabulary check, identical-input determinism.
 
-- [ ] 4.1 RED: `domain/ruleset.py::test_scoring_ruleset_is_frozen_dataclass_keyed_by_version`
-- [ ] 4.2 GREEN: implement `domain/ruleset.py::ScoringRuleset` + `domain/rulesets/v2026_09_01.py::RULESET_2026_09_01` registered into `RULESETS`
-- [ ] 4.3 RED: `domain/scoring.py::test_risk_score_contribution_uses_decimal_weight_severity_confidence`
-- [ ] 4.4 RED: `test_risk_score_capped_at_100_and_raised_to_critical_floor_for_critical_signal`
-- [ ] 4.5 GREEN: implement `score()` risk-score arithmetic (`Decimal` only, per design formula)
-- [ ] 4.6 RED: `test_confidence_independent_of_risk_ocr_fails_others_succeed_not_inconclusive` (locked decision: coverage 0.50 → NOT `INCONCLUSIVE`, `confidence_score`=50)
-- [ ] 4.7 RED: `test_inconclusive_when_all_analyzers_fail_coverage_zero`
-- [ ] 4.8 GREEN: implement `evidence_coverage`/`confidence_score`/`classification` per design formula
-- [ ] 4.9 RED: `test_deterministic_score_same_input_and_ruleset_twice_identical_triple` (Scenario: Deterministic score for identical input)
-- [ ] 4.10 GREEN: close any purity gap found by 4.9 in `score()`
-- [ ] 4.11 RED: `domain/assessment.py::test_fraud_assessment_includes_ruleset_version_and_engine_version`
-- [ ] 4.12 GREEN: implement `assemble()` + `recommended_action` mapping (LOW/REVIEW→`STANDARD_MANUAL_RECONCILIATION`; SUSPICIOUS/INCONCLUSIVE→`PRIORITY_MANUAL_RECONCILIATION`; HIGH_RISK→`DO_NOT_RELY_ON_RECEIPT`)
-- [ ] 4.13 RED: `application/analyze_receipt.py::test_guarded_call_converts_exception_to_failed_result_never_aborts`
-- [ ] 4.14 RED: `test_guarded_call_converts_timeout_to_timed_out_result`
-- [ ] 4.15 RED: `test_whole_request_budget_exhaustion_returns_analysis_timeout`
-- [ ] 4.16 RED: `test_cleanup_runs_in_finally_on_success_error_timeout_cancellation` (full use-case level)
-- [ ] 4.17 GREEN: implement `AnalyzeReceiptUseCase` (`execute()`, `_guarded()`, `TimeBudget`, anyio task group/semaphore/`fail_after`)
-- [ ] 4.18 RED: `adapters/api/schemas.py::test_analyze_response_schema_matches_docs_api_md_field_for_field`
-- [ ] 4.19 RED: `adapters/api/router.py::test_post_analyze_returns_full_assessment_with_ruleset_and_engine_version` (Success criterion)
-- [ ] 4.20 RED: `test_response_never_contains_forbidden_verdict_vocabulary` (`is_real`/`is_fake`/`authentic`/`verified transfer` — Scenario: No absolute verdict)
-- [ ] 4.21 RED: contract tests for each of the 7 documented `ProblemDetails` error codes vs `docs/API.md`
-- [ ] 4.22 GREEN: implement `adapters/api/{schemas,mappers,errors,dependencies,router}.py`
-- [ ] 4.23 Modify `bootstrap/app.py`: register router (first public exposure of `/v1/receipts/analyze`), add `/ready`, `/version`
-- [ ] 4.24 RED: `test_analyze_route_appears_in_openapi_only_after_slice4_registration` (regression guard vs slices 1-3's absent-route design decision)
-- [ ] 4.25 RED: `test_no_raw_bytes_or_unmasked_cbu_cuit_amount_in_logs_across_success_and_failure_paths` (`caplog` scan)
-- [ ] 4.26 GREEN: close any masking gap found by 4.25 in adapters/domain logging calls
-- [ ] 4.27 Create `docs/features/receipt-analysis/{SDD,TDD,RDD}.md` mirroring design/tasks per `config.yaml` `rules.design`
-- [ ] 4.28 Update `docs/API.md` only if 4.18/4.21 contract tests surface a field-naming drift
+- [x] 4.1 RED: `domain/ruleset.py::test_scoring_ruleset_is_frozen_dataclass_keyed_by_version`
+- [x] 4.2 GREEN: implement `domain/ruleset.py::ScoringRuleset` + `domain/rulesets/v2026_09_01.py::RULESET_2026_09_01` registered into `RULESETS`
+- [x] 4.3 RED: `domain/scoring.py::test_risk_score_contribution_uses_decimal_weight_severity_confidence`
+- [x] 4.4 RED: `test_risk_score_capped_at_100_and_raised_to_critical_floor_for_critical_signal`
+- [x] 4.5 GREEN: implement `score()` risk-score arithmetic (`Decimal` only, per design formula)
+- [x] 4.6 RED: `test_confidence_independent_of_risk_ocr_fails_others_succeed_not_inconclusive` (locked decision: coverage 0.50 → NOT `INCONCLUSIVE`, `confidence_score`=50)
+- [x] 4.7 RED: `test_inconclusive_when_all_analyzers_fail_coverage_zero`
+- [x] 4.8 GREEN: implement `evidence_coverage`/`confidence_score`/`classification` per design formula
+- [x] 4.9 RED: `test_deterministic_score_same_input_and_ruleset_twice_identical_triple` (Scenario: Deterministic score for identical input)
+- [x] 4.10 GREEN: close any purity gap found by 4.9 in `score()` (none found — determinism held on first run)
+- [x] 4.11 RED: `domain/assessment.py::test_fraud_assessment_includes_ruleset_version_and_engine_version`
+- [x] 4.12 GREEN: implement `assemble()` + `recommended_action` mapping (LOW/REVIEW→`STANDARD_MANUAL_RECONCILIATION`; SUSPICIOUS/INCONCLUSIVE→`PRIORITY_MANUAL_RECONCILIATION`; HIGH_RISK→`DO_NOT_RELY_ON_RECEIPT`)
+- [x] 4.13 RED: `application/analyze_receipt.py::test_guarded_call_converts_exception_to_failed_result_never_aborts`
+- [x] 4.14 RED: `test_guarded_call_converts_timeout_to_timed_out_result`
+- [x] 4.15 RED: `test_whole_request_budget_exhaustion_returns_analysis_timeout`
+- [x] 4.16 RED: `test_cleanup_runs_in_finally_on_success_error_timeout_cancellation` (full use-case level)
+- [x] 4.17 GREEN: implement `AnalyzeReceiptUseCase` (`execute()`, `_guarded()`, `TimeBudget`, anyio task group/semaphore/`fail_after`)
+- [x] 4.18 RED: `adapters/api/schemas.py::test_analyze_response_schema_matches_docs_api_md_field_for_field`
+- [x] 4.19 RED: `adapters/api/router.py::test_post_analyze_returns_full_assessment_with_ruleset_and_engine_version` (Success criterion)
+- [x] 4.20 RED: `test_response_never_contains_forbidden_verdict_vocabulary` (`is_real`/`is_fake`/`authentic`/`verified transfer` — Scenario: No absolute verdict)
+- [x] 4.21 RED: contract tests for each of the 7 documented `ProblemDetails` error codes vs `docs/API.md` (5 of 7 reachable through the router: `MISSING_FILE`/`FILE_TOO_LARGE`/`UNSUPPORTED_IMAGE`/`IMAGE_DIMENSIONS_EXCEEDED`/`ANALYSIS_TIMEOUT`; `RATE_LIMITED` covered by the rate-limit middleware tests; `ANALYZER_UNAVAILABLE` 503 is documented but structurally unreachable per the "failed analyzer -> signal, never abort" decision — recorded as a deviation in `docs/features/receipt-analysis/TDD.md`)
+- [x] 4.22 GREEN: implement `adapters/api/{schemas,mappers,errors,dependencies,router}.py`
+- [x] 4.23 Modify `bootstrap/app.py`: register router (first public exposure of `/v1/receipts/analyze`), add `/ready`, `/version`
+- [x] 4.24 RED: `test_analyze_route_appears_in_openapi_only_after_slice4_registration` (regression guard vs slices 1-3's absent-route design decision)
+- [x] 4.25 RED: `test_no_raw_bytes_or_unmasked_cbu_cuit_amount_in_logs_across_success_and_failure_paths` (`caplog` scan)
+- [x] 4.26 GREEN: close any masking gap found by 4.25 in adapters/domain logging calls (none found — existing masking already covers the guarded-exception path)
+- [x] 4.27 Create `docs/features/receipt-analysis/{SDD,TDD,RDD}.md` mirroring design/tasks per `config.yaml` `rules.design`
+- [x] 4.28 Update `docs/API.md` only if 4.18/4.21 contract tests surface a field-naming drift (found: §3 example's `recommended_action` used the stale value `MANUAL_RECONCILIATION`; corrected to `PRIORITY_MANUAL_RECONCILIATION`)
+
+### Apply-time addition (not in the original 28-task list)
+
+- [x] 4.29 Implement `adapters/api/rate_limit/{bucket,config}.py` + `adapters/api/middleware/rate_limit.py`: in-process per-IP token-bucket rate limiting per the frozen `api-rate-limiting` spec, wired into `bootstrap/app.py`. Added because `POST /v1/receipts/analyze` becomes publicly reachable for the first time in this slice, and the spec's requirement applies from first exposure — see `docs/features/receipt-analysis/TDD.md` "Known deviations".
+- [x] 4.30 (sdd-verify corrective pass) Implement `adapters/api/cors_config.py` + wire `CORSMiddleware` in `bootstrap/app.py`, registered AFTER `RateLimitMiddleware` so CORS is outermost (docs/API.md §5's "rate limiter runs inside the CORS middleware" contract). Fixes a gap `sdd-verify` found: the frozen `public-api-contract` spec's "CORS allowlist" requirement had zero implementation despite this slice being the first to expose the endpoint publicly. Also corrected `docs/API.md`'s stale `503 ANALYZER_UNAVAILABLE` entry, which is structurally unreachable per the "never abort, always signal" decision.
 
 ## Key Learnings
 
