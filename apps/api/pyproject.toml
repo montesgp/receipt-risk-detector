@@ -10,6 +10,9 @@ dependencies = [
     "pydantic>=2.9",
     "Pillow>=11.0",
     "c2pa-python>=0.7",
+    "onnxruntime>=1.20",
+    "opencv-python-headless>=4.10",
+    "rapidocr-onnxruntime>=1.4",
 ]
 
 [project.optional-dependencies]
@@ -19,6 +22,10 @@ server = ["uvicorn[standard]>=0.32"]
 dev = [
     "pytest>=8.3",
     "ruff>=0.8",
+    # scripts/fetch_ocr_models.py's only dependency -- build/CI-time only,
+    # never imported by the application itself (the runtime image installs
+    # it separately in the Dockerfile's ocr-models stage, before uv sync).
+    "requests==2.32.3",
 ]
 
 [build-system]
@@ -52,6 +59,8 @@ select = ["E", "F", "I", "UP", "B", "TID", "S602", "S604", "S605", "S607"]
 "PIL".msg = "Pillow is an adapter-only dependency."
 "subprocess".msg = "Subprocess execution is adapter-only; fixed argv, shell=False, always a timeout."
 "c2pa".msg = "C2PA is an adapter-only dependency."
+"onnxruntime".msg = "ONNX Runtime is an adapter-only dependency."
+"rapidocr_onnxruntime".msg = "The OCR engine is an adapter-only dependency."
 
 [tool.ruff.lint.per-file-ignores]
 "src/receipt_risk/adapters/**" = ["TID251"]

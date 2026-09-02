@@ -119,27 +119,27 @@ Traces to spec scenario: *Field extracted with confidence* (FR-005). Traces to l
 product decisions: bounded single retry, `CORE_FIELD_EXTRACTION_FAILED` as a signal.
 Traces to threat matrix: Process integration (OCR model loading) — both cases.
 
-- [ ] 3b.1 RED: `test_ocr_port_protocol_shape`
-- [ ] 3b.2 GREEN: extend `application/ports.py` with `OcrPort`
-- [ ] 3b.3 RED: `adapters/ocr/field_parsers.py::test_amount_extracted_with_raw_normalized_and_confidence` (Scenario: Field extracted with confidence)
-- [ ] 3b.4 GREEN: implement `field_parsers.py` (engine output → `ExtractedField` per core field)
-- [ ] 3b.5 RED: `adapters/ocr/preprocess.py::test_deskew_bounded_to_15_degrees_and_deterministic`
-- [ ] 3b.6 GREEN: implement `preprocess.py` (deskew, CLAHE, unsharp — fixed parameters, no randomness)
-- [ ] 3b.7 RED: `test_attempt1_completed_when_coverage_at_or_above_075_no_retry`
-- [ ] 3b.8 RED: `test_exactly_one_preprocessing_retry_when_below_threshold` (engine called exactly twice)
-- [ ] 3b.9 RED: `test_retry_keeps_better_result_by_coverage_and_confidence`
-- [ ] 3b.10 RED: `test_core_field_extraction_failed_emitted_with_reason_low_confidence_after_retry`
-- [ ] 3b.11 RED: `test_no_text_detected_reason_skips_retry_when_budget_insufficient`
-- [ ] 3b.12 GREEN: implement `adapters/ocr/paddle_onnx.py` per design's attempt1/retry-gate/attempt2 state machine
-- [ ] 3b.13 RED (threat): `test_ocr_adapter_bogus_model_dir_returns_analyzer_unavailable_no_download`
-- [ ] 3b.14 RED (threat): `test_ocr_analysis_makes_zero_outbound_network_connections` (socket-blocking test)
-- [ ] 3b.15 GREEN: wire `RECEIPT_RISK_OCR_MODEL_DIR` lookup + fail-closed `ANALYZER_UNAVAILABLE` path
-- [ ] 3b.16 RED: `test_low_quality_skewed_fixture_exercises_single_retry_path` (integration, real engine, CI-required, `skipif` locally if engine/models absent)
-- [ ] 3b.17 GREEN: confirm fixture-driven integration passes
-- [ ] 3b.18 Create `apps/api/scripts/fetch_ocr_models.py` (pinned model set + sha256 verification, `--dest`/`--verify`)
-- [ ] 3b.19 Modify `apps/api/pyproject.toml`: add `onnxruntime`, `opencv-python-headless`, `rapidocr-onnxruntime`; extend ruff `select`/banned-api per design
-- [ ] 3b.20 Modify `apps/api/Dockerfile`: prepend `ocr-models` build stage + baked-model `COPY` + env vars
-- [ ] 3b.21 Modify `.github/workflows/ci.yml`: add "Cache OCR models" + "Fetch OCR models" steps, replace `Test` step with env-carrying version
+- [x] 3b.1 RED: `test_ocr_port_protocol_shape`
+- [x] 3b.2 GREEN: extend `application/ports.py` with `OcrPort`
+- [x] 3b.3 RED: `adapters/ocr/field_parsers.py::test_amount_extracted_with_raw_normalized_and_confidence` (Scenario: Field extracted with confidence)
+- [x] 3b.4 GREEN: implement `field_parsers.py` (engine output → `ExtractedField` per core field)
+- [x] 3b.5 RED: `adapters/ocr/preprocess.py::test_deskew_bounded_to_15_degrees_and_deterministic`
+- [x] 3b.6 GREEN: implement `preprocess.py` (deskew, CLAHE, unsharp — fixed parameters, no randomness)
+- [x] 3b.7 RED: `test_attempt1_completed_when_coverage_at_or_above_075_no_retry`
+- [x] 3b.8 RED: `test_exactly_one_preprocessing_retry_when_below_threshold` (engine called exactly twice)
+- [x] 3b.9 RED: `test_retry_keeps_better_result_by_coverage_and_confidence`
+- [x] 3b.10 RED: `test_core_field_extraction_failed_emitted_with_reason_low_confidence_after_retry`
+- [x] 3b.11 RED: `test_no_text_detected_reason_skips_retry_when_budget_insufficient`
+- [x] 3b.12 GREEN: implement `adapters/ocr/paddle_onnx.py` per design's attempt1/retry-gate/attempt2 state machine
+- [x] 3b.13 RED (threat): `test_ocr_adapter_bogus_model_dir_returns_analyzer_unavailable_no_download`
+- [x] 3b.14 RED (threat): `test_ocr_analysis_makes_zero_outbound_network_connections` (socket-blocking test)
+- [x] 3b.15 GREEN: wire `RECEIPT_RISK_OCR_MODEL_DIR` lookup + fail-closed `ANALYZER_UNAVAILABLE` path
+- [x] 3b.16 RED: `test_low_quality_skewed_fixture_exercises_single_retry_path` (integration, real engine, CI-required, `skipif` locally if engine/models absent)
+- [x] 3b.17 GREEN: confirm fixture-driven integration passes
+- [x] 3b.18 Create `apps/api/scripts/fetch_ocr_models.py` (pinned model set + sha256 verification, `--dest`/`--verify`)
+- [x] 3b.19 Modify `apps/api/pyproject.toml`: add `onnxruntime`, `opencv-python-headless`, `rapidocr-onnxruntime`; extend ruff `select`/banned-api per design
+- [x] 3b.20 Modify `apps/api/Dockerfile`: prepend `ocr-models` build stage + baked-model `COPY` + env vars
+- [x] 3b.21 Modify `.github/workflows/ci.yml`: add "Cache OCR models" + "Fetch OCR models" steps, replace `Test` step with env-carrying version
 
 ## Slice 4: Risk engine + response assembly
 

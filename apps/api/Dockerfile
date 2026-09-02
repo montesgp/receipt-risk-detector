@@ -1,22 +1,33 @@
-# Minimal production image for the receipt-risk-detector API.
+# syntax=docker/dockerfile:1
 #
-# Ships only the bootstrap liveness endpoint (see src/receipt_risk/bootstrap/app.py) —
-# no business logic exists yet (tracked as GitHub issue #1, receipt-analysis capability).
-# This Dockerfile exists so railway.json's DOCKERFILE builder has something real to
-# build; it is intentionally not optimized for image size or build cache until the
-# real analyzer dependencies (OpenCV, PaddleOCR, ExifTool) land.
-#
-# Build context is the REPO ROOT, not apps/api. Railway's top-level `build` object
-# has no `dockerContext` property (confirmed against railway.schema.json — it only
-# exists per-service inside a multi-service `services[]` array, which this single-
-# service repo does not use), so it always builds from root regardless of
-# `dockerfilePath`. Paths below are relative to the repo root accordingly.
+# Production image for the receipt-risk-detector API. No business logic exists
+# yet beyond the /health bootstrap and the receipt-analysis pipeline's adapters
+# (tracked as GitHub issue #1). Build context is the REPO ROOT, not apps/api:
+# Railway's top-level `build` object has no `dockerContext` property (confirmed
+# against railway.schema.json — it only exists per-service inside a
+# multi-service `services[]` array, which this single-service repo does not
+# use), so it always builds from root regardless of `dockerfilePath`. Paths
+# below are relative to the repo root accordingly.
 
+# ---- slice 3: OCR model pre-baking (no network access at container start) ----
+FROM python:3.12-slim AS ocr-models
+RUN pip install --no-cache-dir uv
+WORKDIR /build
+COPY apps/api/scripts/fetch_ocr_models.py ./
+# Pinned model set + sha256 verification live inside the script so the pin is reviewable.
+RUN pip install --no-cache-dir "requests==2.32.3" \
+ && python fetch_ocr_models.py --dest /opt/ocr-models --verify
+
+# ---- runtime ----
 FROM python:3.12-slim
 
-# slice 2: ExifTool binary for the metadata adapter (adapters/metadata/exiftool.py).
+# slice 2: ExifTool binary. libglib2.0-0 is required by opencv-python-headless
+# (slice 3); libgl1 is deliberately NOT installed because the headless wheel
+# does not link libGL.
 RUN apt-get update \
- && apt-get install --no-install-recommends -y libimage-exiftool-perl \
+ && apt-get install --no-install-recommends -y \
+      libimage-exiftool-perl \
+      libglib2.0-0 \
  && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv
@@ -31,6 +42,13 @@ WORKDIR /app
 COPY apps/api/pyproject.toml apps/api/uv.lock apps/api/README.md ./
 COPY apps/api/src ./src
 RUN uv sync --frozen --no-dev --extra server
+
+# slice 3: baked models; the OCR adapter must never download at request or
+# startup time (see the "zero outbound network connections" threat-matrix test).
+COPY --from=ocr-models /opt/ocr-models /opt/ocr-models
+ENV RECEIPT_RISK_OCR_MODEL_DIR=/opt/ocr-models \
+    HF_HUB_OFFLINE=1 \
+    OMP_NUM_THREADS=2
 
 # Invoke uvicorn directly from the synced venv instead of `uv run` — `uv run` re-
 # resolves dependency groups (including `dev`) on every container start, which is
