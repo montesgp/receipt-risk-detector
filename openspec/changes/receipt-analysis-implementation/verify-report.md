@@ -234,3 +234,104 @@ WARNING (non-blocking): tasks.md's own Review Workload Forecast projected Slice 
 3. detect_contradictions being field-name-agnostic rather than amount/date-specific is a reasonable interpretation given design.md defines only one AMOUNT_DATE_CONTRADICTION code, and it broadens rather than narrows detection coverage.
 4. CORE_FIELD_EXTRACTION_FAILED and ExtractionFailureReason living in Slice 3a's domain/signals.py ahead of Slice 3b's OCR adapter is explicitly required by tasks.md task 3a.17, not scope leakage.
 5. Slice 3a's actual diff (approximately 692 authored lines) moderately exceeds tasks.md's own pre-declared forecast, driven by test volume across 7 new test files, not by file-set scope creep.
+
+## Slice 3b: OCR adapter + infra
+
+Verdict: PASS
+
+Context: this slice was completed in two passes -- a background sdd-apply agent (ports.py OcrPort, field_parsers.py, preprocess.py, paddle_onnx.py, unit tests) was killed mid-work before finishing infra, then the orchestrator directly finished fetch_ocr_models.py, Dockerfile/ci.yml, an expanduser bugfix plus regression test, and tests/integration/test_ocr_integration.py. Both halves were verified with equal rigor.
+
+### 1. Spec scenario to test mapping
+
+| Scenario / decision | Covering test | Result |
+|---|---|---|
+| Field extracted with confidence (FR-005) | test_amount_extracted_with_raw_normalized_and_confidence, test_real_engine_extracts_all_core_fields_from_clean_fixture (real engine, real fixture) | PASS |
+| Bounded single retry (locked decision) | test_exactly_one_preprocessing_retry_when_below_threshold, test_retry_keeps_better_result_by_coverage_and_confidence, test_no_text_detected_reason_skips_retry_when_budget_insufficient | PASS |
+| CORE_FIELD_EXTRACTION_FAILED signal (locked decision) | test_core_field_extraction_failed_emitted_with_reason_low_confidence_after_retry | PASS |
+| Threat matrix: OCR model loading, bogus dir | test_ocr_adapter_bogus_model_dir_returns_analyzer_unavailable_no_download, test_ocr_adapter_extract_with_bogus_model_dir_returns_analyzer_unavailable | PASS |
+| Threat matrix: zero outbound network connections | test_ocr_analysis_makes_zero_outbound_network_connections | PASS |
+
+All 21 slice-3b tasks marked [x] and match the actual code state.
+
+### 2. Independent re-run (not trusting apply/orchestrator claims)
+
+- uv run pytest: 76 passed, 4 skipped locally (2 exiftool-absent, 2 OCR-model-dir-absent -- pre-existing skip patterns, not new gaps).
+- uv run ruff check .: All checks passed.
+- uv run ruff format --check .: 53 files already formatted.
+- Re-ran CI's own log for PR #10 run 33660161135 ("API Lint and Test"): 80 passed (76 local + the 4 that only run when models/exiftool are present) -- exact arithmetic match, confirming the CI environment genuinely exercises the 4 tests this sandbox skips, not a silently-degraded green.
+
+### 3. Model pin authenticity (independently reproduced)
+
+Downloaded all 3 pinned URLs myself with `uv run --with requests==2.32.3 python scripts/fetch_ocr_models.py --dest <tmp> --verify`:
+- Real download succeeded, "sha256 verified" printed for det.onnx, cls.onnx, rec.onnx.
+- Independently recomputed sha256 with sha256sum outside the script: matched the pinned values in fetch_ocr_models.py exactly for all 3 files.
+- Ran the script a second time: printed "already present, sha256 matches" for all 3 files with zero new downloads -- idempotency confirmed.
+- Inspected first 32 bytes of each file with xxd: readable protobuf strings (PaddlePaddle, batch_norm2d_0.b_0, conv12_...) -- genuine ONNX/protobuf content, not an HTML error page.
+
+### 4. Real-engine integration test (ran myself against my own downloaded models)
+
+RECEIPT_RISK_OCR_MODEL_DIR=<my tmp dir> uv run pytest tests/integration/test_ocr_integration.py -v -> 2 passed in 8.45s.
+- clean_valid_transfer.png: extracted destination_cbu=2850590940090418135201, cuit=20172543597, amount=125000.00 -- matches samples/manifest.json's declared_fields exactly.
+- low_quality_skewed.jpg: the module docstring's honesty note ("this fixture's degradation does NOT trigger the retry branch with the real engine -- verified by instrumenting the engine call count, which stays at 1") is independently confirmed true -- the test asserts call_count == 1 and it passed. The orchestrator did not overstate or fabricate this claim.
+
+### 5. expanduser bug -- reproduced both failing and fixed states myself
+
+Without .expanduser(): path stays "~\.cache\receipt-risk\ocr-models" (relative, does not exist).
+With .expanduser(): resolves to the real absolute home directory path.
+
+Confirms the root-cause claim: GitHub Actions' env: mapping passes "~/.cache/receipt-risk/ocr-models" through literally without shell expansion, so _model_dir_from_env() without .expanduser() would silently look in a nonexistent relative path. The fix (Path(value).expanduser()) is present in paddle_onnx.py, and test_model_dir_from_env_expands_tilde_to_home_directory covers the regression.
+
+### 6. Network-blocking test -- verified it actually discriminates loopback vs outbound
+
+Extracted the guard's exact logic into a standalone script and fired a real connect() attempt to 8.8.8.8:53: the guard correctly raised AssertionError("OCR analysis attempted to open an outbound network connection"). Loopback addresses (127.0.0.1, ::1, localhost) are explicitly allow-listed, required so asyncio's Windows ProactorEventLoop self-pipe socketpair does not false-positive. The guard is a real behavioral check, not a no-op.
+
+### 7. Bounded retry hard bound
+
+Read paddle_onnx.py::_run_bounded_retry: exactly two possible engine-call sites in the function body (engine(pixels) at attempt 1, engine(preprocessed) at attempt 2), no loop, no recursion -- structurally impossible to exceed 2 calls under any input. Confirmed further by _CountingEngine-based tests asserting call_count == 1 (early completion / budget-insufficient paths) or call_count == 2 (retry-triggered paths) -- no test path shows a 3rd call.
+
+### 8. Layering
+
+grep -rl for cv2/onnxruntime/rapidocr_onnxruntime imports over apps/api/src/receipt_risk/ returns only adapters/ocr/paddle_onnx.py and adapters/ocr/preprocess.py. field_parsers.py imports only stdlib plus receipt_risk.domain.analysis / receipt_risk.domain.financial.money -- no tool-specific import. Boundary holds structurally; ruff's TID251/banned-api additions (onnxruntime, rapidocr_onnxruntime) also present in pyproject.toml.
+
+### 9. Dockerfile / ci.yml vs design.md's exact snippets
+
+Diffed apps/api/Dockerfile, .github/workflows/ci.yml, apps/api/pyproject.toml against dev. Content matches design.md's literal snippets field-for-field (ocr-models build stage, COPY --from=ocr-models, RECEIPT_RISK_OCR_MODEL_DIR/HF_HUB_OFFLINE/OMP_NUM_THREADS env vars, "Cache OCR models" + "Fetch OCR models" steps, Test step's env block). One immaterial ordering deviation: design.md said to insert the CI steps "after Sync dependencies"; the actual diff places them after Lint/Format check and immediately before Test, which is functionally equivalent (still runs before pytest, still after uv sync) -- WARNING, not CRITICAL, no spec or design requirement is broken by this ordering choice.
+
+### 10. PR #10 CI run authenticity (not just "job passed")
+
+Fetched the full log of run 33660161135 for job "API Lint and Test": Fetch OCR models step's log shows real download URLs hit (https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/...) and "sha256 verified" for all 3 files at 17:18:02, immediately followed by the Test step's env block showing RECEIPT_RISK_OCR_MODEL_DIR: ~/.cache/receipt-risk/ocr-models and "80 passed in 4.51s". This is a real, non-silently-skipped execution of the critical model-fetch step, not a false green.
+
+### 11. git diff --stat vs dev
+
+```
+.github/workflows/ci.yml                           |  13 +-
+apps/api/Dockerfile                                |  46 +++-
+apps/api/pyproject.toml                            |   9 +
+apps/api/scripts/fetch_ocr_models.py               | 129 +++++++++
+.../src/receipt_risk/adapters/ocr/field_parsers.py | 135 +++++++++
+.../src/receipt_risk/adapters/ocr/paddle_onnx.py   | 265 ++++++++++++++++++
+.../src/receipt_risk/adapters/ocr/preprocess.py    |  76 ++++++
+apps/api/src/receipt_risk/application/ports.py     |  16 +-
+apps/api/tests/integration/test_ocr_integration.py |  93 +++++++
+apps/api/tests/unit/test_ocr_field_parsers.py      |  63 +++++
+apps/api/tests/unit/test_ocr_paddle_onnx.py        | 213 +++++++++++++++
+apps/api/tests/unit/test_ocr_preprocess.py         |  57 ++++
+apps/api/tests/unit/test_ports.py                  |  19 +-
+apps/api/uv.lock                                   | 301 ++++++++++++++++++++-
+.../receipt-analysis-implementation/tasks.md       |  42 +--
+15 files changed, 1436 insertions(+), 41 deletions(-)
+```
+
+Excluding uv.lock (generated) and the tasks.md checkbox update, authored diff is roughly 1093 lines -- above the tasks.md forecast (~600-650, already flagged High) but the forecast itself anticipated this and offered a size:exception fallback; not a new finding.
+
+### 12. Apply-progress artifact gap (process note, not a code defect)
+
+No Engram apply-progress observation exists for slice 3b specifically (the last persisted one, #1856, still says "Remaining: Slice 3b ... not started"). This is consistent with the stated history: the background agent was killed before it could persist progress, and the orchestrator that finished the slice did not author a replacement apply-progress save. WARNING: the pipeline's memory trail has a gap for this slice; recommend the orchestrator backfill an apply-progress observation for slice 3b before archive.
+
+### Summary
+
+- CRITICAL: none.
+- WARNING: (1) CI step insertion order differs immaterially from design.md's literal instruction; (2) no apply-progress Engram record exists for slice 3b, leaving a stale "not started" record as the most recent memory of this slice's status.
+- SUGGESTION: none beyond what's already noted inline.
+
+All spec scenarios, locked decisions, and threat-matrix cases for slice 3b are backed by a passing runtime test that this verify pass re-ran independently. Model pins are real, correct, and reproducible. The expanduser fix and the network-blocking test's loopback/outbound discrimination both hold under direct reproduction. Safe to proceed to slice 4 once the orchestrator addresses the apply-progress backfill.
