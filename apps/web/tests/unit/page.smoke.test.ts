@@ -59,7 +59,20 @@ describe('+page.svelte wiring', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        jsonResponse(200, { analysis_id: 'sha256:abc', classification: 'LOW_RISK', risk_score: 10 })
+        jsonResponse(200, {
+          analysis_id: 'sha256:abc',
+          engine_version: '2026.09.01',
+          ruleset_version: 'v2026_09_01',
+          classification: 'LOW_RISK',
+          risk_score: 10,
+          confidence_score: 95,
+          recommended_action: 'STANDARD_MANUAL_RECONCILIATION',
+          signals: [],
+          extracted_data: {},
+          analyzer_statuses: [],
+          limitations: [],
+          duration_ms: 500
+        })
       )
     );
 
@@ -75,8 +88,11 @@ describe('+page.svelte wiring', () => {
     expect(screen.getByRole('status').textContent).toMatch(/Analizando/i);
     expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
 
-    await waitFor(() => expect(screen.getByText(/Resultado: LOW_RISK/i)).toBeTruthy());
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    await waitFor(() => expect(screen.getByText(/Riesgo bajo/i)).toBeTruthy());
+    // Both the always-mounted ReconciliationNotice and ResultView's own
+    // limitations fallback render the identical DESIGN.md §5 sentence when
+    // the server sends no `limitations[]` — at least one match is required.
+    expect(screen.getAllByText(DISCLAIMER_TEXT).length).toBeGreaterThan(0);
   });
 
   it('shows a distinct connectivity error, never a result, on a network failure — disclaimer stays present', async () => {

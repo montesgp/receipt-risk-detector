@@ -117,25 +117,25 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 ## Slice 1b: Full Result Presentation
 
 ### Phase 1: Formatters
-- [ ] 1.1 RED `tests/unit/format.test.ts`: `Intl` amount/date formatting cases
-- [ ] 1.2 GREEN `lib/features/receipt-analysis/format.ts`
+- [x] 1.1 RED `tests/unit/format.test.ts`: `Intl` amount/date formatting cases
+- [x] 1.2 GREEN `lib/features/receipt-analysis/format.ts`
 
 ### Phase 2: Result components (spec "Successful result display"; design component props sketch)
-- [ ] 2.1 RED `ScoreSummary` test: text-first classification, no forced risk color when `INCONCLUSIVE` (spec "INCONCLUSIVE result does not force a risk color")
-- [ ] 2.2 GREEN `lib/components/ScoreSummary.svelte`
-- [ ] 2.3 RED `EvidenceList`/`EvidenceItem` test: sorted by severity then `score_contribution` desc
-- [ ] 2.4 GREEN `lib/components/EvidenceList.svelte` + `EvidenceItem.svelte`
-- [ ] 2.5 RED `ExtractedDataTable` test: renders `masked_value` when present, never unmasks `value`, treats `is_checksum_valid` as optional
-- [ ] 2.6 GREEN `lib/components/ExtractedDataTable.svelte`
-- [ ] 2.7 RED `ReconciliationChecklist` test: renders items even when a field is absent
-- [ ] 2.8 GREEN `lib/components/ReconciliationChecklist.svelte`
-- [ ] 2.9 RED `TechnicalDetail` test: shows `engine_version`/`ruleset_version`/`analyzer_statuses`
-- [ ] 2.10 GREEN `lib/components/TechnicalDetail.svelte`
-- [ ] 2.11 RED forbidden-word test on full rendered result (spec "No forbidden authenticity language appears": no "real"/"fake"/"authentic"/"verified transfer")
-- [ ] 2.12 GREEN `lib/components/ResultView.svelte` composing all above; `limitations[]` always rendered (spec "Full result renders from the live response")
+- [x] 2.1 RED `ScoreSummary` test: text-first classification, no forced risk color when `INCONCLUSIVE` (spec "INCONCLUSIVE result does not force a risk color")
+- [x] 2.2 GREEN `lib/components/ScoreSummary.svelte`
+- [x] 2.3 RED `EvidenceList`/`EvidenceItem` test: sorted by severity then `score_contribution` desc
+- [x] 2.4 GREEN `lib/components/EvidenceList.svelte` + `EvidenceItem.svelte`
+- [x] 2.5 RED `ExtractedDataTable` test: renders `masked_value` when present, never unmasks `value`, treats `is_checksum_valid` as optional
+- [x] 2.6 GREEN `lib/components/ExtractedDataTable.svelte`
+- [x] 2.7 RED `ReconciliationChecklist` test: renders items even when a field is absent
+- [x] 2.8 GREEN `lib/components/ReconciliationChecklist.svelte`
+- [x] 2.9 RED `TechnicalDetail` test: shows `engine_version`/`ruleset_version`/`analyzer_statuses`
+- [x] 2.10 GREEN `lib/components/TechnicalDetail.svelte`
+- [x] 2.11 RED forbidden-word test on full rendered result (spec "No forbidden authenticity language appears": no "real"/"fake"/"authentic"/"verified transfer")
+- [x] 2.12 GREEN `lib/components/ResultView.svelte` composing all above; `limitations[]` always rendered (spec "Full result renders from the live response")
 
 ### Phase 3: Wiring
-- [ ] 3.1 GREEN wire `ResultView` into workspace `result` state in `+page.svelte`
+- [x] 3.1 GREEN wire `ResultView` into workspace `result` state in `+page.svelte`
 
 #### Slice 1b Review Workload Forecast
 | Field | Value |

@@ -16,7 +16,7 @@ describe('ScoreSummary', () => {
       props: {
         classification: 'LOW_RISK',
         riskScore: 12,
-        confidenceScore: 0.91,
+        confidenceScore: 91,
         recommendedAction: 'STANDARD_MANUAL_RECONCILIATION'
       }
     });
@@ -33,7 +33,7 @@ describe('ScoreSummary', () => {
       props: {
         classification: 'SUSPICIOUS',
         riskScore: 74,
-        confidenceScore: 0.63,
+        confidenceScore: 63,
         recommendedAction: 'PRIORITY_MANUAL_RECONCILIATION'
       }
     });
@@ -47,7 +47,7 @@ describe('ScoreSummary', () => {
       props: {
         classification: 'HIGH_RISK',
         riskScore: 91,
-        confidenceScore: 0.88,
+        confidenceScore: 88,
         recommendedAction: 'DO_NOT_RELY_ON_RECEIPT'
       }
     });
@@ -61,7 +61,7 @@ describe('ScoreSummary', () => {
       props: {
         classification: 'INCONCLUSIVE',
         riskScore: 50,
-        confidenceScore: 0.21,
+        confidenceScore: 21,
         recommendedAction: 'PRIORITY_MANUAL_RECONCILIATION'
       }
     });

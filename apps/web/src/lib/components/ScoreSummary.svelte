@@ -15,6 +15,10 @@
   }: {
     classification: string;
     riskScore: number;
+    /**
+     * Already a 0-100 integer per `AnalyzeResponse.confidence_score`
+     * (`schemas.py`), same scale as `risk_score` — NOT a 0-1 float.
+     */
     confidenceScore: number;
     recommendedAction: string;
   } = $props();
@@ -43,7 +47,7 @@
 
   const tier = $derived(RISK_TIER[classification]);
   const isInconclusive = $derived(classification === 'INCONCLUSIVE');
-  const confidencePercent = $derived(Math.round(confidenceScore * 100));
+  const confidencePercent = $derived(Math.round(confidenceScore));
 </script>
 
 <section class="score-summary" class:score-summary--low={tier === 'low'} class:score-summary--review={tier === 'review'} class:score-summary--high={tier === 'high'}>

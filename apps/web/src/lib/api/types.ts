@@ -37,6 +37,7 @@ export interface AnalyzeResponse {
   ruleset_version: string;
   classification: string;
   risk_score: number;
+  /** 0-100 integer, same scale as `risk_score` — NOT a 0-1 float (`schemas.py` types both as `int`). */
   confidence_score: number;
   recommended_action: string;
   signals: SignalModel[];

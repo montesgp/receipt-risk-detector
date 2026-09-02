@@ -5,6 +5,7 @@
   import ProcessingStages from '$lib/components/ProcessingStages.svelte';
   import ErrorPanel from '$lib/components/ErrorPanel.svelte';
   import ReconciliationNotice from '$lib/components/ReconciliationNotice.svelte';
+  import ResultView from '$lib/components/ResultView.svelte';
 
   const workspace = new AnalysisWorkspace();
 
@@ -53,11 +54,8 @@
     {:else if workspace.status === 'uploading'}
       <ProcessingStages />
     {:else if workspace.status === 'result' && workspace.result}
-      <section aria-labelledby="result-heading">
-        <h2 id="result-heading">Resultado: {workspace.result.classification}</h2>
-        <p>Riesgo: {workspace.result.risk_score} / 100</p>
-        <button type="button" onclick={() => workspace.reset()}>Analizar otro comprobante</button>
-      </section>
+      <ResultView result={workspace.result} />
+      <button type="button" onclick={() => workspace.reset()}>Analizar otro comprobante</button>
     {:else if workspace.status === 'error' && workspace.error}
       {@const err = workspace.error}
       {#if err.kind === 'network'}
