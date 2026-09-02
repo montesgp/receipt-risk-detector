@@ -8,6 +8,7 @@ license = { text = "Apache-2.0" }
 dependencies = [
     "fastapi>=0.115",
     "pydantic>=2.9",
+    "Pillow>=11.0",
 ]
 
 [project.optional-dependencies]
@@ -50,3 +51,6 @@ select = ["E", "F", "I", "UP", "B", "TID"]
 "src/receipt_risk/adapters/**" = ["TID251"]
 "src/receipt_risk/bootstrap/**" = ["TID251"]
 "tests/**" = ["TID251"]
+# samples/generate.py is fixture-authoring tooling (test/dev only), not production
+# code, so it may import Pillow directly to render deterministic fixture images.
+"samples/**" = ["TID251"]
