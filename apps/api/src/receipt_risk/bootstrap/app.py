@@ -5,18 +5,84 @@ import both the framework and the application/domain layers directly (see
 AGENTS.md's architecture rules and the `bootstrap/` layering exception in
 pyproject.toml).
 
-Only the liveness endpoint exists today. `/ready`, `/version` and
-`POST /v1/receipts/analyze` are implemented by the `receipt-analysis` and
-`public-api-contract` capability specs (see openspec/specs/), tracked as
-GitHub issues #1 and #2.
+`POST /v1/receipts/analyze` is registered here for the first time (slice 4
+of `receipt-analysis-implementation`) — design.md's "router module absent
+until slice 4" decision means slices 1-3 never touched this file.
 """
+
+from __future__ import annotations
+
+import tempfile
+from pathlib import Path
 
 from fastapi import FastAPI
 
+from receipt_risk.adapters.api.dependencies import get_use_case
+from receipt_risk.adapters.api.middleware.rate_limit import RateLimitMiddleware
+from receipt_risk.adapters.api.router import router
+from receipt_risk.adapters.api.schemas import ReadyResponse, VersionResponse
+from receipt_risk.adapters.image.pillow_decoder import PillowImageDecoder
+from receipt_risk.adapters.metadata.exiftool import ExifToolMetadataAdapter
+from receipt_risk.adapters.ocr.paddle_onnx import PaddleOnnxOcrAdapter
+from receipt_risk.adapters.provenance.c2pa_reader import C2paProvenanceAdapter
+from receipt_risk.application.analyze_receipt import ENGINE_VERSION, AnalyzeReceiptUseCase
+from receipt_risk.application.ingestion import IngestionService
+from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+
 app = FastAPI(title="Transfer Receipt Risk Engine")
+app.include_router(router)
+# Registered after include_router: Starlette applies middleware in
+# reverse-registration order, so this still runs before body parsing for
+# every request (DD5).
+app.add_middleware(RateLimitMiddleware)
+
+_temp_dir = Path(tempfile.gettempdir()) / "receipt-risk-uploads"
+_ocr = PaddleOnnxOcrAdapter()
+_metadata = ExifToolMetadataAdapter()
+_provenance = C2paProvenanceAdapter()
+_ingestion = IngestionService(temp_dir=_temp_dir, decoder=PillowImageDecoder())
+
+_use_case = AnalyzeReceiptUseCase(
+    ocr=_ocr,
+    metadata=_metadata,
+    provenance=_provenance,
+    ingestion=_ingestion,
+    ruleset=RULESET_2026_09_01,
+)
+
+app.dependency_overrides[get_use_case] = lambda: _use_case
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    """Liveness probe used by Railway's healthcheck (see railway.json)."""
+    """Liveness probe used by Railway's healthcheck (see railway.json).
+    Never runs OCR or expensive dependency checks (docs/API.md §2)."""
     return {"status": "ok"}
+
+
+@app.get("/ready", response_model=ReadyResponse)
+def ready() -> ReadyResponse:
+    """Reports whether required analyzers are initialized and the service
+    can accept work (docs/API.md §2)."""
+    return ReadyResponse(
+        status="ok",
+        analyzers={
+            "ocr": f"{_ocr.name}/{_ocr.version}",
+            "metadata": f"{_metadata.name}/{_metadata.version}",
+            "provenance": f"{_provenance.name}/{_provenance.version}",
+        },
+    )
+
+
+@app.get("/version", response_model=VersionResponse)
+def version() -> VersionResponse:
+    """Per docs/API.md §2 example."""
+    return VersionResponse(
+        engine_version=ENGINE_VERSION,
+        ruleset_version=RULESET_2026_09_01.version,
+        analyzers={
+            "ocr": f"{_ocr.name}/{_ocr.version}",
+            "metadata": f"{_metadata.name}/{_metadata.version}",
+            "provenance": f"{_provenance.name}/{_provenance.version}",
+        },
+    )

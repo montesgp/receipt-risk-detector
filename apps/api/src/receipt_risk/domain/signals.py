@@ -43,6 +43,8 @@ class SignalCode(StrEnum):
     AMOUNT_DATE_CONTRADICTION = "AMOUNT_DATE_CONTRADICTION"
     DATE_OUT_OF_BOUNDS = "DATE_OUT_OF_BOUNDS"
     CORE_FIELD_EXTRACTION_FAILED = "CORE_FIELD_EXTRACTION_FAILED"  # category DATA_QUALITY
+    # slice 4
+    ANALYZER_UNAVAILABLE = "ANALYZER_UNAVAILABLE"  # category DATA_QUALITY, info severity, weight 0
 
 
 class ExtractionFailureReason(StrEnum):

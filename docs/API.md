@@ -63,7 +63,7 @@ MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart 
   "classification": "SUSPICIOUS",
   "risk_score": 74,
   "confidence_score": 86,
-  "recommended_action": "MANUAL_RECONCILIATION",
+  "recommended_action": "PRIORITY_MANUAL_RECONCILIATION",
   "signals": [
     {
       "code": "INVALID_CBU_CHECK_DIGIT",
