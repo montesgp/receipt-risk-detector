@@ -1,7 +1,7 @@
 """Application ports (protocols) implemented by adapters.
 
 Slice 1 defines only `ImageDecoderPort`. `MetadataPort` and `ProvenancePort`
-are added by slice 2; `OcrPort` is added by slice 3. Every port returns a
+are added by slice 2; `OcrPort` is added by slice 3b. Every port returns a
 domain type (never `dict`, JSON, or a tool-specific type) so raw tool output
 can never cross this boundary — see design.md "Application — ports".
 """
@@ -47,3 +47,17 @@ class ProvenancePort(Protocol):
     version: str
 
     async def inspect(self, image: SafeImageRef) -> AnalyzerResult: ...
+
+
+@runtime_checkable
+class OcrPort(Protocol):
+    """Local OCR field extraction (slice 3b). `extract` never raises: the
+    adapter's bounded single preprocessing retry and every failure path
+    (no engine available, no text detected, low confidence, timeout) are
+    all folded into `AnalyzerResult(status=...)` — see design.md "OCR
+    adapter — bounded single retry"."""
+
+    name: str
+    version: str
+
+    async def extract(self, image: SafeImageRef) -> AnalyzerResult: ...

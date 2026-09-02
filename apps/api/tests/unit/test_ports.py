@@ -11,7 +11,12 @@ from receipt_risk.adapters.image.pillow_decoder import PillowImageDecoder
 from receipt_risk.adapters.metadata.exiftool import ExifToolMetadataAdapter
 from receipt_risk.adapters.provenance.c2pa_reader import C2paProvenanceAdapter
 from receipt_risk.application.models import SafeImageRef
-from receipt_risk.application.ports import ImageDecoderPort, MetadataPort, ProvenancePort
+from receipt_risk.application.ports import (
+    ImageDecoderPort,
+    MetadataPort,
+    OcrPort,
+    ProvenancePort,
+)
 from receipt_risk.domain.analysis import AnalyzerResult
 
 
@@ -49,3 +54,15 @@ def test_exiftool_metadata_adapter_conforms_to_metadata_port() -> None:
 
 def test_c2pa_provenance_adapter_conforms_to_provenance_port() -> None:
     assert isinstance(C2paProvenanceAdapter(), ProvenancePort)
+
+
+class _FakeOcrAnalyzer:
+    name = "fake-ocr"
+    version = "0.0.1"
+
+    async def extract(self, image: SafeImageRef) -> AnalyzerResult:
+        return AnalyzerResult(analyzer=self.name, version=self.version, status="completed")
+
+
+def test_ocr_port_protocol_shape() -> None:
+    assert isinstance(_FakeOcrAnalyzer(), OcrPort)
