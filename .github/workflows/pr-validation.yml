@@ -27,9 +27,14 @@ jobs:
         with:
           script: |
             const body = process.env.PR_BODY || '';
-            const match = body.match(/\b(?:closes|fixes|resolves)\s+#(\d+)\b/i);
+            // Closing keywords (closes/fixes/resolves) auto-close the issue on merge —
+            // use those on the PR that actually completes the work. A chained-PR slice
+            // that only partially addresses an issue should use a non-closing reference
+            // ("Refs #N" / "Part of #N" / "Related to #N") instead, so the issue stays
+            // open until its final slice lands.
+            const match = body.match(/\b(?:closes|fixes|resolves|refs|references|part of|related to)\s+#(\d+)\b/i);
             if (!match) {
-              core.setFailed('PR body must contain "Closes #N", "Fixes #N" or "Resolves #N".');
+              core.setFailed('PR body must reference an issue: "Closes #N" / "Fixes #N" / "Resolves #N" to close it on merge, or "Refs #N" / "Part of #N" / "Related to #N" for a partial/chained-PR slice.');
               return;
             }
             core.setOutput('issue', match[1]);
