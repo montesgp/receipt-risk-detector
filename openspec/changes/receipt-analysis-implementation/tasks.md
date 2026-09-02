@@ -93,25 +93,25 @@ Traces to threat matrix: Subprocess invocation (ExifTool) — all 4 adversarial 
 
 Traces to spec scenario: *Invalid CBU check digit* (FR-006).
 
-- [ ] 3a.1 RED: `domain/financial/cbu.py::test_cbu_known_answer_block_digits` (literal, `2850590940090418135201`)
-- [ ] 3a.2 GREEN: implement `mod10_check_digit()`
-- [ ] 3a.3 RED: `test_validate_cbu_accepts_known_valid` (literal)
-- [ ] 3a.4 RED: `test_validate_cbu_rejects_mutated_block2_check_digit` (literal — Scenario: Invalid CBU check digit)
-- [ ] 3a.5 GREEN: implement `validate_cbu()`, `ChecksumResult`, `ChecksumFailure`
-- [ ] 3a.6 RED: `domain/financial/cuit.py::test_validate_cuit_known_answer` (literal, `20-17254359-7`)
-- [ ] 3a.7 RED: `test_validate_cuit_rejects_wrong_check_digit` (literal)
-- [ ] 3a.8 GREEN: implement `validate_cuit()`
-- [ ] 3a.9 RED: `domain/financial/money.py::test_ars_amount_normalization_handles_thousands_and_decimal_separators`
-- [ ] 3a.10 GREEN: implement `normalize_amount()`
-- [ ] 3a.11 RED: `domain/financial/dates.py::test_date_out_of_bounds_flagged_outside_configured_window`
-- [ ] 3a.12 GREEN: implement date-bounds check emitting `DATE_OUT_OF_BOUNDS`
-- [ ] 3a.13 RED: `domain/financial/contradictions.py::test_amount_date_contradiction_detected`
-- [ ] 3a.14 GREEN: implement contradiction check emitting `AMOUNT_DATE_CONTRADICTION`
-- [ ] 3a.15 RED: `application/financial_validation.py::test_validate_financials_runs_all_validators_over_extracted_fields`
-- [ ] 3a.16 GREEN: implement `validate_financials()`
-- [ ] 3a.17 Modify `domain/signals.py`: add `INVALID_CBU_CHECK_DIGIT`, `INVALID_CUIT_CHECK_DIGIT`, `AMOUNT_DATE_CONTRADICTION`, `DATE_OUT_OF_BOUNDS`, `CORE_FIELD_EXTRACTION_FAILED` (category `DATA_QUALITY`), `ExtractionFailureReason`
-- [ ] 3a.18 RED: `test_invalid_cbu_fixture_produces_expected_signal` (manifest-driven, `invalid_cbu_check_digit` fixture)
-- [ ] 3a.19 GREEN: wire fixture assertion via `conftest.py::fixture()` + `validate_financials()`
+- [x] 3a.1 RED: `domain/financial/cbu.py::test_cbu_known_answer_block_digits` (literal, `2850590940090418135201`)
+- [x] 3a.2 GREEN: implement `mod10_check_digit()`
+- [x] 3a.3 RED: `test_validate_cbu_accepts_known_valid` (literal)
+- [x] 3a.4 RED: `test_validate_cbu_rejects_mutated_block2_check_digit` (literal — Scenario: Invalid CBU check digit)
+- [x] 3a.5 GREEN: implement `validate_cbu()`, `ChecksumResult`, `ChecksumFailure`
+- [x] 3a.6 RED: `domain/financial/cuit.py::test_validate_cuit_known_answer` (literal, `20-17254359-7`)
+- [x] 3a.7 RED: `test_validate_cuit_rejects_wrong_check_digit` (literal)
+- [x] 3a.8 GREEN: implement `validate_cuit()`
+- [x] 3a.9 RED: `domain/financial/money.py::test_ars_amount_normalization_handles_thousands_and_decimal_separators`
+- [x] 3a.10 GREEN: implement `normalize_amount()`
+- [x] 3a.11 RED: `domain/financial/dates.py::test_date_out_of_bounds_flagged_outside_configured_window`
+- [x] 3a.12 GREEN: implement date-bounds check emitting `DATE_OUT_OF_BOUNDS`
+- [x] 3a.13 RED: `domain/financial/contradictions.py::test_amount_date_contradiction_detected`
+- [x] 3a.14 GREEN: implement contradiction check emitting `AMOUNT_DATE_CONTRADICTION`
+- [x] 3a.15 RED: `application/financial_validation.py::test_validate_financials_runs_all_validators_over_extracted_fields`
+- [x] 3a.16 GREEN: implement `validate_financials()`
+- [x] 3a.17 Modify `domain/signals.py`: add `INVALID_CBU_CHECK_DIGIT`, `INVALID_CUIT_CHECK_DIGIT`, `AMOUNT_DATE_CONTRADICTION`, `DATE_OUT_OF_BOUNDS`, `CORE_FIELD_EXTRACTION_FAILED` (category `DATA_QUALITY`), `ExtractionFailureReason`
+- [x] 3a.18 RED: `test_invalid_cbu_fixture_produces_expected_signal` (manifest-driven, `invalid_cbu_check_digit` fixture)
+- [x] 3a.19 GREEN: wire fixture assertion via `conftest.py::fixture()` + `validate_financials()`
 
 ## Slice 3b: OCR adapter + infra
 

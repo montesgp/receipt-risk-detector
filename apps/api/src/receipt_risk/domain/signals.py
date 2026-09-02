@@ -37,6 +37,23 @@ class SignalCode(StrEnum):
     METADATA_EDITOR_SOFTWARE = "METADATA_EDITOR_SOFTWARE"
     VALID_AI_GENERATED_CLAIM = "VALID_AI_GENERATED_CLAIM"
     PROVENANCE_VALIDATION_FAILED = "PROVENANCE_VALIDATION_FAILED"
+    # slice 3
+    INVALID_CBU_CHECK_DIGIT = "INVALID_CBU_CHECK_DIGIT"
+    INVALID_CUIT_CHECK_DIGIT = "INVALID_CUIT_CHECK_DIGIT"
+    AMOUNT_DATE_CONTRADICTION = "AMOUNT_DATE_CONTRADICTION"
+    DATE_OUT_OF_BOUNDS = "DATE_OUT_OF_BOUNDS"
+    CORE_FIELD_EXTRACTION_FAILED = "CORE_FIELD_EXTRACTION_FAILED"  # category DATA_QUALITY
+
+
+class ExtractionFailureReason(StrEnum):
+    """Why a core field (amount, CBU/CVU, CUIT/CUIL, date) could not be
+    extracted. Consumed by `CORE_FIELD_EXTRACTION_FAILED` signals — emitted
+    by the OCR adapter in slice 3b, defined here alongside the signal codes
+    it accompanies."""
+
+    LOW_CONFIDENCE = "low_confidence"
+    NO_TEXT_DETECTED = "no_text_detected"
+    TIMEOUT = "timeout"
 
 
 @dataclass(frozen=True, slots=True)
