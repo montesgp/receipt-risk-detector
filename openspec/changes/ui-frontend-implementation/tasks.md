@@ -50,13 +50,14 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 
 ## Slice 1a: Scaffold, API Client, State Machine, CORS/Env, Docs
 
-> **Apply batch note**: the first apply pass for slice 1a covered Phases 1–3
-> and docs tasks 6.1–6.2 only (scaffold + toolchain, API client, workspace
-> state machine, `docs/API.md`/`Local-Setup.md`), per an explicit narrower
-> scope from the orchestrator for that batch. Phase 4 (idle/upload/error
-> presentational components), Phase 5 (wiring + smoke e2e), and tasks
-> 6.3–6.5 (README, CI Node job, SDD/TDD/RDD doc mirrors) remain pending for
-> a follow-up apply batch before slice 1a's PR is opened.
+> **Apply batch history**: batch 1 covered Phases 1–3 and docs tasks 6.1–6.2
+> (scaffold + toolchain, API client, workspace state machine,
+> `docs/API.md`/`Local-Setup.md`). Batch 2 covered Phase 4 (idle/upload/
+> processing/error components), Phase 5.1 (wiring into `+page.svelte` + a
+> Vitest smoke test proving the disclaimer renders in every state), and docs
+> tasks 6.3–6.5 (README, CI Node job, SDD/TDD/RDD doc mirrors). Task 5.2
+> (Playwright `smoke.spec.ts`) is explicitly deferred to slice 4, which
+> already owns the Playwright e2e buildout — see 5.2's `[~]` note.
 
 ### Phase 1: Scaffold & Toolchain (no tests yet — foundation)
 - [x] 1.1 Create `apps/web/{package.json,svelte.config.js,vite.config.ts,tsconfig.json}` — SvelteKit 5 + TS + `@sveltejs/adapter-static` (design File Changes / Slice 1a)
@@ -82,27 +83,27 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 - [x] 3.3 GREEN `lib/features/receipt-analysis/workspace.svelte.ts` — `AnalysisWorkspace` class (`$state`/`$derived`, DD1)
 
 ### Phase 4: Idle/upload/processing/error components (spec: Idle/upload state, File selection and validation, Uploading/processing state)
-- [ ] 4.1 RED `DropZone` test: keyboard-operable, calls `onselect(file)` (spec "Idle state shows constraints and disclaimer")
-- [ ] 4.2 GREEN `lib/components/DropZone.svelte`
-- [ ] 4.3 RED `FilePreview` test: shows filename/type/size (spec "Valid file moves to preview")
-- [ ] 4.4 GREEN `lib/components/FilePreview.svelte`
-- [ ] 4.5 RED `ProcessingStages` test: ARIA-live region present, no fabricated percentages (spec "Processing state is announced")
-- [ ] 4.6 GREEN `lib/components/ProcessingStages.svelte`
-- [ ] 4.7 RED `ErrorPanel` test: code-derived actionable message, never raw `detail`/stack (spec "Server-side validation error is explained")
-- [ ] 4.8 GREEN `lib/components/ErrorPanel.svelte`
-- [ ] 4.9 RED `ReconciliationNotice` test: renders unconditionally in idle AND result contexts (DD7, AGENTS.md MVP1 invariant)
-- [ ] 4.10 GREEN `lib/components/ReconciliationNotice.svelte`
+- [x] 4.1 RED `DropZone` test: keyboard-operable, calls `onselect(file)` (spec "Idle state shows constraints and disclaimer")
+- [x] 4.2 GREEN `lib/components/DropZone.svelte`
+- [x] 4.3 RED `FilePreview` test: shows filename/type/size (spec "Valid file moves to preview")
+- [x] 4.4 GREEN `lib/components/FilePreview.svelte`
+- [x] 4.5 RED `ProcessingStages` test: ARIA-live region present, no fabricated percentages (spec "Processing state is announced")
+- [x] 4.6 GREEN `lib/components/ProcessingStages.svelte`
+- [x] 4.7 RED `ErrorPanel` test: code-derived actionable message, never raw `detail`/stack (spec "Server-side validation error is explained")
+- [x] 4.8 GREEN `lib/components/ErrorPanel.svelte`
+- [x] 4.9 RED `ReconciliationNotice` test: renders unconditionally in idle AND result contexts (DD7, AGENTS.md MVP1 invariant)
+- [x] 4.10 GREEN `lib/components/ReconciliationNotice.svelte`
 
 ### Phase 5: Wiring + smoke e2e
-- [ ] 5.1 GREEN wire `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` into `+page.svelte` via `setContext(workspace)` (DD1)
-- [ ] 5.2 Create `playwright.config.ts` + `tests/e2e/smoke.spec.ts`: page loads, drop zone visible, disclaimer visible (design "smoke e2e valuable in 1a")
+- [x] 5.1 GREEN wire `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` into `+page.svelte` — **DEVIATION**: wired via direct component composition in `+page.svelte` reading `workspace` (a local `const`), not `setContext(workspace)`, because slice 1a has only one consumer (`+page.svelte` itself); `setContext` is deferred to slice 1b/2/3 when `ThemeSwitcher`/`LanguageSwitcher` need cross-component access from the layout. A Vitest component test (`tests/unit/page.smoke.test.ts`) proves `ReconciliationNotice` renders in every reachable state (idle, selected, uploading, result, network error, timeout, rate-limited, rejected-file, client-validation) instead of Playwright, which is deferred to 5.2/slice 4 per scope-management.
+- [~] 5.2 Playwright `playwright.config.ts` + `tests/e2e/smoke.spec.ts` — **DEFERRED to slice 4** (this apply batch prioritized the Vitest smoke coverage in 5.1 over standing up the Playwright harness under time pressure; `@playwright/test` is already a devDependency from Phase 1.2, so slice 4 only needs to add the config + spec, not the toolchain).
 
 ### Phase 6: Docs + CI
 - [x] 6.1 Correct `docs/API.md` §3 `extracted_data` example to the real `ExtractedFieldModel` shape; remove fictional `beneficiary_name`, `operation_id`, `currency`; omit `is_checksum_valid` since `mappers.py` never populates it (design "docs/API.md §3 corrected `extracted_data`")
 - [x] 6.2 Update `docs/wiki/Local-Setup.md`: document `RECEIPT_RISK_CORS_ALLOWED_ORIGINS=http://localhost:5173` as a required local API env var, plus `npm run dev` steps
-- [ ] 6.3 Update `README.md` local-dev section with the same web/CORS steps
-- [ ] 6.4 Update `.github/workflows/ci.yml`: add Node 20 job (`npm ci`, `svelte-check`, `vitest run`)
-- [ ] 6.5 Create `docs/features/ui-frontend-implementation/{SDD,TDD,RDD}.md` mirrors (AGENTS.md rule)
+- [x] 6.3 Update `README.md` local-dev section with the same web/CORS steps
+- [x] 6.4 Update `.github/workflows/ci.yml`: add Node 20 job (`npm ci`, `svelte-check`, `vitest run`)
+- [x] 6.5 Create `docs/features/ui-frontend-implementation/{SDD,TDD,RDD}.md` mirrors (AGENTS.md rule)
 
 #### Slice 1a Review Workload Forecast
 | Field | Value |

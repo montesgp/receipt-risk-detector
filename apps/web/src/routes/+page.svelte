@@ -1,15 +1,23 @@
 <script lang="ts">
   import { AnalysisWorkspace } from '$lib/features/receipt-analysis/workspace.svelte';
+  import DropZone from '$lib/components/DropZone.svelte';
+  import FilePreview from '$lib/components/FilePreview.svelte';
+  import ProcessingStages from '$lib/components/ProcessingStages.svelte';
+  import ErrorPanel from '$lib/components/ErrorPanel.svelte';
+  import ReconciliationNotice from '$lib/components/ReconciliationNotice.svelte';
 
   const workspace = new AnalysisWorkspace();
 
-  function onFileInputChange(event: Event): void {
-    const input = event.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) {
-      workspace.selectFile(file);
-    }
-  }
+  // DESIGN.md §4.5: preserve the file only when retry is safe. Both
+  // server-rejected files (400/413/415/422) and client-side validation
+  // failures already cleared the file and returned the workspace to `idle`,
+  // so their ErrorPanel renders above the drop zone rather than replacing it.
+  const idleError = $derived(
+    workspace.status === 'idle' &&
+      (workspace.error?.kind === 'client-validation' || workspace.error?.kind === 'rejected-file')
+      ? workspace.error
+      : null
+  );
 </script>
 
 <main class="page">
@@ -18,40 +26,53 @@
     Detectamos señales de manipulación, procedencia digital e inconsistencias para ayudarte a
     revisar una transferencia.
   </p>
-  <p>PNG, JPG o WebP · máximo 10 MB</p>
 
-  <div role="region" aria-live="polite">
+  <!-- DD7: always mounted, both in idle and result contexts, never behind a
+       state branch. -->
+  <ReconciliationNotice />
+
+  <div role="region" aria-label="Estado del análisis">
+    {#if idleError?.kind === 'client-validation'}
+      <ErrorPanel
+        variant="rejected-file"
+        code={idleError.reason === 'too-large' ? 'FILE_TOO_LARGE' : 'UNSUPPORTED_IMAGE'}
+        onretry={() => workspace.reset()}
+      />
+    {:else if idleError?.kind === 'rejected-file'}
+      <ErrorPanel variant="rejected-file" code={idleError.code} onretry={() => workspace.reset()} />
+    {/if}
+
     {#if workspace.status === 'idle'}
-      <label for="receipt-file">Arrastrá o seleccioná un comprobante</label>
-      <input id="receipt-file" type="file" accept="image/png,image/jpeg,image/webp" onchange={onFileInputChange} />
-    {:else if workspace.status === 'selected'}
-      <p>Archivo listo: {workspace.file?.name}</p>
-      <button type="button" onclick={() => workspace.analyze()}>Analizar</button>
-      <button type="button" onclick={() => workspace.reset()}>Reemplazar</button>
+      <DropZone disabled={false} onselect={(file) => workspace.selectFile(file)} />
+    {:else if workspace.status === 'selected' && workspace.file}
+      <FilePreview
+        file={workspace.file}
+        onanalyze={() => workspace.analyze()}
+        onreplace={() => workspace.reset()}
+      />
     {:else if workspace.status === 'uploading'}
-      <p>Analizando el comprobante…</p>
+      <ProcessingStages />
     {:else if workspace.status === 'result' && workspace.result}
-      <h2>Resultado: {workspace.result.classification}</h2>
-      <p>Riesgo: {workspace.result.risk_score} / 100</p>
-      <button type="button" onclick={() => workspace.reset()}>Analizar otro comprobante</button>
+      <section aria-labelledby="result-heading">
+        <h2 id="result-heading">Resultado: {workspace.result.classification}</h2>
+        <p>Riesgo: {workspace.result.risk_score} / 100</p>
+        <button type="button" onclick={() => workspace.reset()}>Analizar otro comprobante</button>
+      </section>
     {:else if workspace.status === 'error' && workspace.error}
-      <p role="alert">
-        {#if workspace.error.kind === 'network'}
-          No pudimos contactar el servicio. Intentá nuevamente.
-        {:else if workspace.error.kind === 'timeout'}
-          El análisis no terminó a tiempo. Podés reintentar.
-        {:else if workspace.error.kind === 'rate-limited'}
-          Hay demasiadas solicitudes en este momento. Reintentá en unos segundos.
-        {:else}
-          Ocurrió un problema al analizar el comprobante.
-        {/if}
-      </p>
-      <button type="button" onclick={() => workspace.analyze()}>Reintentar</button>
+      {@const err = workspace.error}
+      {#if err.kind === 'network'}
+        <ErrorPanel variant="network" onretry={() => workspace.analyze()} />
+      {:else if err.kind === 'timeout'}
+        <ErrorPanel variant="timeout" onretry={() => workspace.analyze()} />
+      {:else if err.kind === 'rate-limited'}
+        <ErrorPanel
+          variant="rate-limited"
+          retryAfterSeconds={err.retryAfterSeconds}
+          onretry={() => workspace.analyze()}
+        />
+      {:else if err.kind === 'rejected-file'}
+        <ErrorPanel variant="rejected-file" code={err.code} onretry={() => workspace.reset()} />
+      {/if}
     {/if}
   </div>
-
-  <p>
-    Este análisis evalúa el comprobante presentado. Confirmá la acreditación en la cuenta
-    beneficiaria antes de entregar productos o servicios.
-  </p>
 </main>
