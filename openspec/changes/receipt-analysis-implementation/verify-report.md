@@ -164,3 +164,73 @@ The algorithmic-source and editor-software marker lists have no regression test 
 3. ExifTool subprocess safety is enforced structurally (fixed argv list, shell=False, end-of-options guard, shutil.which-resolved absolute path, pinned subprocess environment, mandatory timeout) rather than by sanitizing the untrusted client filename, which never reaches the adapter at all because ingestion discards it before this layer runs.
 4. Both slice-2 adapters return only the domain AnalyzerResult type and swallow tool exceptions without logging or re-raising their content, so raw EXIF/C2PA manifest bytes structurally cannot leak into logs or error responses.
 5. The ~760-line actual diff vs ~350-line forecast is fully explained by threat-matrix test volume across two new adapters, not by any slice-3/4 code appearing early, confirmed by both a file-set diff and a scope grep finding zero premature OCR/scoring/router code.
+
+## Slice 3a: Financial validators (pure domain, no new deps)
+
+Verdict: PASS (0 CRITICAL, 1 WARNING, 0 SUGGESTION)
+
+### 1. Independent recomputation of both locked known-answer fixtures (hand math, not the implementation)
+
+Wrote a standalone script (not importing receipt_risk) reimplementing the mod-10/mod-11 formulas from the proposal's locked algorithm table and ran it against the two fixtures:
+
+- CBU 2850590940090418135201: manual mod-10 block1 -> DV1=9 (matches digit[7]=9); manual mod-10 block2 -> DV2=1 (matches digit[21]=1). Matches the locked algorithm exactly.
+- CUIT 20172543597 (from 20-17254359-7): manual mod-11 over weights [5,4,3,2,7,6,5,4,3,2] on the first 10 digits -> check digit=7 (matches digit[10]=7). Matches the locked algorithm exactly.
+
+### 2. Actual implementation run directly (not trusting the test file)
+
+Ran validate_cbu() and validate_cuit() directly in a uv run python one-liner, independent of pytest:
+
+- validate_cbu("2850590940090418135201") -> is_valid=True, normalized echoes input. Matches.
+- validate_cuit("20-17254359-7") -> is_valid=True, normalized="20172543597" (hyphens stripped). Matches.
+- Corrupted variant 1: flipped last digit of CBU fixture -> is_valid=False, failure=BLOCK2_CHECK_DIGIT. Correctly rejected.
+- Corrupted variant 2: flipped mid-block digit of CBU fixture -> is_valid=False, failure=BLOCK2_CHECK_DIGIT. Correctly rejected.
+- Corrupted variant 3: flipped CUIT check digit -> is_valid=False, failure=CHECK_DIGIT. Correctly rejected.
+- Corrupted variant 4: flipped CUIT leading digit -> is_valid=False, failure=CHECK_DIGIT. Correctly rejected.
+
+Independent recomputation confirms the locked algorithm's expected outputs, and the actual implementation reproduces the same outputs on both valid fixtures and correctly rejects all four deliberately corrupted variants.
+
+### 3. Spec scenario to test mapping (Slice 3a scope)
+
+| Scenario | Covering test(s) | Result |
+|---|---|---|
+| Invalid CBU check digit (FR-006, the only Slice-3a GWT scenario in spec.md) | test_validate_cbu_rejects_mutated_block2_check_digit (unit, literal); test_invalid_cbu_fixture_produces_expected_signal (manifest-driven, exercises validate_financials() end-to-end against samples/manifest.json's invalid_cbu_check_digit fixture, asserting INVALID_CBU_CHECK_DIGIT / financial_consistency / high) | PASS |
+
+Only one GWT scenario in openspec/specs/receipt-analysis/spec.md traces to Slice 3a (Invalid CBU check digit under Requirement: Financial validation); this matches tasks.md's own scenario trace line for the slice. Both the literal unit test and the fixture-driven end-to-end test pass at runtime.
+
+### 4. Independent re-run (not trusting the apply report)
+
+- uv run pytest -q: 63 passed, 2 skipped (pre-existing exiftool-absent skips from Slice 2, unrelated to this slice; confirmed by rerun, not accepted from the apply report).
+- uv run ruff check .: All checks passed.
+- uv run ruff format --check .: 45 files already formatted.
+
+### 5. Zero new dependencies
+
+git diff dev -- apps/api/pyproject.toml is empty - confirmed independently. Pure-logic slice, no new dependency surface.
+
+### 6. Layering boundary (grep, not claim)
+
+grep of import statements in src/receipt_risk/domain/financial/*.py shows only stdlib and internal receipt_risk.domain.* imports (__future__, collections.abc, dataclasses, enum, typing, datetime, re, decimal). Zero fastapi/starlette/cv2/paddleocr/PIL/subprocess/c2pa imports anywhere under domain/financial/. Layering is real, not asserted.
+
+### 7. Deviation review #1 - field-name-agnostic detect_contradictions()
+
+Confirmed reasonable, not a bug. design.md defines exactly one contradiction signal code (AMOUNT_DATE_CONTRADICTION, line 132) - no generic field-contradiction code exists in the locked vocabulary. detect_contradictions() groups any repeated field name with disagreeing normalized values (not just amount/date pairs) and financial_validation.py emits the single available code for every such group. This is a broadening, not a narrowing, of detection: it does not silently under-detect real amount/date contradictions (the literal amount-repeated-twice scenario in test_amount_date_contradiction_detected still fires correctly), and any other repeated-field disagreement also now surfaces via the same code rather than being silently dropped. Acceptable interpretation given the constrained code vocabulary; worth a design.md follow-up note if a future slice wants field-specific contradiction codes, but not a blocking issue.
+
+### 8. Deviation review #2 - CORE_FIELD_EXTRACTION_FAILED and ExtractionFailureReason defined here, consumed in 3b
+
+Confirmed intentional, not premature slice-3b logic leaking in. tasks.md task 3a.17 explicitly lists CORE_FIELD_EXTRACTION_FAILED and ExtractionFailureReason as part of the Slice 3a domain/signals.py modification. design.md (line 134, and the OCR-adapter prose near lines 379/402) independently confirms the vocabulary is meant to live in domain/signals.py ahead of the adapter that emits it, consistent with domain-first sequencing already used for other signal codes in Slices 1-2. The diff for domain/signals.py shows only enum/StrEnum additions - no adapter code, no OCR-specific logic, nothing beyond vocabulary. Zero premature slice-3b implementation.
+
+### 9. git diff --stat against dev (independently run)
+
+17 files changed, 730 insertions(+), 20 deletions(-)
+
+Breakdown: pure-domain source (cbu.py 63, cuit.py 38, money.py 55, dates.py 28, contradictions.py 28, financial/__init__.py 8), application orchestration (financial_validation.py 117), domain/signals.py +17, 7 new/extended test files (~358 lines), and tasks.md checkbox updates (38 lines). File set matches design.md's Slice 3a boundary exactly - no adapters/ocr files, no pyproject.toml, no Dockerfile/ci.yml changes present (those belong to Slice 3b per design.md's slice table).
+
+WARNING (non-blocking): tasks.md's own Review Workload Forecast projected Slice 3 (pre-split) risk as Medium. Actual authored diff is approximately 692 lines (730 total minus the 38-line tasks.md checkbox delta), moderately exceeding the forecast, mostly attributable to test volume across 7 new test files covering multiple validators. Not a scope-creep concern (file set matches the design boundary exactly, confirmed above) and delivery strategy (auto-chain, already accepted by the product owner) already resolves the PR-boundary question - flagged for tasks.md forecast-accuracy tracking only, not a blocker for this PR.
+
+## Key Learnings
+
+1. Independent hand recomputation of the CBU mod-10 (DV1=9, DV2=1) and CUIT mod-11 (check digit=7) formulas exactly matches both the locked proposal algorithm and the actual validate_cbu/validate_cuit implementation output.
+2. Four deliberately corrupted variants (CBU last-digit flip, CBU mid-block digit flip, CUIT check-digit flip, CUIT leading-digit flip) are all correctly rejected by the implementation with the expected ChecksumFailure reason.
+3. detect_contradictions being field-name-agnostic rather than amount/date-specific is a reasonable interpretation given design.md defines only one AMOUNT_DATE_CONTRADICTION code, and it broadens rather than narrows detection coverage.
+4. CORE_FIELD_EXTRACTION_FAILED and ExtractionFailureReason living in Slice 3a's domain/signals.py ahead of Slice 3b's OCR adapter is explicitly required by tasks.md task 3a.17, not scope leakage.
+5. Slice 3a's actual diff (approximately 692 authored lines) moderately exceeds tasks.md's own pre-declared forecast, driven by test volume across 7 new test files, not by file-set scope creep.
