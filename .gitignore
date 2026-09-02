@@ -49,3 +49,4 @@ Desktop.ini
 
 # --- Local agent tooling (machine-specific, not part of the product) ---
 /.atl/
+/.claude/scheduled_tasks.lock
