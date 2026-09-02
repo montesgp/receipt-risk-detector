@@ -77,3 +77,67 @@ PASS WITH WARNINGS. No CRITICAL findings. Slice 1a implementation matches its sc
 3. The ReconciliationNotice disclaimer invariant is enforced structurally in +page.svelte (mounted outside any conditional block), not just by test coverage, making it robust against future state-machine changes.
 4. Three successful result display spec scenarios are intentionally uncovered by slice 1a test suite because ScoreSummary, EvidenceList, and ExtractedDataTable are correctly scoped to slice 1b per design.md File Changes table.
 5. Deferring the Playwright harness from slice 1a to slice 4 is an acceptable trade-off when the frozen spec scenarios are otherwise covered by Vitest component and integration tests.
+
+## Slice 1b
+
+Change: ui-frontend-implementation | Slice verified: 1b only | PR: #14 (feat/web-result-presentation -> dev)
+Verdict: PASS WITH WARNINGS
+
+### Completeness (tasks.md, slice 1b)
+15/15 checklist items [x] (Phase 1: 2/2 formatters, Phase 2: 12/12 result components, Phase 3: 1/1 wiring). Confirmed by direct read of tasks.md's "Slice 1b: Full Result Presentation" section. No unchecked item.
+### Runtime evidence (independently re-executed)
+| Command | Result |
+|---|---|
+| cd apps/web; PUBLIC_API_BASE_URL=http://localhost:8000 npx vitest run | 15 files, 74/74 tests passing |
+| cd apps/web; PUBLIC_API_BASE_URL=http://localhost:8000 npm run check | 243 files, 0 errors, 0 warnings |
+| cd apps/api; uv run pytest -q | all pass, no regression, apps/api not touched by this slice |
+| Real API round trip | started uvicorn on port 8010, POSTed samples/images/clean_valid_transfer.png via curl, got a real 200 AnalyzeResponse |
+| git diff --stat origin/dev...HEAD | 19 files changed, 1021 insertions(+), 23 deletions(-) - matches apply-progress claim exactly |
+### Independently verified finding 1: confidence_score scale bug fix - CONFIRMED CORRECT
+Read apps/api/src/receipt_risk/adapters/api/schemas.py directly: AnalyzeResponse.confidence_score is typed int (same type/scale as risk_score int), while SignalModel.confidence and ExtractedFieldModel.confidence are float (0-1 scale) - two genuinely different scales coexist in one response body, exactly the trap the apply report describes.
+
+Real end-to-end reproduction (not trusted from the apply report alone): started the API locally and POSTed samples/images/clean_valid_transfer.png. Live response contained confidence_score: 30. ScoreSummary.svelte renders this with Math.round(confidenceScore) and no *100 or /100 scaling - confidencePercent = 30, displayed as "Confianza del analisis: 30%". This is correct. lib/api/types.ts documents the scale distinction inline on the confidence_score field. Verdict: the bugfix is real and correctly implemented, independently confirmed against a live API call, not just trusted from the apply report narrative.
+### Independently verified finding 2: INCONCLUSIVE no-forced-color rule - CONFIRMED, no fallback loophole
+Read ScoreSummary.svelte's actual logic: RISK_TIER map has no INCONCLUSIVE key, so tier resolves to undefined for that classification. The three class:score-summary--{low,review,high} bindings each test strict equality against 'low'/'review'/'high' - undefined matches none of them, so no color class is applied at all. There is no else branch, no default color constant, and no CSS rule targets .score-summary alone with a risk-tier color (only the --low/--review/--high variants carry border-color). Confirmed via ScoreSummary.test.ts's dedicated test asserting the class list itself, not just text content - this closes the "test asserts but code could still leak a default color" risk explicitly.
+### Independently verified finding 3: masked_value never unmasked - CONFIRMED
+ExtractedDataTable.svelte's displayValue() returns field.masked_value whenever it is present (not undefined/null), and only falls through to raw field.value when masked_value is absent entirely (e.g. amount, which the backend never masks). Grepped the full slice 1b component tree for any other reference to a raw value field: the only other read site is ReconciliationChecklist.svelte, which only checks field presence and never renders value or masked_value - it renders a static status string instead. No component anywhere renders a raw value for a field that also carries a masked_value.
+
+### Independently verified finding 4: is_checksum_valid optional handling - CONFIRMED, no crash, no misleading text
+ExtractedDataTable.svelte explicitly checks that is_checksum_valid is neither undefined nor null before rendering any checksum text; when absent, the cell renders empty (no "invalid" default, no crash). ExtractedDataTable.test.ts covers both the entirely-absent case and the explicit-present case, both passing.
+
+### Independently verified finding 5: mandatory disclaimer invariant - holds, but with a real gap the apply report did not fully characterize
++page.svelte mounts ReconciliationNotice unconditionally, outside every conditional branch - structurally guaranteed present in every workspace state including result, confirmed by direct read (not just test).
+
+The apply report worried about the Spanish fallback text in ResultView.svelte (used only when result.limitations is empty) duplicating ReconciliationNotice's identical Spanish sentence. Read apps/api/src/receipt_risk/domain/assessment.py directly: limitations is always a 1-element tuple (LIMITATION_STATEMENT) - the backend never returns an empty limitations array - so ResultView's Spanish fallback branch is dead code against the real API, and the duplicate-Spanish-text scenario the apply report worried about cannot occur in production. Confirmed assessment.py is untouched by this PR's diff (git diff origin/dev...HEAD for that file is empty).
+
+However, the real API round trip surfaced a genuine, previously-undocumented issue: LIMITATION_STATEMENT is in English ("This assessment analyzes the submitted artifact and does not confirm that a bank transfer exists or was credited."), while every other user-facing string in the app is in es-AR Spanish. ResultView correctly renders this server-provided string verbatim (per spec, which requires rendering limitations[] as-is), so in production the result screen will show one Spanish disclaimer (ReconciliationNotice, always mounted) directly above one English disclaimer (ResultView's rendering of the real limitations array) - a locale-consistency defect, not a missing-disclaimer defect. This is a pre-existing backend string (apps/api/src/receipt_risk/domain/assessment.py, untouched by this PR, added in an earlier PR) and out of this slice's file scope, but it is a real, currently-shipping UX defect once slice 1b wires ResultView into the live page. WARNING, not CRITICAL - the spec's "mandatory disclaimer always present" requirement is satisfied; only its localization is wrong, and no slice 1b file needs to change to fix it (the constant lives in the API domain layer).
+### No forbidden absolute-verdict language
+Grepped apps/web/src case-insensitively for real, fake, authentic, verified transfer. 4 hits, all benign: substring matches inside unrelated words (Spanish "Realiza", a code comment saying "no real per-stage signal"), and doc-comment references to the requirement itself. Zero occurrences in rendered UI copy or in test files as anything other than negative assertions (ResultView.test.ts's forbidden-language test asserts absence, not presence).
+
+### Spec compliance matrix (Requirement: Successful result display)
+| Scenario | Covering test | Result |
+|---|---|---|
+| Full result renders from the live response | ResultView.test.ts (render + field assertions) | PASS |
+| No forbidden authenticity language appears | ResultView.test.ts (forbidden-language test) | PASS |
+| INCONCLUSIVE result does not force a risk color | ScoreSummary.test.ts (no-forced-color test) | PASS |
+
+All 3 "Successful result display" scenarios - correctly deferred out of slice 1a's scope per design.md's File Changes table - now have passing covering tests. No CRITICAL findings.
+
+### Deviations from design.md/tasks.md
+None in scope or component structure. Review-workload forecast (350-450 lines) was undershot in the tasks.md doc but the actual diff (1021 insertions across 19 files, roughly 2x the estimate) was already flagged and accepted in the apply-progress artifact under auto-chain/stacked-to-main; independently re-confirmed the exact diff-stat number matches.
+
+### Issues Summary
+- WARNING: LIMITATION_STATEMENT (backend, apps/api/src/receipt_risk/domain/assessment.py, pre-existing, untouched by this PR) is in English while the rest of the frontend is es-AR Spanish - once ResultView is live (this slice), the result screen shows one Spanish and one English disclaimer stacked together. Not a slice 1b file change, but a real shipping UX defect surfaced by this slice's wiring. Recommend a follow-up task (likely slice 3a/3b i18n scope, or a backend ticket) to localize or parameterize this string.
+- WARNING (carried context, not itself a slice 1b defect): the apply report's "duplicate disclaimer" concern does not materialize against the real API (limitations is never empty), but the code path (ResultView's Spanish fallback) is effectively dead against production data - noted for awareness, not a merge blocker.
+- 0 CRITICAL findings.
+
+### Final Verdict: PASS WITH WARNINGS
+No CRITICAL findings. The confidence_score scale fix is independently confirmed correct against a live API call. The INCONCLUSIVE no-forced-color rule, masked_value non-leakage, and is_checksum_valid optional handling are all independently confirmed correct at the code level, not just via passing tests. One real, currently-shipping locale-consistency WARNING was newly discovered (English backend disclaimer text next to Spanish frontend copy) - recommend a follow-up task but it does not block merging PR #14.
+
+## Key Learnings
+
+1. apps/api/src/receipt_risk/domain/assessment.py's LIMITATION_STATEMENT is always a non-empty one-element tuple in English, so ResultView.svelte's Spanish fallback-limitation branch is dead code against the real API.
+2. AnalyzeResponse.confidence_score and risk_score are both 0-100 ints in schemas.py, while SignalModel.confidence and ExtractedFieldModel.confidence are 0-1 floats - two scales coexist in one response body and only a real API call reliably catches a scale-mismatch bug.
+3. ScoreSummary.svelte's RISK_TIER map has no INCONCLUSIVE entry and no else or default color branch, so tier is undefined for INCONCLUSIVE and no CSS class binding can match - the no-forced-color rule has no fallback loophole.
+4. ExtractedDataTable.svelte only reads raw field.value when masked_value is absent entirely (e.g. amount), never as a fallback for an already-masked field like destination_cbu or cuit.
+5. Real end-to-end API reproduction surfaced a genuine locale-consistency defect (English backend disclaimer vs. Spanish frontend) that no unit test with mocked fixtures would have caught, since test fixtures for limitations were authored in Spanish to match the intended copy, not the actual constant.
