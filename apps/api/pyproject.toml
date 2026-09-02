@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.115",
     "pydantic>=2.9",
     "Pillow>=11.0",
+    "c2pa-python>=0.7",
 ]
 
 [project.optional-dependencies]
@@ -36,7 +37,10 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "TID"]
+# S602/S604/S605/S607 have NO per-file-ignore on purpose: adapters/** is
+# exempt from TID251 but must still never reach a shell or a partial-path
+# executable (design.md "pyproject.toml — exact additions").
+select = ["E", "F", "I", "UP", "B", "TID", "S602", "S604", "S605", "S607"]
 
 # AGENTS.md architecture rule: domain and application code must not import
 # FastAPI, PaddleOCR, ExifTool, OpenCV or storage implementations.
@@ -46,6 +50,8 @@ select = ["E", "F", "I", "UP", "B", "TID"]
 "cv2".msg = "OpenCV is an adapter-only dependency."
 "paddleocr".msg = "PaddleOCR is an adapter-only dependency."
 "PIL".msg = "Pillow is an adapter-only dependency."
+"subprocess".msg = "Subprocess execution is adapter-only; fixed argv, shell=False, always a timeout."
+"c2pa".msg = "C2PA is an adapter-only dependency."
 
 [tool.ruff.lint.per-file-ignores]
 "src/receipt_risk/adapters/**" = ["TID251"]

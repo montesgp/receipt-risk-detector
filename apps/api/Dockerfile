@@ -14,6 +14,11 @@
 
 FROM python:3.12-slim
 
+# slice 2: ExifTool binary for the metadata adapter (adapters/metadata/exiftool.py).
+RUN apt-get update \
+ && apt-get install --no-install-recommends -y libimage-exiftool-perl \
+ && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir uv
 
 WORKDIR /app

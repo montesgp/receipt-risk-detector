@@ -23,6 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libimage-exiftool-perl
+          exiftool -ver
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:

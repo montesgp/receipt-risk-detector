@@ -33,6 +33,11 @@ class SignalCode(StrEnum):
     added here by slices 2 (metadata/provenance), 3 (financial), and 4
     (analyzer availability)."""
 
+    # slice 2
+    METADATA_EDITOR_SOFTWARE = "METADATA_EDITOR_SOFTWARE"
+    VALID_AI_GENERATED_CLAIM = "VALID_AI_GENERATED_CLAIM"
+    PROVENANCE_VALIDATION_FAILED = "PROVENANCE_VALIDATION_FAILED"
+
 
 @dataclass(frozen=True, slots=True)
 class ValidationSignal:
