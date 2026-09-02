@@ -84,8 +84,8 @@ Chain strategy: size-exception
 - [x] L5. **Bootstrap labels**: done via `.github/labels.sh montesgp/receipt-risk-detector` — 26 labels synced.
 - [x] L6. **Apply branch protection, `main` then `dev`**: done via `gh api PUT .../branches/{main,dev}/protection` with the exact T0 payloads; confirmed via read-back.
 - [x] L7. **Publish issues**: done — 6 issues created (#1-#6), one per capability spec, labels per draft. `status:approved` applied to #1 (receipt-analysis) to unblock work.
-- [ ] L8. **Publish wiki pages**: BLOCKED — GitHub only creates the `.wiki.git` remote after a human manually creates the first page via the web UI (Wiki tab → "Create the first page"); there is no API/git-push path to initialize it, confirmed by a failed clone/push attempt ("Repository not found"). Once the user does that one click, push `docs/wiki/*.md` as page names to `https://github.com/montesgp/receipt-risk-detector.wiki.git`.
-- [ ] L9. **Railway linkage** (manual, out of design control, unchanged from design): create the Railway project via the Railway UI, connect the GitHub repo, create `staging` (watches `dev`) and `production` (watches `main`) environments, set env vars, enable "wait for CI to pass."
+- [x] L8. **Publish wiki pages**: done — user created the first page manually (unblocking the `.wiki.git` remote), then all 5 `docs/wiki/*.md` pages were pushed (`Home.md` overwritten from GitHub's placeholder, 4 new pages added).
+- [~] L9. **Railway linkage**: user created the Railway project from the GitHub repo. Remaining sub-steps (manual, out of design control): confirm/create `staging` (watching `dev`) and `production` (watching `main`) environments, set per-environment variables (none required today per `docs/wiki/Environment-and-Secrets.md`), and enable "wait for CI to pass" if available. First deploy will fail until `apps/api/Dockerfile` exists — expected per the accepted "inert `railway.json`" decision (D7 revised by Design A1), not a bug.
 
 ## Key Learnings
 
