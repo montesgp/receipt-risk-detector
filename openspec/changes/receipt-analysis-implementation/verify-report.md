@@ -456,3 +456,37 @@ gh pr view 11 confirms baseRefName dev, headRefName feat/receipt-analysis-risk-e
 3. A field-for-field contract test that only asserts top-level response keys can pass while nested field shapes silently drift from the documented example, so top-level key-set equality is not sufficient proof of full contract compliance.
 4. dependency_overrides used in production bootstrap code is safe in this codebase specifically because exactly one FastAPI instance is created per process and every test constructs its own separate instance with its own override dict; the pattern safety depends on that per-instance isolation holding.
 5. multipart form-data is a CORS-safelisted content type, so a public endpoint accepting multipart uploads without CORS middleware can still be triggered cross-origin by any third-party page even though the response body would be unreadable to that page.
+
+### CORS corrective pass re-verification
+
+Scope: focused re-verification of corrective commit `8255ead` only, following the prior PASS WITH WARNINGS verdict's blocking finding (Issue 1: undisclosed, unimplemented CORS allowlist requirement). Not a re-audit of the whole slice.
+
+**Fix inspected**: `apps/api/src/receipt_risk/adapters/api/cors_config.py` (new — `allowed_origins()` reads `RECEIPT_RISK_CORS_ALLOWED_ORIGINS`, comma-separated, empty/unset default = no browser origin allowed) and `apps/api/src/receipt_risk/bootstrap/app.py` (CORSMiddleware now registered, added via `app.add_middleware(...)` AFTER `RateLimitMiddleware`). Both files read in full. The ordering comment in `bootstrap/app.py` correctly states Starlette applies middleware in reverse registration order, so the last-added middleware is outermost — confirmed against Starlette's own middleware stack construction behavior (last added = outermost `BaseHTTPMiddleware`/`ExceptionMiddleware` wrap order).
+
+**Independent smoke test against the real `bootstrap.app.app`** (not the toy app in `test_cors_wraps_rate_limit.py` — a fresh script was run directly against the production `app` object with `RECEIPT_RISK_CORS_ALLOWED_ORIGINS=https://app.example.com` set):
+- `GET /health` with allowed origin → `200`, `Access-Control-Allow-Origin: https://app.example.com` present.
+- `GET /health` with disallowed origin (`https://evil.example.com`) → `200`, header absent.
+- `OPTIONS /v1/receipts/analyze` preflight with allowed origin → `200`, header present.
+- `OPTIONS /v1/receipts/analyze` preflight with disallowed origin → `400`, header absent.
+- 15 rapid `POST /v1/receipts/analyze` calls with allowed origin → hit `429` from the rate limiter, and that exact 429 response still carried `Access-Control-Allow-Origin: https://app.example.com`.
+
+This independently proves CORS wraps the rate limiter in the actual production app object, not just in the unit test's minimal reproduction app, closing the gap between "toy test passes" and "real app is wired correctly."
+
+**Existing test files reviewed**: `apps/api/tests/unit/test_cors_config.py` (4 tests: unset/empty/single/multi-origin env parsing, all correct) and `apps/api/tests/unit/test_cors_wraps_rate_limit.py` (3 tests: allowed-origin header on normal response, allowed-origin header retained on 429, disallowed-origin gets no header — all pass against a purpose-built minimal app using the real `RateLimitMiddleware` and real `CORSMiddleware` classes). These plus the fresh production-app smoke test together satisfy both GWT scenarios in `openspec/specs/public-api-contract/spec.md`'s "CORS allowlist" requirement: "Allowed browser origin" (matching `Access-Control-Allow-Origin` header returned) and "Disallowed browser origin" (no such header, so the browser enforces the block).
+
+**docs/API.md correction reviewed**: the stale `503 ANALYZER_UNAVAILABLE` row was removed from the status-code table and replaced with an explanatory paragraph stating `ANALYZER_UNAVAILABLE` is not a response status, only an internal `AnalyzerResult.error_code`, and that a failed analyzer surfaces as a `CORE_FIELD_EXTRACTION_FAILED`-style signal inside a normal `200` response per the "never abort, always signal" decision. This matches the router-tracing finding from the original slice 4 verification (Issue/WARNING on the same topic) exactly, with no new inaccuracy introduced.
+
+**Fresh full-suite re-run**:
+- `uv run pytest`: 129 passed, 4 skipped (same pre-existing exiftool/OCR-model-absent sandbox skips as before) — the +7 pass count vs. the prior 122 corresponds exactly to the two new CORS test files (4 + 3 tests).
+- `uv run ruff check .`: all checks passed.
+- `uv run ruff format --check .`: 84 files already formatted, no diffs.
+
+**Regression scope check**: `git diff --stat dev...feat/receipt-analysis-risk-engine` shows 41 files changed (2706 insertions, 35 deletions) total for the whole branch. `git show --stat 8255ead` isolates the corrective commit to exactly 7 files: `cors_config.py` (new), `bootstrap/app.py` (+16/-4 net), `test_cors_config.py` (new), `test_cors_wraps_rate_limit.py` (new), `docs/API.md` (correction), `tasks.md` (new task 4.30 entry), `verify-report.md` (this report). No other production or test file was touched by the corrective commit — confirms it is additive-only on top of the previously-verified slice 4 state, with zero unrelated changes.
+
+**tasks.md check**: task 4.30 is present, checked `[x]`, and its description accurately matches the actual diff (CORS middleware implementation + docs correction), correctly attributing the fix to the sdd-verify finding.
+
+#### Verdict
+
+PASS. The single CRITICAL/blocking finding from the prior PASS WITH WARNINGS verdict (missing CORS allowlist implementation) is fully resolved: implemented, tested at both the unit and integration (real middleware stack) level, and independently confirmed against the actual production `bootstrap.app.app` object with real HTTP requests including a 429 rate-limit response. The `docs/API.md` correction from the same corrective commit is accurate and introduces no new issue. No regressions found in the corrective commit's file scope. The remaining WARNING (nested-shape drift in `extracted_data`/`analyzer_statuses` vs. docs example) and SUGGESTION (hardcoded `request_id`) from the original slice 4 report are unchanged, non-blocking, and out of scope for this corrective pass — the orchestrator/user may treat them as accepted follow-ups or track them separately.
+
+**Slice 4, and therefore the entire 5-slice `receipt-analysis-implementation` change, is ready to merge and archive.**
