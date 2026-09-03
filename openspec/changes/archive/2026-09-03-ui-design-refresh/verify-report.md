@@ -311,7 +311,7 @@ SUGGESTION:
 | 3.2 GREEN fix (active = $derived(controller.resolved)) | [x] confirmed present in shipped file |
 | 3.3 ThemeSwitcher.test.ts updated to binary (2-length, retargeted ArrowRight, rewritten cycle test) | [x] confirmed |
 | 3.4 theme-persistence.spec.ts updated (count 3 to 2, regex Sistema removed) | [x] confirmed |
-| 3.5 select(), LiveRegion, dual-variant style block, theme.system i18n key unchanged | [x] confirmed |
+| 3.5 select(), LiveRegion, dual-variant style block, and theme.system i18n key unchanged | [x] confirmed |
 | 3.6 focused test commands green | [x] confirmed (full suite, not just focused subset) |
 
 All 6/6 Slice 3 tasks in tasks.md are checked and match the code state, no drift found.

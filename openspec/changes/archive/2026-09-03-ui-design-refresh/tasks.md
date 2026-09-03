@@ -98,3 +98,7 @@ Chain strategy: stacked-to-main
 3. Slice 4's PipelineExplainer is new functionality and follows full RED (failing test + missing i18n keys) → GREEN (component + keys) TDD.
 4. Slice 2b is closest to the 400-line review budget; design.md's pre-agreed split point (ResultView+ScoreSummary+EvidenceItem/List vs ExtractedDataTable+ReconciliationChecklist+TechnicalDetail) is carried into task 2b.10 as a conditional fallback.
 5. Slice ordering is strictly dependency-locked: slices 2/3/4 each require slice 1 merged, and slice 4 additionally requires the frozen spec delta to exist before apply.
+
+## Archive Note (post-close reconciliation, 2026-09-03)
+
+All 46/46 tasks across 6 slices confirmed [x] at archive time by sdd-archive, cross-checked against verify-report.md's per-slice completeness tables and PR merge state (#20-#25, all merged to `dev`). No stale-checkbox reconciliation was needed — the tasks artifact already reflected final state.
