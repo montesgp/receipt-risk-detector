@@ -74,15 +74,15 @@ Chain strategy: stacked-to-main
 
 ## Slice 4: Pipeline Explainer (PR 5, requires Slice 1+2 merged; requires spec delta authored)
 
-- [ ] 4.1 RED: write `apps/web/tests/unit/PipelineExplainer.test.ts` asserting 6 `<li>` items, ES and EN render, no `role="status"`/`aria-live` attribute, forbidden-word scan (`real`/`fake`/`authentic`/`auténtico`/`verificado`/"verified transfer") over `upload.pipeline.*` — confirm it fails (component does not exist yet)
-- [ ] 4.2 Add 13 keys under `upload.pipeline.*` to `apps/web/src/lib/i18n/messages/es.json` and `en.json` in the same commit (identical key set, exact copy from design.md table)
-- [ ] 4.3 GREEN: create `apps/web/src/lib/components/PipelineExplainer.svelte` per design.md's exact markup (static `<section>`/`<ol>`, no live-region role)
-- [ ] 4.4 Wire into `+page.svelte`: mount `<PipelineExplainer />` directly after `<DropZone />` inside the `idle` branch; confirm `ReconciliationNotice` stays mounted and undisplaced
-- [ ] 4.5 Confirm `npm run test -- PipelineExplainer` passes (GREEN) and `key-parity.test.ts` still passes with 13 new keys
-- [ ] 4.6 Confirm `literal-audit.test.ts` still passes (no hardcoded Spanish/English literals outside i18n files)
-- [ ] 4.7 New e2e assertion: explainer visible below drop zone, disclaimer still present, idle state
-- [ ] 4.8 `docs/PRD.md`: add FR-013 (static idle-state pipeline explainer, bilingual, non-live, six steps derived from FR-001–FR-007)
-- [ ] 4.9 Confirm `openspec/changes/ui-design-refresh/specs/receipt-analysis-web-client/spec.md` delta (already authored by sdd-spec) matches shipped scenarios; no further edit needed here
+- [x] 4.1 RED: write `apps/web/tests/unit/PipelineExplainer.test.ts` asserting 6 `<li>` items, ES and EN render, no `role="status"`/`aria-live` attribute, forbidden-word scan (`real`/`fake`/`authentic`/`auténtico`/`verificado`/"verified transfer") over `upload.pipeline.*` — confirm it fails (component does not exist yet)
+- [x] 4.2 Add 13 keys under `upload.pipeline.*` to `apps/web/src/lib/i18n/messages/es.json` and `en.json` in the same commit (identical key set, exact copy from design.md table)
+- [x] 4.3 GREEN: create `apps/web/src/lib/components/PipelineExplainer.svelte` per design.md's exact markup (static `<section>`/`<ol>`, no live-region role)
+- [x] 4.4 Wire into `+page.svelte`: mount `<PipelineExplainer />` directly after `<DropZone />` inside the `idle` branch; confirm `ReconciliationNotice` stays mounted and undisplaced
+- [x] 4.5 Confirm `npm run test -- PipelineExplainer` passes (GREEN) and `key-parity.test.ts` still passes with 13 new keys
+- [x] 4.6 Confirm `literal-audit.test.ts` still passes (no hardcoded Spanish/English literals outside i18n files)
+- [x] 4.7 New e2e assertion: explainer visible below drop zone, disclaimer still present, idle state
+- [x] 4.8 `docs/PRD.md`: add FR-013 (static idle-state pipeline explainer, bilingual, non-live, six steps derived from FR-001–FR-007)
+- [x] 4.9 Confirm `openspec/changes/ui-design-refresh/specs/receipt-analysis-web-client/spec.md` delta (already authored by sdd-spec) matches shipped scenarios; no further edit needed here
 
 ## Slice 5: Docs Cleanup (PR 6, requires Slice 1–4 merged)
 

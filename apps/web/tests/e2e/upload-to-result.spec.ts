@@ -20,6 +20,25 @@ const RECEIPT_FIXTURE = path.join(__dirname, 'fixtures', 'receipt.png');
 const ANALYZE_URL = '**/v1/receipts/analyze';
 
 test.describe('upload to result', () => {
+  test('idle state shows the pipeline explainer below the drop zone without displacing the disclaimer', async ({
+    page
+  }) => {
+    await page.goto('/');
+
+    const dropZone = page.getByText(/Arrastrá o seleccioná un comprobante/i);
+    await expect(dropZone).toBeVisible();
+
+    const explainerHeading = page.getByRole('heading', { name: /qué hace este análisis/i });
+    await expect(explainerHeading).toBeVisible();
+    await expect(page.locator('li')).toHaveCount(6);
+
+    // The idle-state reconciliation-limitation disclaimer must still be
+    // visible; the explainer must not displace it.
+    await expect(
+      page.getByText(/Confirmá la acreditación en la cuenta beneficiaria/i).first()
+    ).toBeVisible();
+  });
+
   test('successful upload renders the full result screen', async ({ page }) => {
     await page.route(ANALYZE_URL, async (route) => {
       await route.fulfill({ status: 200, json: MOCK_ANALYZE_RESPONSE });
