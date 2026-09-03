@@ -141,3 +141,74 @@ No CRITICAL findings. The confidence_score scale fix is independently confirmed 
 3. ScoreSummary.svelte's RISK_TIER map has no INCONCLUSIVE entry and no else or default color branch, so tier is undefined for INCONCLUSIVE and no CSS class binding can match - the no-forced-color rule has no fallback loophole.
 4. ExtractedDataTable.svelte only reads raw field.value when masked_value is absent entirely (e.g. amount), never as a fallback for an already-masked field like destination_cbu or cuit.
 5. Real end-to-end API reproduction surfaced a genuine locale-consistency defect (English backend disclaimer vs. Spanish frontend) that no unit test with mocked fixtures would have caught, since test fixtures for limitations were authored in Spanish to match the intended copy, not the actual constant.
+
+---
+
+## Slice 2
+
+### Scope
+PR #15 (`feat/web-theme-switcher` -> `dev`, commit `561c9e0`), open, NOT merged. Theme switcher: `ThemeController` runes class, `app.html` blocking inline script, `app.css` dark tokens + `.theme-transition`, `ThemeSwitcher.svelte`, `+layout.svelte` wiring. All 7/7 `tasks.md` "Slice 2" items `[x]`.
+
+### Artifacts read
+- `openspec/changes/ui-frontend-implementation/proposal.md`, `design.md` (theme mechanism, DD3)
+- `openspec/specs/ui-localization-and-theming/spec.md` (frozen, theme scenarios: Manual theme toggle, System-preference default, Theme persists after reload, Switchers are keyboard-operable with visible focus, State change is announced and not color-only)
+- `docs/DESIGN.md` sections 6.3 (color tokens) and 12 (theme switcher UX)
+- `apps/web/src/lib/theme/theme.svelte.ts`, `apps/web/src/lib/components/ThemeSwitcher.svelte`, `apps/web/src/app.html`, `apps/web/src/app.css`, `apps/web/src/routes/+layout.svelte`, unit tests for both
+- Engram: `sdd/ui-frontend-implementation/spec` (#1861), `.../tasks` (#1863), `.../apply-progress` (#1864)
+
+### Independent runtime evidence (re-run by verifier)
+| Command | Result |
+|---|---|
+| vitest run (apps/web) | 17 files, 85/85 passing (7 theme.test.ts + 4 ThemeSwitcher.test.ts) |
+| npm run check (apps/web) | 0 errors, 0 warnings, 247 files |
+| uv run pytest -q (apps/api) | All backend tests pass, unaffected by this PR |
+| git diff --stat origin/dev...HEAD | 8 files changed, 461 insertions(+), 9 deletions(-) |
+| Dev server + curl on raw SSR HTML | Independently inspected, not reused from apply report |
+
+447 authored lines excluding tasks.md checkbox-only diff, comfortably under the 400-line review budget.
+
+### Anti-flash blocking script (independently verified)
+Curled the raw dev-server SSR response directly. Confirmed: the script is the literal first child of head, before the sveltekit-injected style block; it is a plain synchronous inline script (no defer/module/async); it reads localStorage rrd.theme, uses matchMedia prefers-color-scheme only when nothing valid is stored, and sets dataset.theme plus style.colorScheme before any dependent content.
+
+### Persistence key
+DESIGN.md section 12 specifies localStorage key rrd.theme. theme.svelte.ts, app.html, and both test files all use the literal string rrd.theme -- exact match, no drift.
+
+### System-preference fallback
+Constructor only overrides the default mode when a stored value is exactly light or dark; otherwise mode stays system and resolves via matchMedia. setTheme(system) removes the stored key, restoring the OS-preference fallback. Confirmed genuinely conditional (not unconditional or dead) via code reading plus passing tests for both the restore-on-construction and clear-on-system-select paths.
+
+### Accessibility
+ThemeSwitcher.test.ts's fourth test uses an awaited fireEvent.keyDown (ArrowRight) on a focused radio and asserts the mode actually changes -- a real keyboard-event test, not a click disguised as one. Markup read directly: role=radiogroup wrapping three role=radio buttons with real aria-checked booleans and roving tabindex. SSR curl of the live dev server independently confirmed the same markup plus a role=status aria-live=polite region. A global :focus-visible rule using --color-focus covers the native buttons.
+
+### Task 2.3 deviation assessment
+LiveRegion.svelte is genuinely slice-4 scope and does not exist yet. The local role=status region is functionally proven (not just present): the announcement test asserts the live region's text actually updates to the new theme's label after a click. Reasonable interim choice, correctly documented in tasks.md and apply-progress. Not broken or missing.
+
+### Dark tokens spot-check
+All ten dark-theme custom properties in app.css (canvas, surface, text, text-muted, border, action, action-text, risk-low, risk-review, risk-high, focus) match DESIGN.md section 6.3 exactly, value for value. Light tokens also match.
+
+### No regression
+Full vitest suite re-run (not filtered): 85/85 pass including pre-existing slice 1a/1b suites (client, workspace, ScoreSummary, ExtractedDataTable, ErrorPanel, DropZone, EvidenceList, ResultView, page.smoke -- the last exercises the full idle-to-result loop against a mocked fetch). Confirmed ResultView.svelte and ReconciliationNotice.svelte (disclaimer-bearing files) are absent from this PR's diff -- the always-render-disclaimer invariant is untouched.
+
+### Spec compliance matrix
+| Scenario | Status | Evidence |
+|---|---|---|
+| Manual theme toggle | PASS | ThemeSwitcher.test.ts click-selects test |
+| System-preference default | PASS | theme.test.ts matchMedia resolution tests |
+| Theme persists after reload | PASS | theme.test.ts restore-on-construction test |
+| Switchers are keyboard-operable with visible focus | PASS (theme only) | ThemeSwitcher.test.ts ArrowRight test + global focus-visible rule |
+| State change is announced and not color-only | PASS (theme only) | ThemeSwitcher.test.ts live-region announcement test |
+
+### Issues Summary
+- WARNING: DESIGN.md section 12 specifies a responsive breakpoint (segmented control at 768px and above, icon button below) that ThemeSwitcher.svelte does not implement -- no media query exists, the segmented control renders unconditionally. Real, undocumented design deviation distinct from the one deviation already recorded for task 2.3. Does not break a frozen spec scenario, so WARNING not CRITICAL.
+- WARNING: DESIGN.md section 12 also specifies a 44x44px touch target; the switcher's buttons use min-height 32px. Ambiguous whether this constraint targets the mobile icon-button variant only, but as shipped the segmented control does not meet it. WARNING, not CRITICAL (no GWT scenario measures touch target size).
+- 0 CRITICAL findings.
+
+### Final Verdict: PASS WITH WARNINGS
+No CRITICAL findings against the frozen ui-localization-and-theming spec's theme scenarios, DESIGN.md section 12, or slice 1a/1b regression. Two WARNINGs (missing responsive breakpoint; touch target below 44x44px) should be tracked as follow-ups but do not block merging PR #15.
+
+## Key Learnings
+
+1. The app.html blocking theme script's position as the literal first child of head was confirmed via direct SSR curl inspection rather than trusting the apply report's claim.
+2. The rrd.theme storage key and all light/dark CSS custom property values match DESIGN.md sections 6.3/12 exactly, with zero drift between spec and code.
+3. ThemeController's prefers-color-scheme fallback only activates when no valid stored value exists, and switching to system explicitly clears the stored key.
+4. DESIGN.md section 12 specifies a responsive breakpoint and a 44x44px touch target that ThemeSwitcher.svelte does not implement, a real undocumented deviation beyond the one already recorded in tasks.md.
+5. The local role=status live region substituting for the not-yet-built LiveRegion.svelte is proven functionally correct by an assertion on its live text content after a click, not merely its presence in markup.
