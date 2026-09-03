@@ -35,9 +35,9 @@
   );
 </script>
 
-<main class="page">
-  <h1>{i18n.t('page.title')}</h1>
-  <p>{i18n.t('page.intro')}</p>
+<main class="page flex flex-col gap-6">
+  <h1 class="m-0 text-3xl font-semibold tracking-tight">{i18n.t('page.title')}</h1>
+  <p class="m-0 max-w-reading text-ui-muted">{i18n.t('page.intro')}</p>
 
   <!-- DD7: always mounted, both in idle and result contexts, never behind a
        state branch. -->

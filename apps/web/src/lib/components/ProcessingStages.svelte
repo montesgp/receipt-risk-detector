@@ -11,19 +11,12 @@
   const i18n = getI18nContext();
 </script>
 
-<div role="status" aria-live="polite" class="processing">
+<div role="status" aria-live="polite" class="flex flex-col gap-3 p-6">
   <p class="processing__label">{i18n.t('processing.label')}</p>
   <div class="processing__bar" aria-hidden="true"></div>
 </div>
 
 <style>
-  .processing {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    padding: var(--space-4);
-  }
-
   .processing__label {
     margin: 0;
   }

@@ -18,8 +18,8 @@
   setI18nContext(i18n);
 </script>
 
-<header class="app-header">
-  <div class="app-header__inner">
+<header class="border-b border-ui-line bg-ui-surface">
+  <div class="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-4">
     <span class="app-header__brand">Receipt Risk Detector</span>
     <div class="app-header__switchers">
       <LanguageSwitcher />
@@ -31,21 +31,6 @@
 {@render children()}
 
 <style>
-  .app-header {
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface);
-  }
-
-  .app-header__inner {
-    max-width: var(--content-max-width);
-    margin: 0 auto;
-    padding: var(--space-3) var(--space-4);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-  }
-
   .app-header__brand {
     font-weight: 600;
   }

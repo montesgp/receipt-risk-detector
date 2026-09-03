@@ -56,8 +56,8 @@
 </script>
 
 <div
-  class="drop-zone"
-  class:drop-zone--drag={isDragOver}
+  class="flex flex-col items-center gap-2 rounded-ui border-2 border-dashed border-ui-line bg-ui-surface px-4 py-8 text-center cursor-pointer transition-colors duration-150 hover:border-ui-muted aria-disabled:cursor-not-allowed aria-disabled:opacity-60"
+  class:border-ui-focus={isDragOver}
   role="button"
   tabindex="0"
   aria-disabled={disabled}
@@ -67,8 +67,8 @@
   ondragover={onDragOver}
   ondragleave={onDragLeave}
 >
-  <p class="drop-zone__heading">{i18n.t('upload.dropzone.heading')}</p>
-  <p class="drop-zone__constraints">{i18n.t('upload.dropzone.constraints')}</p>
+  <p class="m-0 text-lg font-semibold">{i18n.t('upload.dropzone.heading')}</p>
+  <p class="m-0 text-ui-muted">{i18n.t('upload.dropzone.constraints')}</p>
   <input
     bind:this={inputEl}
     id="receipt-file"
@@ -77,49 +77,6 @@
     disabled={disabled}
     onchange={onInputChange}
     tabindex="-1"
+    class="sr-only"
   />
 </div>
-
-<style>
-  .drop-zone {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    border: 2px dashed var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-8) var(--space-4);
-    text-align: center;
-    cursor: pointer;
-    background: var(--color-surface);
-  }
-
-  .drop-zone[aria-disabled='true'] {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  .drop-zone--drag {
-    border-color: var(--color-focus);
-  }
-
-  .drop-zone__heading {
-    font-weight: 600;
-    margin: 0;
-  }
-
-  .drop-zone__constraints {
-    color: var(--color-text-muted);
-    margin: 0;
-  }
-
-  input[type='file'] {
-    /* Native input stays in the DOM (accessible fallback) but is visually
-       hidden; the zone itself owns the click/keyboard affordance. */
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-  }
-</style>
