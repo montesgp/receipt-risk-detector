@@ -298,3 +298,95 @@ WARNING:
 
 SUGGESTION:
 1. Carry-over from Slices 1/2a: the pre-existing vitest/vite/esbuild critical/high vulnerability chain remains unrelated to and unchanged by this PR; still recommended as a separate dependency-upgrade follow-up.
+
+## Slice 3
+
+**Change**: ui-design-refresh, Slice 3 (Binary Theme Switcher), PR #23 feat/web-binary-theme -> dev. All 7 CI checks green at time of verification.
+
+### Completeness
+
+| Task | Status |
+|---|---|
+| 3.1 RED test added and confirmed failing pre-fix | [x] confirmed by independent reproduction (see below) |
+| 3.2 GREEN fix (active = $derived(controller.resolved)) | [x] confirmed present in shipped file |
+| 3.3 ThemeSwitcher.test.ts updated to binary (2-length, retargeted ArrowRight, rewritten cycle test) | [x] confirmed |
+| 3.4 theme-persistence.spec.ts updated (count 3 to 2, regex Sistema removed) | [x] confirmed |
+| 3.5 select(), LiveRegion, dual-variant style block, theme.system i18n key unchanged | [x] confirmed |
+| 3.6 focused test commands green | [x] confirmed (full suite, not just focused subset) |
+
+All 6/6 Slice 3 tasks in tasks.md are checked and match the code state, no drift found.
+
+### Independent bug reproduction (not trusted from the apply-progress claim, redone from scratch)
+
+Sequence executed as one contained operation:
+1. Backed up ThemeSwitcher.svelte to the session scratchpad (outside git tracking).
+2. Edited the tracked file in place: derived value bound to controller.resolved was changed to bind to controller.mode instead (reverting to the pre-fix approach).
+3. Ran the focused vitest command for the dark-first-paint test: it FAILED as expected, with a TypeError: ".toMatch() expects to receive a string, but got undefined". This happens because with active bound to controller.mode (still "system" pre-choice), no OPTIONS entry matches, so no radio is aria-checked=true and checked is undefined. This is a materially different, arguably worse failure mode than the "Light shown checked" scenario originally described in design.md (it manifests as no radio checked rather than the wrong one being checked, because currentOption's fallback to OPTIONS[0] affects the currentOption/label display, not the per-radio aria-checked comparison), but it is the same root cause (mode staying "system" pre-choice) and confirms the bug class is real and the fix is necessary.
+4. Restored the tracked file from the scratchpad backup immediately, then deleted the backup.
+5. Re-ran the full ThemeSwitcher unit test file: 9/9 passed, confirming the real fix.
+6. git diff --stat on the restored file showed no diff; git status --porcelain was empty afterward.
+
+Verdict: the bug and fix are real, reproducible, and the working tree was left clean.
+
+### theme.svelte.ts scope check
+
+git diff origin/dev...HEAD for apps/web/src/lib/theme/theme.svelte.ts returned empty output. Confirmed genuinely untouched, as the proposal/design require (ThemeController resolution logic is explicitly out of scope for this change).
+
+### Binary-only UI check
+
+- OPTIONS array in ThemeSwitcher.svelte has exactly 2 entries: mode light and mode dark.
+- No UI path renders System: the segmented radiogroup only iterates OPTIONS (2 radios, confirmed by the unit test asserting length 2 and by the Playwright assertion count 2); the sub-768px cycling button only toggles between light and dark via cycle(), and its text/aria-label only ever resolves to theme.light or theme.dark since currentOption is derived from the same 2-entry OPTIONS array. theme.system remains in both message files for ThemeMode/key-parity only, never rendered.
+
+### Responsive breakpoint and touch-target regression check (specific assertions, not just aggregate count)
+
+Re-ran npx playwright test (9/9 passed). Specifically confirmed passing:
+- "shows the segmented control at >=768px with a >=44x44px touch target per option" - asserts the segmented control is visible, the cycle button is hidden, radio count is 2, and each radio bounding box is >=44x44px at a 1024x768 viewport.
+- "shows the cycling icon button below 768px with a visible current-state label and a >=44x44px touch target" - asserts the cycle button is visible, the segmented control is hidden, label text matches Claro or Oscuro only (no Sistema), bounding box >=44x44px at a 375x812 viewport, and label text changes after a click.
+
+Both passed individually, not merely as part of the aggregate 9-passed count.
+
+### i18n key parity
+
+- theme.system key confirmed present in both es.json (Sistema) and en.json (System).
+- key-parity.test.ts ran as part of the full vitest run and passed (3/3 tests in that file; 156/156 overall).
+
+### Persistence check
+
+theme.test.ts directly asserts localStorage getItem for rrd.theme equals dark after setTheme(dark), and ThemeSwitcher.test.ts's click test confirms controller.mode equals dark after clicking the Dark radio, which routes through the unmodified setTheme() in theme.svelte.ts. Both passed in the full run.
+
+### Command evidence (independently re-run, not trusted from prior reports)
+
+| Command | Result |
+|---|---|
+| cd apps/web and npx vitest run | 156/156 passed (24 test files) |
+| cd apps/web and npm run check | 402 files, 0 errors, 0 warnings |
+| cd apps/web and npx playwright test | 9/9 passed |
+| cd apps/api and uv run pytest -q | all passed (4 skipped, 0 failures), apps/api untouched by this slice |
+| git diff --stat origin/dev...HEAD | ThemeSwitcher.svelte 34 lines changed, theme-persistence.spec.ts 4 lines changed, ThemeSwitcher.test.ts 54 lines changed, tasks.md 12 lines changed; 4 files changed, 64 insertions, 40 deletions. Matches the apply-progress claim exactly. |
+
+### Design coherence
+
+- The derived active value binds to controller.resolved, matching design.md's exact locked snippet.
+- select() signature, LiveRegion, dual-variant style block, and theme.system i18n key are unchanged from pre-Slice-3 (confirmed present and untouched by inspection).
+- The component's own header comment was updated to document the fix rationale, consistent with design.md's decision record, a documentation improvement, not a deviation.
+
+### Issues
+
+CRITICAL: None.
+
+WARNING: None.
+
+SUGGESTION:
+1. The independently-reproduced regression symptom (no radio checked, TypeError on undefined) is a slightly different manifestation than the design.md/apply-progress narrative (Light shown checked via the OPTIONS[0] fallback) - both stem from the same root cause (mode staying system pre-choice) and both are fixed by the same change, so this is a documentation-precision nit only, not a functional gap. No action required before merge; worth a one-line correction in design.md's decision rationale if it is ever revisited.
+
+### Final Verdict: PASS
+
+All Slice 3 tasks complete and verified against code. The controller.resolved bug fix is real, independently reproduced (RED confirmed via a deliberate temporary revert, then GREEN confirmed via restoration), and correctly scoped, theme.svelte.ts is provably untouched. Binary-only UI, responsive/touch-target, i18n parity, and persistence behavior all hold under re-run tests. PR #23 is clear to merge from a verification standpoint.
+
+## Key Learnings
+
+1. Deriving checked state from ThemeController.mode instead of resolved fails differently than described: no radio matches at all (undefined, TypeError) rather than the wrong radio being checked, because mode stays "system" pre-choice and no OPTIONS entry has mode "system".
+2. The controller.resolved fix is confirmed byte-identical to design.md's locked snippet and independently reproduced as RED-then-GREEN via a contained revert-and-restore sequence.
+3. git diff origin/dev...HEAD for theme.svelte.ts returns empty output, which is the correct way to prove a file is untouched across a branch delta rather than trusting a stated claim.
+4. Playwright assertions for the 768px breakpoint and the 44x44px touch target must be checked as named individual test results, not just inferred from an aggregate N-of-N pass count.
+5. Heredoc content with many embedded single quotes can break the surrounding shell invocation; routing multi-paragraph report text through an intermediate scratch file with single-quote-free prose avoids that failure mode.
