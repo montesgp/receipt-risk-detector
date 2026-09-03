@@ -401,3 +401,38 @@ All 12 Slice 4 tasks [x] match code state - every task's literal deliverable exi
 
 ### Final verdict
 FAIL (spec-compliance CRITICAL). Slice 4's own 12 tasks are complete and correctly tested; the Playwright suite, CI job, focus management, ThemeSwitcher fixes, LiveRegion sharing, and no-color-only-status audits all independently check out exactly as claimed, with real runtime evidence. However, a CRITICAL, previously-unflagged gap against the frozen ui-localization-and-theming spec's "every user-facing string" requirement exists in +page.svelte and must be corrected, with a companion fix to literal-audit.test.ts's scope (include src/routes/) and detection method (do not rely on accented characters alone), before the 6-slice ui-frontend-implementation change can be archived as fully compliant with its own frozen spec.
+
+### Corrective pass re-verification
+
+Corrective commit: `a754a05` ("fix(web): translate the last 4 hardcoded strings on +page.svelte"), on top of the same `feat/web-a11y-e2e` branch, PR #18 into `dev`, all 7 CI checks still green.
+
+**1. i18n keys and `+page.svelte` re-inspected directly (not trusted from the commit description).** `es.json`/`en.json` both define `page.title`, `page.intro`, `page.statusRegionLabel`, `page.analyzeAnother` with correct, natural translations in each locale. Re-read the entire `+page.svelte` file end to end: all four former literals now route through `i18n.t(...)` (h1 line 39, intro paragraph line 40, `aria-label` line 50, reset-button text line 73). No hardcoded Spanish text remains anywhere in the file. The only static string in the routes layer is `+layout.svelte`'s header brand "Receipt Risk Detector," a proper noun correctly left untranslated (already noted as non-defect in the prior FAIL report).
+
+**2. `literal-audit.test.ts` glob genuinely widened.** Read the file directly: it now unions `import.meta.glob('../../src/lib/components/*.svelte', ...)` with a second `import.meta.glob('../../src/routes/**/*.svelte', ...)`. Ran it standalone (`npx vitest run tests/unit/literal-audit.test.ts --reporter=verbose`): 18/18 passing, and the per-file test list explicitly includes `../../src/routes/+layout.svelte` and `../../src/routes/+page.svelte` alongside all 14 components — confirmed by name in the verbose output, not inferred from a count alone.
+
+**3. Independently reproduced "the test genuinely catches the bug."** Temporarily edited `+page.svelte`'s h1 to a fresh hardcoded Spanish string not used elsewhere ("Revisar comprobante ahora") and re-ran the audit test: it failed correctly, reporting the accent-free wordlist match (`Revisar`) as the culprit — proving both the widened glob and the wordlist check (not just the accent regex) are load-bearing. Reverted via direct file restore from a pre-edit backup; confirmed byte-identical to HEAD via `git status`/`git diff` showing no changes afterward.
+
+**4. Independently confirmed the actual user-visible bug is fixed.** No existing automated test (unit or e2e) asserts on the page's own h1/intro/button text across a locale switch — `locale-switch.spec.ts` only checks the `ResultView` heading, the `DropZone` placeholder, and the switcher's own label. Wrote a throwaway Playwright spec (not committed) that loads the page, asserts the h1/intro render in Spanish, clicks the language switcher, then asserts the h1 changes to an English pattern and the intro paragraph's text changes to the English copy. Ran it: 1/1 passing. Deleted the temporary spec afterward; `git status` on `tests/e2e/` confirms no residue.
+
+**5. Full suite re-execution (this session, independent):**
+
+| Command | Result |
+|---|---|
+| `cd apps/web && npx vitest run` | 24 files, 155/155 passing (was 153; +2 from the widened literal-audit route coverage) |
+| `cd apps/web && rm -rf .svelte-kit && npm run check` (fresh state) | 401 files, 0 errors, 0 warnings |
+| `cd apps/web && npx playwright test` | 9/9 passing (chromium) |
+| `cd apps/api && uv run pytest` | 129 passed, 4 skipped, 0 failures — backend still fully untouched |
+
+**6. `git diff --stat origin/dev...HEAD` (whole PR #18, including the corrective commit):**
+
+```
+27 files changed, 935 insertions(+), 93 deletions(-)
+```
+
+(Prior pre-correction figure was 25 files, 803(+)/61(-); the delta — 2 files, 132(+)/32(-) — is exactly this verify-report.md's prior FAIL section append plus the corrective commit's diff to `+page.svelte`, `es.json`, `en.json`, and `literal-audit.test.ts`.)
+
+### Final verdict (corrective pass)
+
+PASS. The sole CRITICAL finding from the prior FAIL verdict is confirmed resolved: all four former hardcoded Spanish strings in `+page.svelte` now route through `i18n.t()` with correctly translated keys in both locales, `literal-audit.test.ts`'s scope and detection method genuinely close the structural blind spot (independently proven via a real reintroduce-and-fail-then-revert cycle), and the actual user-visible defect — the page's own heading/intro/button not translating on language switch — is independently confirmed fixed via a throwaway e2e check. No new CRITICAL or WARNING issues found in this corrective pass. Full regression suite (vitest, svelte-check, Playwright, pytest) re-run clean.
+
+**Slice 4 verdict: PASS.** **Overall 6-slice `ui-frontend-implementation` change verdict: PASS.** PR #18 is safe to merge into `dev`; once merged, the entire `ui-frontend-implementation` change is ready for `sdd-archive`.
