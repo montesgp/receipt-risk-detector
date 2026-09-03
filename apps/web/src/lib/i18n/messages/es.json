@@ -1,6 +1,11 @@
 {
   "common.retry": "Reintentar",
 
+  "page.title": "Analizá un comprobante antes de conciliarlo",
+  "page.intro": "Detectamos señales de manipulación, procedencia digital e inconsistencias para ayudarte a revisar una transferencia.",
+  "page.statusRegionLabel": "Estado del análisis",
+  "page.analyzeAnother": "Analizar otro comprobante",
+
   "header.brand": "Receipt Risk Detector",
   "header.language.groupLabel": "Idioma",
   "header.language.switchToEs": "Cambiar a español",
@@ -14,6 +19,7 @@
   "theme.light": "Claro",
   "theme.dark": "Oscuro",
   "theme.announcement": "Tema: {label}",
+  "theme.cycleLabel": "Cambiar tema (actual: {label})",
 
   "upload.dropzone.heading": "Arrastrá o seleccioná un comprobante",
   "upload.dropzone.constraints": "PNG, JPG o WebP · máximo 10 MB",
@@ -81,5 +87,8 @@
   "evidence.severity.high": "Alta",
   "evidence.severity.critical": "Crítica",
   "evidence.confidenceLabel": "Confianza",
-  "evidence.scoreContributionLabel": "Aporte al puntaje"
+  "evidence.scoreContributionLabel": "Aporte al puntaje",
+
+  "a11y.resultAnnouncement": "Análisis completo. El resultado está disponible.",
+  "a11y.errorAnnouncement": "Ocurrió un error. Revisá el mensaje para continuar."
 }

@@ -341,3 +341,63 @@ Slice 3b Phase 1 (1.1, 1.2), Phase 2 (2.1, 2.2), Phase 3 (3.1, 3.2) all [x] - ma
 
 ### Final verdict
 PASS. No CRITICAL or WARNING issues found. PR #17 is safe to merge as-is. The only note is a non-blocking factual correction (item 7 above) about a stale key-count figure that does not affect functional correctness.
+
+## Slice 4 (final)
+
+Change: ui-frontend-implementation | Slice verified: 4 (final of 6) | PR: #18 (feat/web-a11y-e2e -> dev)
+Verdict: FAIL (one CRITICAL spec-compliance gap; everything else independently confirmed PASS)
+
+### Completeness (tasks.md, slice 4)
+12/12 checklist items [x] (Phase 1: 1.1-1.4 incl. one ad-hoc; Phase 2: 2.1-2.5; Phase 3: 3.1-3.2). Confirmed by direct read of tasks.md lines 222-239. Every task's stated deliverable exists in the diff and is exercised by a passing test.
+
+### Runtime evidence (independently re-executed, this session)
+| Command | Result |
+|---|---|
+| cd apps/web and npx vitest run | 24 files, 153/153 tests passing (matches apply-progress claim exactly) |
+| cd apps/web and npx playwright test | 9/9 passing locally (chromium) |
+| cd apps/api and uv run pytest -q | all pass (some skipped, OCR-model-dependent), zero failures, backend fully unaffected |
+| gh pr checks 18 | all 7 checks green: API Lint and Test, Web Lint and Test, Web E2E (Playwright), Check Issue Has status:approved, Check Issue Reference, Check PR Has type:* Label, Check Source Branch |
+| gh run view --job 100521222566 --log (CI's actual Playwright job, run 33714629965) | log shows "Running 9 tests using 2 workers" / "9 passed (10.9s)", confirms CI genuinely executed the same 9 specs, not a silent skip |
+
+### Independent verification of the 11 specific audit points
+
+1. ThemeSwitcher responsive breakpoint: CONFIRMED for the right reason. ThemeSwitcher.svelte renders both .theme-switcher__segmented and .theme-switcher__cycle unconditionally in the DOM; visibility is toggled purely by a @media (min-width: 768px) CSS block (no JS matchMedia/resize listener). theme-persistence.spec.ts sets real viewports (1024x768 and 375x812) and asserts one variant toBeVisible() and the other toBeHidden() via Playwright's real browser layout engine (not jsdom, which cannot apply media queries to computed layout). Ran this test myself, it passes.
+2. Touch target 44x44px: CONFIRMED via actual boundingBox() measurement (not just CSS inspection) for both variants: segmented buttons (looped over all 3 radios) and the cycling button, both at their respective active viewport. CSS declares min-width/min-height 44px on both classes, and no conflicting rule collapses it - the measured boxes match the declared minimums.
+3. LiveRegion component: CONFIRMED genuinely shared: used by ThemeSwitcher.svelte, LanguageSwitcher.svelte, and conditionally by +page.svelte (3 independent call sites), not a rename of a single old workaround. Read +page.svelte's conditional logic directly: the page's own LiveRegion is gated by {#if liveMessage} and only carries the result-transition announcement; ThemeSwitcher's LiveRegion is unconditionally mounted alongside its own control. Minor imprecision found: the apply-progress claim that they are "mounted mutually exclusively" is not literally accurate - ThemeSwitcher's LiveRegion is always present in the DOM (empty string most of the time), not conditionally excluded when the page's result LiveRegion mounts. Not a functional defect (multiple simultaneous ARIA live regions with distinct/empty content do not conflict per the ARIA spec; live-region.test.ts plus the e2e suite pass), just an inexact description in prior narration. SUGGESTION, not a blocker.
+4. Focus management: CONFIRMED via direct code read and a passing e2e assertion. ResultView.svelte uses an $effect to focus the h2#result-heading (tabindex="-1"); ErrorPanel.svelte does the same on its role="alert" div. upload-to-result.spec.ts asserts toBeFocused() on both the result heading after a successful upload and the alert after a validation error - real document.activeElement checks via Playwright, both pass.
+5. No-color-only-status: CONFIRMED by direct code read. ScoreSummary.svelte: classification is always rendered as text; risk-tier color is applied only via a border-color on the container (secondary cue); INCONCLUSIVE has zero entry in the risk-tier map so it gets no color class at all, text is the only signal. EvidenceItem.svelte: severity is rendered as an uppercase text label with no color styling of any kind (only a neutral muted color, not severity-coded). Both hold.
+6. Playwright suite tests something real: CONFIRMED. All e2e specs that call the API use page.route interception; theme-persistence.spec.ts correctly does not call the API at all given its scope. Read every assertion: each spec has at least one non-tautological assertion that would fail if the underlying feature broke - e.g. upload-to-result.spec.ts asserts the masked CBU regex, an exact evidence-item count, and zero matches for the raw server limitations text (would catch a regression that renders the server string verbatim); locale-switch.spec.ts asserts the analyze call count stays 1 after a locale switch (would catch an accidental re-fetch). Ran npx playwright test myself: 9/9 pass. Confirmed real-api.spec.ts is tagged @real-api and playwright.config.ts's grepInvert correctly excludes it by default - it did not run locally or in the CI log.
+7. CI Playwright job: CONFIRMED. .github/workflows/ci.yml's web-e2e job runs npx playwright install --with-deps chromium (chromium only, matching playwright.config.ts's single chromium project), needs: web, and the CI log for run 33714629965's Playwright job shows "Running 9 tests using 2 workers" / "9 passed" - the same 9 specs that pass locally, not a silently-skipped or truncated run.
+8. Full regression check: CONFIRMED, re-ran the full suite myself: npx vitest run gives 153/153 passing across 24 files. Spot-checked the specific invariants: ReconciliationNotice is unconditionally mounted in +page.svelte outside any state-dispatch branch - disclaimer-always-renders holds structurally. ScoreSummary's INCONCLUSIVE path has zero color-tier class (point 5). ExtractedDataTable/EvidenceItem masked-value-only logic unchanged from slice 1b. key-parity.test.ts (3/3) confirms bilingual key-set equality still holds after slice 4's new theme.cycleLabel/a11y.resultAnnouncement/a11y.errorAnnouncement keys. app.html's anti-flash inline script is untouched by this PR's diff and is independently verified by theme-persistence.spec.ts's addInitScript probe (real browser, first-paint check) - passes.
+9. a11y.errorAnnouncement unused-key note: CONFIRMED genuinely harmless, not a gap. Both es.json and en.json define the key, key-parity.test.ts passes (3/3), and ErrorPanel.svelte renders with role="alert", a native assertive live region per the ARIA spec - no additional wiring needed for it to be announced. The key exists in the catalog for parity/future use only.
+10. Backend untouched across all 6 slices: CONFIRMED. cd apps/api and uv run pytest passes with zero failures (some skipped, OCR-model-dependent, pre-existing). No apps/api file appears in any of the 6 PRs' diffs.
+11. Diff stats: git diff --stat origin/dev...HEAD (PR #18 alone): 25 files changed, 803 insertions(+), 61 deletions(-). Apply-progress recorded 801(+); the 2-line difference is immaterial narration noise, not a functional discrepancy. git diff --stat main...dev -- apps/web (whole 6-slice frontend capability, cumulative): 62 files changed, 7204 insertions(+), 0 deletions(-) - the total delivered frontend surface across PRs #13-#18.
+
+### CRITICAL finding (new, found this session, not previously flagged in any prior slice's verify report)
+
+Hardcoded, permanently-Spanish user-facing strings remain in apps/web/src/routes/+page.svelte, bypassing the i18n system entirely, and were never caught by any test or CI gate.
+
+Directly inspected +page.svelte (unchanged in this respect since slice 1a/1b, commits 3eca406/75c7802 - slice 4 only added the liveMessage/focus-adjacent wiring, not a copy fix):
+
+- Line 39: the h1 heading "Analiza un comprobante antes de conciliarlo" is hardcoded, no i18n.t() call.
+- Line 41: the intro paragraph describing detected signals is hardcoded.
+- Line 53: the wrapping div's aria-label "Estado del analisis" is hardcoded.
+- Line 76: the reset button's text "Analizar otro comprobante" is hardcoded.
+
+These four strings never change when the user switches to English via LanguageSwitcher. This directly contradicts:
+- The frozen ui-localization-and-theming spec scenario "Language switch updates all visible copy": every user-facing string (upload flow, results, disclaimers, checklist) must render in English without a page architecture change - the page's own h1/intro/aria-label/reset-button are part of the upload flow and do not render in English.
+- The proposal's explicit Success Criteria: "No user-facing string is hardcoded outside the message store after slice 3."
+
+Root cause of why this was never caught, confirmed by reading each gate directly:
+1. literal-audit.test.ts (added slice 3b) only globs src/lib/components/*.svelte - it never scans src/routes/+page.svelte or +layout.svelte, so this class of file was structurally out of its scope from the day it was written.
+2. Even if scope were widened, the audit's detection method only matches accented characters - this catches the h1/paragraph/aria-label (all contain accents) but would not catch line 76's button text (zero accented characters), so widening the glob alone would still miss one of the four literals. This is a second, independent detection-method gap.
+3. locale-switch.spec.ts's two tests only assert the ResultView's heading text changes and that the drop-zone placeholder text and switcher labels are correct - neither test visits or asserts anything about the page's own h1, intro paragraph, or the post-result reset button, so the e2e suite's green run gives no signal here.
+4. +layout.svelte's header brand "Receipt Risk Detector" is a proper noun/product name and is correctly left untranslated (not a defect) - unrelated to this finding.
+
+This is a genuine, user-visible spec-compliance gap in the final slice of a 6-slice change about to be archived as fully delivered. It does not fail any existing automated gate, which is precisely the problem: the gates have a structural blind spot. CI green and 153/153 unit plus 9/9 e2e passing do not, by themselves, prove full compliance with the frozen "every user-facing string" scenario.
+
+### tasks.md vs code state
+All 12 Slice 4 tasks [x] match code state - every task's literal deliverable exists and is tested. The CRITICAL finding above is not a slice-4-introduced regression and is not attributable to an unchecked slice-4 task (it predates slice 4, coming from slice 1a's original +page.svelte, and slice 3b's literal-sweep tasks were scoped to lib/components/ in tasks.md itself). It is flagged here because slice 4 is the last checkpoint before this whole change is considered complete, and the frozen spec scenario it violates was never independently re-checked against the routes layer in any of slices 2-4's verify passes.
+
+### Final verdict
+FAIL (spec-compliance CRITICAL). Slice 4's own 12 tasks are complete and correctly tested; the Playwright suite, CI job, focus management, ThemeSwitcher fixes, LiveRegion sharing, and no-color-only-status audits all independently check out exactly as claimed, with real runtime evidence. However, a CRITICAL, previously-unflagged gap against the frozen ui-localization-and-theming spec's "every user-facing string" requirement exists in +page.svelte and must be corrected, with a companion fix to literal-audit.test.ts's scope (include src/routes/) and detection method (do not rely on accented characters alone), before the 6-slice ui-frontend-implementation change can be archived as fully compliant with its own frozen spec.

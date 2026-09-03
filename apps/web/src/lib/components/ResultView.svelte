@@ -29,10 +29,22 @@
   let { result }: { result: AnalyzeResponse } = $props();
 
   const i18n = getI18nContext();
+
+  // Slice 4 focus management: `+page.svelte` mounts a fresh `ResultView`
+  // per successful analysis, replacing the drop zone/processing UI. Without
+  // this, keyboard/screen-reader focus stays on whatever element it was on
+  // before submission (or resets to the document body), which is now
+  // irrelevant. Moving focus to the result heading orients the user at the
+  // start of the new content instead.
+  let headingEl: HTMLHeadingElement | undefined;
+
+  $effect(() => {
+    headingEl?.focus();
+  });
 </script>
 
 <section class="result-view" aria-labelledby="result-heading">
-  <h2 id="result-heading">{i18n.t('result.heading')}</h2>
+  <h2 id="result-heading" bind:this={headingEl} tabindex="-1">{i18n.t('result.heading')}</h2>
 
   <ScoreSummary
     classification={result.classification}
@@ -72,6 +84,15 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
+  }
+
+  /* Slice 4: the heading receives programmatic focus on render (see
+     script). `outline: none` would hide that from sighted keyboard users,
+     so it keeps a visible `--color-focus` ring like every other focusable
+     control (DESIGN.md §12/§13 "focus ring uses --color-focus"). */
+  .result-view h2:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
 
   .result-view__limitations {

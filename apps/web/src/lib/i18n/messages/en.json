@@ -1,6 +1,11 @@
 {
   "common.retry": "Retry",
 
+  "page.title": "Analyze a receipt before reconciling it",
+  "page.intro": "We detect signs of manipulation, digital provenance and inconsistencies to help you review a transfer.",
+  "page.statusRegionLabel": "Analysis status",
+  "page.analyzeAnother": "Analyze another receipt",
+
   "header.brand": "Receipt Risk Detector",
   "header.language.groupLabel": "Language",
   "header.language.switchToEs": "Switch to Spanish",
@@ -14,6 +19,7 @@
   "theme.light": "Light",
   "theme.dark": "Dark",
   "theme.announcement": "Theme: {label}",
+  "theme.cycleLabel": "Change theme (current: {label})",
 
   "upload.dropzone.heading": "Drag or select a receipt",
   "upload.dropzone.constraints": "PNG, JPG or WebP · 10 MB max",
@@ -81,5 +87,8 @@
   "evidence.severity.high": "High",
   "evidence.severity.critical": "Critical",
   "evidence.confidenceLabel": "Confidence",
-  "evidence.scoreContributionLabel": "Score contribution"
+  "evidence.scoreContributionLabel": "Score contribution",
+
+  "a11y.resultAnnouncement": "Analysis complete. The result is available.",
+  "a11y.errorAnnouncement": "An error occurred. Check the message to continue."
 }

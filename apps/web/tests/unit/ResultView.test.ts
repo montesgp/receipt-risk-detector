@@ -97,6 +97,18 @@ describe('ResultView', () => {
     expect(screen.getByText(es['legal.disclaimer'])).toBeTruthy();
   });
 
+  it('moves focus to the result heading when it renders (focus management, slice 4)', async () => {
+    // Batch instructions: "after an action completes (upload -> result...),
+    // focus should move sensibly ... rather than staying on a now-irrelevant
+    // element". `+page.svelte` mounts a fresh `ResultView` per successful
+    // analysis, so mount-time focus is the correct hook.
+    renderResult(buildResponse());
+    await Promise.resolve();
+
+    const heading = screen.getByRole('heading', { name: es['result.heading'] });
+    expect(document.activeElement).toBe(heading);
+  });
+
   it('contains no forbidden authenticity language, regardless of classification', () => {
     for (const classification of ['LOW_RISK', 'REVIEW_RECOMMENDED', 'SUSPICIOUS', 'HIGH_RISK', 'INCONCLUSIVE']) {
       const { unmount, container } = renderResult(buildResponse({ classification }));
