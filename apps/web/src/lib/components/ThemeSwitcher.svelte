@@ -103,11 +103,15 @@
 
   <button
     type="button"
-    class="theme-switcher__cycle flex h-11 w-11 items-center justify-center rounded-full border border-ui-line text-base text-ui-muted transition-colors hover:text-ui-fg md:hidden"
+    class="theme-switcher__cycle flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-ui-line px-3 text-sm text-ui-muted transition-colors hover:text-ui-fg md:hidden"
     aria-label={i18n.t('theme.cycleLabel', { label: currentLabel })}
     onclick={cycle}
   >
     <span aria-hidden="true">{currentOption.icon}</span>
+    <!-- DESIGN.md §12: "a cycling icon button with a visible current-state
+         label" — state must be conveyed as visible text, not only via
+         aria-label. Kept minimal (small text, no extra chrome). -->
+    <span>{currentLabel}</span>
   </button>
 </div>
 <LiveRegion message={announcement} />
