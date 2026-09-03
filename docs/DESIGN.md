@@ -54,7 +54,13 @@ Do not mention or reproduce any external reference product in UI copy or reposit
 - Headline explains artifact-level risk analysis.
 - Large drop zone is immediately visible.
 - Supported formats and 10 MB limit are visible.
-- Privacy line appears adjacent to the upload action.
+- A static six-step pipeline explainer sits directly below the drop zone. It
+  describes the real steps (upload → file validation → metadata/C2PA
+  provenance → OCR extraction → CBU/CVU and CUIT/CUIL validation → risk and
+  confidence scoring), is non-interactive, and carries no live-region
+  semantics — it is not `ProcessingStages` (§4.3). PRD FR-013.
+- Privacy line appears adjacent to the upload action; the explainer never
+  displaces the reconciliation-limitation statement (§5).
 - No large marketing section delays the tool.
 
 Suggested Spanish copy:
@@ -291,8 +297,8 @@ Implements `ui-localization-and-theming` (FR-012 expanded per proposal D1); see
 | Aspect | Decision |
 | --- | --- |
 | Placement | Header right cluster, immediately right of the language switcher, left of API docs / GitHub links. Not in the main workspace — it must never compete with the upload action (§2.1). |
-| Control | Tri-state segmented control (System · Light · Dark) at ≥768 px; a cycling icon button with a visible current-state label below 768 px. Touch target ≥ 44 × 44 px. |
-| Default | `system` — first paint follows `prefers-color-scheme`. |
+| Control | Binary segmented control (Light · Dark) at ≥768 px; a cycling icon button with a visible current-state label below 768 px. Touch target ≥ 44 × 44 px. |
+| Default | First paint follows `prefers-color-scheme`; the control reflects the *resolved* theme, so no third "System" option is exposed. |
 | Persistence | `localStorage['rrd.theme']`. Explicit choices persist; `system` re-subscribes to the OS preference and updates live via a `matchMedia` change listener. |
 | First paint | A small blocking inline script in `app.html` sets `data-theme` before body render. Without it the light tokens flash before a dark preference applies. |
 | Transition | Adding `data-theme` toggles a 160 ms transition (inside the 120–220 ms range in §9) on `background-color`, `color` and `border-color` only, applied through a temporary `theme-transition` class removed on `transitionend`. Never transition `box-shadow` or layout properties. |
@@ -300,10 +306,16 @@ Implements `ui-localization-and-theming` (FR-012 expanded per proposal D1); see
 | Accessibility | Native `<button>`/radio semantics with `aria-pressed` or `aria-checked`; focus ring uses `--color-focus`; the change is announced through the existing ARIA live region. |
 | Constraint | Risk colors must keep WCAG AA contrast in both themes (§6.3). Green still means low artifact risk, never "authentic". |
 
-Stored value: `rrd.theme ∈ {system, light, dark}`, applied by setting `data-theme` and `color-scheme`
-on `<html>` (design.md DD3). Cookie + SSR was rejected because it needs server state, contradicting
-the static-deployable web service; a binary light/dark toggle was rejected for removing the way back
-to the OS preference; CSS-only `@media` was rejected for giving the user no override.
+Stored value: `rrd.theme ∈ {light, dark}`, applied by setting `data-theme` and
+`color-scheme` on `<html>` (design.md DD3). Nothing is stored until the user
+makes an explicit choice, so an untouched install keeps following the OS
+preference live via `matchMedia`. `ThemeMode` retains an internal `'system'`
+value as that pre-choice default; it is never persisted and never rendered as
+an option. Cookie + SSR was rejected because it needs server state,
+contradicting the static-deployable web service; CSS-only `@media` was
+rejected for giving the user no override. A visible third "System" control was
+removed in the ui-design-refresh change: it duplicated the already-automatic
+default while costing a third of the control's width.
 
 ## 13. Language switcher UX
 
