@@ -390,3 +390,63 @@ All Slice 3 tasks complete and verified against code. The controller.resolved bu
 3. git diff origin/dev...HEAD for theme.svelte.ts returns empty output, which is the correct way to prove a file is untouched across a branch delta rather than trusting a stated claim.
 4. Playwright assertions for the 768px breakpoint and the 44x44px touch target must be checked as named individual test results, not just inferred from an aggregate N-of-N pass count.
 5. Heredoc content with many embedded single quotes can break the surrounding shell invocation; routing multi-paragraph report text through an intermediate scratch file with single-quote-free prose avoids that failure mode.
+
+## Slice 4 -- Pipeline Explainer (PR #24, feat/web-pipeline-explainer -> dev)
+
+### Completeness
+
+All 9 Slice 4 tasks (4.1-4.9) in tasks.md are checked and match shipped code:
+PipelineExplainer.svelte created per design.md exact markup, 13 upload.pipeline.* keys
+added to es.json/en.json, component wired into +page.svelte idle branch, e2e assertion
+added, PRD FR-013 added, spec delta already frozen and matches shipped scenarios.
+
+### Spec Compliance Matrix
+
+| Scenario | Status | Evidence |
+|---|---|---|
+| Idle state shows constraints and disclaimer (unchanged baseline) | PASS | e2e test "idle state shows the pipeline explainer below the drop zone without displacing the disclaimer" asserts drop zone, explainer heading, AND the reconciliation disclaimer are simultaneously visible; ReconciliationNotice remains unconditionally mounted in +page.svelte, untouched by this diff |
+| Idle state renders the pipeline explainer (6 real steps, bilingual, no live-region, distinct from ProcessingStages) | PASS | PipelineExplainer.test.ts (4/4): 6 li items in ES, 6 in EN, no role=status or aria-live present; component structurally separate from ProcessingStages.svelte; e2e test confirms 6 li items and heading text render in the browser |
+| Pipeline explainer never overstates system capability (forbidden-language guard) | PASS | 4th unit test scans rendered ES+EN text against real, fake, autentic-oa, authentic, verificad-oa word-boundary, and verified transfer patterns; literal-audit.test.ts additionally globs src/lib/components/*.svelte (includes PipelineExplainer.svelte) and src/routes/**/*.svelte for any hardcoded literal outside i18n catalogs |
+
+### Independent Verification Findings
+
+1. RED-before-GREEN: The apply report claim (import-resolution failure before the component existed) cannot be verified from git history directly -- the branch has a single squash commit (4fb4a8d, feat(web): add bilingual pipeline explainer to idle upload state) containing both the test and the component, consistent with every prior slice in this chain (one commit per PR, no intermediate WIP commits pushed). This is the same pattern already accepted in Slices 1-3 verify passes and is not unique to Slice 4. The test file content itself, the code comments referencing the RED/GREEN cycle, and the TDD Cycle Evidence table in apply-progress are internally consistent and plausible, but this is process-trail evidence, not independently re-derivable proof. Not a blocker; flagged as a known limitation of the squash-commit workflow, same as prior slices.
+2. Idle-state-only visibility -- structurally confirmed: Read +page.svelte line-by-line. PipelineExplainer is mounted at line 64, directly inside the workspace.status idle branch (opened line 62), immediately after DropZone (line 63), and before the selected-state branch (line 65). It is not a sibling gated by a separate condition, not always-mounted, and unmounts automatically on every other status transition (selected/uploading/result/error). ReconciliationNotice (line 45) is confirmed separately mounted unconditionally above the status region, matching DD7 and the never-displace-the-disclaimer requirement.
+3. Six pipeline steps match the real backend, in an order that is accurate: Read apps/api/src/receipt_risk/application/analyze_receipt.py. Confirmed execution shape: ingestion.ingest() is a HARD synchronous gate before any analyzer runs (matches step 2 file validation preceding steps 3-4) then _run_analyzers fans out OCR/metadata/provenance analyzers concurrently under a semaphore (matches steps 3 metadata/C2PA provenance and 4 OCR extraction both being real, independent pipeline stages) then validate_financials(ocr_result.extracted_fields) runs only after the OCR result is available (matches step 5 CBU/CVU and CUIT/CUIL validation correctly following step 4 OCR extraction, this dependency is real, not just narratively convenient) then assemble(...) runs last and produces the FraudAssessment (matches step 6 risk/confidence scoring as the final step). One nuance: the backend runs metadata/provenance and OCR analyzers concurrently (not strictly step-3-then-step-4 sequentially), so presenting them as a numbered 3-then-4 sequence is a simplification for a first-time visitor, not a factual inaccuracy, both stages are real, both occur, and the one genuine sequential dependency (identifiers validation needs OCR extracted fields first) is correctly ordered. Copy content itself (title/detail text) accurately describes each stage real behavior (formats/size checks, C2PA content credentials, own OCR, digit verification, risk+confidence score) with no invented capability. Minor SUGGESTION, not a blocker.
+4. Translation quality: Read all 13 EN keys against their ES counterparts side by side. Translations are natural, idiomatic English (not literal/machine-translated), e.g. Subis el comprobante becomes You upload the receipt (not You upload the voucher), Comprobamos los digitos verificadores becomes We check the verification digits (correct financial/technical term, not verifying digits). No mistranslation or capability drift between locales found.
+5. Forbidden-language guard test coverage: Confirmed PipelineExplainer.test.ts 4th test independently renders both locales and scans for the six forbidden patterns. Confirmed the previously-reported false positive is fixed: the regex is word-boundary-anchored around verificad-oa (case-insensitive), which does NOT match verificadores (present in the ES identifiers.detail copy) because verificadores is a distinct token, not a substring match under word-boundary anchors. Re-ran the full suite; test passes, and verificadores remains in the shipped ES copy without tripping the guard.
+6. Key parity: independently diffed es.json and en.json key sets (Node Object.keys diff) -- 95 keys each, zero keys unique to either file, including all 13 new upload.pipeline.* keys.
+7. PRD FR-013: read the full new section (docs/PRD.md lines 242-250). Well-formed, consistent with the frozen spec delta wording (static, non-interactive, bilingual, six steps from FR-001-FR-007, no live-region semantics, distinct from ProcessingStages, does not displace the disclaimer, forbidden-language rule referenced). No drift from the spec.
+8. No injected instruction-shaped text was found in any file read during this verification pass (PipelineExplainer.svelte, PipelineExplainer.test.ts, +page.svelte, es.json/en.json, PRD.md, tasks.md, design.md, literal-audit.test.ts, upload-to-result.spec.ts). The prompt-injection incident reported by the apply-phase agent (a fake system-reminder demanding AI attribution trailers) is not present in any committed file in this branch; the Slice 4 commit message and PR use plain conventional-commit text with no AI attribution trailer.
+
+### Command Evidence (independently re-run)
+
+| Command | Result |
+|---|---|
+| cd apps/web then npx vitest run | 25 files, 161/161 passed (matches apply report exactly) |
+| cd apps/web then npm run check | svelte-kit sync and svelte-check -- 404 files, 0 errors, 0 warnings |
+| cd apps/web then npx playwright test | 10/10 passed, including the new idle-state assertion in upload-to-result.spec.ts |
+| cd apps/api then uv run pytest -q | All tests pass/skip, no failures -- API untouched, confirmed also by git diff --stat below |
+| git diff --stat origin/dev...HEAD | 8 files changed, 178 insertions(+), 9 deletions(-) -- matches apply report exactly, zero apps/api files touched |
+
+### Issues
+
+CRITICAL: None.
+
+WARNING: None.
+
+SUGGESTION:
+1. The pipeline explainer presents metadata/C2PA provenance (step 3) and OCR extraction (step 4) as a strict numbered sequence, but the backend (AnalyzeReceiptUseCase._run_analyzers) actually runs these two analyzers concurrently under a shared semaphore rather than one-after-the-other. This is a reasonable simplification for end-user copy (both stages are real and both occur), not a factual misstatement, and does not violate the frozen spec wording. No action required before merge; worth a note if the copy is ever revisited to describe stages as running in parallel rather than strictly sequential.
+2. RED-before-GREEN evidence for this slice is only reconstructible from the apply-progress narrative and code comments, not from git history, because the branch ships as a single squash commit. This matches the pattern of every prior slice verify pass and is not a new or slice-4-specific gap.
+
+### Final Verdict: PASS
+
+All 9 Slice 4 tasks are complete and verified against shipped code. The three frozen spec scenarios (baseline constraints unchanged, six-step bilingual explainer, forbidden-language guard) are each covered by a passing runtime test, independently re-run. Idle-state-only visibility is structurally confirmed by reading the exact conditional branch in +page.svelte, not merely by trusting the claim. The six pipeline steps accurately describe the real backend pipeline in analyze_receipt.py, including its one genuine sequential dependency (identifiers validation requires OCR output). i18n key parity, translation quality, and the forbidden-word-boundary regex fix all hold under independent re-verification. No AI-attribution or injected-instruction artifacts found in any file. PR #24 is clear to merge from a verification standpoint.
+
+## Key Learnings (Slice 4)
+
+1. The pipeline explainer numbered 6-step sequence is a user-facing simplification of a backend that runs metadata/provenance and OCR analyzers concurrently, not strictly sequentially, but both stages are still real, so this is not a factual accuracy issue.
+2. validate_financials in analyze_receipt.py only runs when an OCR result exists, which independently confirms the CBU/CVU and CUIT/CUIL validation step genuinely depends on the OCR extraction step completing first, matching the copy implied order.
+3. Squash-commit-per-slice branches make RED-before-GREEN unrecoverable from git history alone; this is a recurring, accepted limitation across all five slices verified so far, not specific to Slice 4.
+4. The forbidden-word regex fix (word-boundary-anchored around verificad-oa instead of unanchored) is confirmed correct: it excludes verificadores (present in shipped ES copy) while still catching verificado and verificada as standalone words.
+5. Reading the exact idle-state conditional block structure in +page.svelte is the only reliable way to prove idle-state-only visibility; an aggregate passing test count does not by itself prove the mount is scoped correctly.
