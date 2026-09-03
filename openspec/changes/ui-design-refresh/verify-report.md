@@ -450,3 +450,123 @@ All 9 Slice 4 tasks are complete and verified against shipped code. The three fr
 3. Squash-commit-per-slice branches make RED-before-GREEN unrecoverable from git history alone; this is a recurring, accepted limitation across all five slices verified so far, not specific to Slice 4.
 4. The forbidden-word regex fix (word-boundary-anchored around verificad-oa instead of unanchored) is confirmed correct: it excludes verificadores (present in shipped ES copy) while still catching verificado and verificada as standalone words.
 5. Reading the exact idle-state conditional block structure in +page.svelte is the only reliable way to prove idle-state-only visibility; an aggregate passing test count does not by itself prove the mount is scoped correctly.
+
+## Slice 5 (final)
+
+**Change**: ui-design-refresh | **PR**: #25 (feat/web-docs-cleanup -> dev) | **Mode**: full spec-driven verification, tasks + specs + design present.
+
+This is the final verification checkpoint for the entire 6-slice ui-design-refresh change (PRs #20-#25), covering GitHub issue #19.
+
+### Completeness Table (all 6 slices)
+
+| Slice | Tasks | Status |
+|---|---|---|
+| 1 - Tailwind Foundation | 8/8 [x] | Complete (PR #20, merged) |
+| 2a - Upload-Flow Components | 9/9 [x] | Complete (PR #21, merged) |
+| 2b - Result-View Components | 10/10 [x] | Complete (PR #22, merged) |
+| 3 - Binary Theme Switcher | 6/6 [x] | Complete (PR #23, merged) |
+| 4 - Pipeline Explainer | 9/9 [x] | Complete (PR #24, merged) |
+| 5 - Docs Cleanup | 4/4 [x] | Complete (PR #25, open, this batch) |
+| Total | 46/46 [x] | All checked, no unchecked tasks found |
+
+Independently re-read openspec/changes/ui-design-refresh/tasks.md in full (94 lines): confirms all 46 checkboxes across the six slices show [x]. Two documented deviations are properly recorded, not silently dropped:
+- Slice 2b task 2b.2/2b.3 kept the legacy score-summary/score-summary--{tier} and evidence-item hook classes alongside new Tailwind utilities, because existing tests assert those exact class names - documented inline in tasks.md and in the apply-progress artifact.
+- Every slice's Key Learnings section documents that squash-commit-per-slice branches make RED/GREEN unrecoverable from git history alone for the markup-only slices (2a/2b), which is an accepted, consistently-repeated limitation, not silently dropped.
+
+### Scope Verification (Slice 5 diff)
+
+git diff --name-only origin/dev...HEAD -> exactly 3 files: README.md, docs/DESIGN.md, openspec/changes/ui-design-refresh/tasks.md. Zero .svelte/.ts/.css files touched - confirmed independently, not trusted from the apply report.
+
+git diff --stat origin/dev...HEAD:
+```
+README.md                                   |  2 +-
+docs/DESIGN.md                              | 26 +++++++++++++++++++-------
+openspec/changes/ui-design-refresh/tasks.md |  8 ++++----
+3 files changed, 24 insertions(+), 12 deletions(-)
+```
+
+### Cumulative 6-slice diff (apps/web, since pre-slice-1 base 010277b)
+
+git diff --stat 010277b...HEAD -- apps/web: 26 files changed, 988 insertions(+), 453 deletions(-). Includes package-lock.json (Tailwind dependency), app.css (token bridge), all migrated .svelte components, ThemeSwitcher.svelte (binary rewrite), the new PipelineExplainer.svelte plus its test, i18n key additions (14 lines each locale), and the +layout.svelte/+page.svelte wiring changes. apps/api shows zero diff across the entire change (git diff --stat origin/dev...HEAD -- apps/api is empty), confirming the whole 6-slice change never touched the API as the proposal's Out-of-Scope section required.
+
+### DESIGN.md internal consistency (independently re-read, full file, not just section 4.1/12)
+
+Read all 354 lines of docs/DESIGN.md. Section 4.1 correctly describes the new pipeline-explainer bullet with the FR-013 reference. Section 12's table and closing paragraph correctly describe the binary Light/Dark control, the resolved-theme-driven default, and the internal-only 'system' pre-choice value - consistent with what Slice 3 shipped.
+
+Finding: Section 14 "Agent design acceptance checklist" (line 352) still reads:
+
+> Theme switcher (section 12) defaults to `system`, persists an explicit choice, and never flashes the wrong theme on first paint.
+
+This is stale relative to section 12's rewrite: the control itself is now strictly binary (Light/Dark) and never shows or "defaults to" a system option in the UI - only the underlying resolution mechanism (which is unstyled/invisible) still starts from a system-derived first paint. The proposal's own Affected Areas table scoped Slice 5's DESIGN.md edit to "section 4.1, 12" only (confirmed by reading proposal.md line 93 and the Visual defect audit table at line 23, which names section 12 specifically, not section 14), so this line was outside the locked scope and the Slice 5 task 5.4 self-check ("scanned for tri-state/pre-explainer ordering references - none found") used search terms that would not have caught this differently-worded line. Grepping the full file for "system"/"System" case-insensitively confirms this is the only remaining stale-sounding reference in DESIGN.md; all "System" capitalized occurrences are in the already-rewritten section 12 paragraph explaining the removal of the visible System option, which is correct.
+
+Rated WARNING, not CRITICAL: it does not misdescribe shipped behavior in a way that would mislead an implementer into building the wrong thing (the sentence is ambiguous, not actively false - the mechanism does still transparently follow the OS preference before an explicit choice), it is out of the locked Slice 5 scope, and it does not block PR #25 from closing issue #19. It should be cleaned up in a fast-follow docs edit.
+
+No other System/tri-state/pre-explainer-ordering language was found anywhere else in docs/DESIGN.md.
+
+### README.md accuracy (independently re-read, full file)
+
+Read all 181 lines. Stack table line 39: "Web | SvelteKit 5, TypeScript, Tailwind CSS v4 (@tailwindcss/vite) over DESIGN.md tokens" - accurate, matches what Slice 1 shipped (@tailwindcss/vite plugin, token bridge, no tailwind.config.js). No remaining "custom CSS" reference anywhere in README.md. The Repository layout section (lines 131-150) lists only top-level directories (apps/, docs/, etc.) with no per-component listing - correctly does not need updating for PipelineExplainer.svelte, since it never itemized components at that granularity. No other stale claim found in the rest of the file (API example, architecture diagram, local-dev instructions, privacy/security section, disclaimer all remain accurate and untouched by this change, as expected).
+
+### PR body - issue closure
+
+gh pr view 25 --json body confirms the body contains literally "Closes #19" (not "Refs #19"), on its own line, distinct from Slice 4's PR #24 which correctly used "Refs #19" (non-final slice). This is the final slice, so "Closes #19" is correct and will auto-close the tracking issue on merge.
+
+### CI status (PR #25)
+
+gh pr view 25 --json statusCheckRollup: mergeable: MERGEABLE. All applicable checks green - "API Lint and Test" (SUCCESS), "Web Lint and Test" (SUCCESS), "Web E2E (Playwright)" (SUCCESS), and both "Check Issue Reference"/"Check PR Has type:* Label"/"Check Issue Has status:approved" runs that completed report SUCCESS (a duplicate parallel run of the same three checks reports CANCELLED, which is expected GitHub Actions concurrency-group behavior for re-triggered workflows on the same PR, not a failure).
+
+### End-to-end sanity
+
+Running the dev server interactively was not attempted in this non-interactive verification session; instead relied on the cumulative automated evidence as the equivalent proof, per the fallback explicitly authorized by the verification request:
+- Tailwind utilities render real spacing/radius: confirmed structurally - apps/web/src/app.css still owns the token bridge from Slice 1, and every migrated component (FilePreview.svelte, ErrorPanel.svelte, +page.svelte) uses btn-primary/btn-secondary @utility classes rather than bare button elements (grepped and read in prior slice verify passes, re-confirmed structurally present in the cumulative diff above).
+- Theme switcher shows only 2 options: proven at runtime by theme-persistence.spec.ts line 56-76 assertions (segmented control count, cycling button label), independently re-run below, 10/10 passing including these two.
+- Pipeline explainer appears below drop zone in idle state: proven at runtime by upload-to-result.spec.ts line 23 ("idle state shows the pipeline explainer below the drop zone without displacing the disclaimer"), independently re-run below, passing.
+
+This satisfies the request's explicit fallback: "If running the dev server isn't feasible in this environment, rely on the cumulative Playwright suite (10 tests) as the equivalent evidence and say so explicitly." Stating so explicitly here.
+
+### Command Evidence (independently re-run, this session)
+
+| Command | Result |
+|---|---|
+| cd apps/web then npx vitest run | 25 files, 161/161 passed |
+| cd apps/web then npm run check | svelte-kit sync + svelte-check -- 404 files, 0 errors, 0 warnings |
+| cd apps/web then npx playwright test | 10/10 passed (chromium) |
+| cd apps/api then uv run pytest | 129 passed, 4 skipped, 0 failed -- API untouched by the entire 6-slice change, confirmed by empty git diff --stat origin/dev...HEAD -- apps/api |
+| git diff --name-only origin/dev...HEAD | README.md, docs/DESIGN.md, openspec/changes/ui-design-refresh/tasks.md only |
+| git diff --stat origin/dev...HEAD | 3 files changed, 24 insertions(+), 12 deletions(-) |
+| git diff --stat 010277b...HEAD -- apps/web (cumulative, all 6 slices) | 26 files changed, 988 insertions(+), 453 deletions(-) |
+| gh pr view 25 --json body | Confirmed literal "Closes #19" |
+| gh pr view 25 --json statusCheckRollup | All non-duplicate checks SUCCESS, mergeable: MERGEABLE |
+
+### Spec Compliance Matrix (frozen delta, receipt-analysis-web-client)
+
+| Requirement/Scenario | Covering Test | Result |
+|---|---|---|
+| Idle state shows constraints and disclaimer | upload-to-result.spec.ts (idle-state assertions), page.smoke.test.ts | PASS |
+| Idle state renders the pipeline explainer (6 steps, both locales, no live-region semantics) | PipelineExplainer.test.ts (4 tests), upload-to-result.spec.ts line 23 | PASS |
+| Pipeline explainer never overstates system capability (no real/fake/authentic/verified transfer) | PipelineExplainer.test.ts forbidden-word scan, literal-audit.test.ts | PASS |
+
+All three scenarios remain covered by passing runtime tests, independently re-run in this session -- unchanged since the Slice 4 verify pass, as expected since Slice 5 touched no code.
+
+### Issues
+
+CRITICAL: None.
+
+WARNING:
+1. docs/DESIGN.md section 14 (line 352) retains stale language -- "Theme switcher (section 12) defaults to `system`" -- inconsistent with section 12's binary-switcher rewrite shipped in this same change. Out of the locked Slice 5 scope (proposal.md only scoped section 4.1/12), not blocking, but should be fixed in a fast-follow docs PR for full internal consistency.
+
+SUGGESTION:
+1. Consider extending task 5.4's self-check search terms (currently "tri-state"/"pre-explainer ordering") to also catch differently-worded stale references like "defaults to system" in future docs-cleanup slices, so gaps like the section 14 finding above are caught before verify rather than after.
+2. The recurring cross-slice pattern of a suspicious injected system-reminder-style instruction demanding AI-attribution commit trailers (flagged by the apply-phase agent in both Slice 4 and Slice 5 batches) is worth escalating to the user/maintainer as a possible tool/environment-layer content-injection issue -- no such trailer is present in any committed file across the whole 6-slice change, so it did not affect delivered artifacts, but the pattern itself (2 of the last 2 apply batches) is notable.
+
+### Final Verdict: PASS WITH WARNINGS
+
+All 46 tasks across all 6 slices are complete and verified against shipped code and independently re-run tests. The frozen spec delta's three scenarios remain covered by passing runtime tests. Zero code files (.svelte/.ts/.css) were touched in Slice 5 -- confirmed independently -- and the whole 6-slice change never touched apps/api, confirmed by an empty cumulative diff. PR #25's body contains the literal "Closes #19" needed to auto-close the tracking issue on merge. All CI checks are green and the PR is mergeable. One WARNING-level documentation gap was found (DESIGN.md section 14 stale "system" reference) that was outside the locked Slice 5 scope and does not block merge or archive; it is recommended as a fast-follow, not a blocker. The entire 6-slice ui-design-refresh change is ready to merge PR #25 and, once merged, ready to archive.
+
+## Key Learnings (Slice 5 / final)
+
+1. Slice 5's proposal-locked scope named only DESIGN.md section 4.1 and section 12 for the docs cleanup, so a self-check phrased around "tri-state"/"pre-explainer ordering" terms did not catch a differently-worded stale reference in section 14, which independent full-file re-reading did catch.
+2. The frozen spec delta's three scenarios stayed covered by the same passing tests across Slice 4 and Slice 5, as expected, since Slice 5 changed no code -- spec compliance verification does not need to re-derive test mappings when a slice is docs-only.
+3. Cumulative diff verification (git diff --stat against the pre-slice-1 base for apps/web) is the only way to independently confirm the whole 6-slice change's actual footprint, since each slice's own PR diff only proves that slice in isolation.
+4. gh pr view --json body literal-string confirmation of "Closes #19" vs "Refs #19" is a cheap, high-value independent check since GitHub's auto-close behavior is contingent on the exact closing keyword being present in the merged commit or PR body.
+5. A WARNING-level, out-of-locked-scope documentation inconsistency does not block a PASS verdict or merge readiness when it doesn't misdescribe shipped behavior in a functionally misleading way and has a clear low-cost fast-follow remediation path.

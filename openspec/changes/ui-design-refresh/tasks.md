@@ -86,10 +86,10 @@ Chain strategy: stacked-to-main
 
 ## Slice 5: Docs Cleanup (PR 6, requires Slice 1–4 merged)
 
-- [ ] 5.1 `docs/DESIGN.md` §4.1: replace bullet list with the exact replacement text from design.md (adds pipeline-explainer bullet, PRD FR-013 reference)
-- [ ] 5.2 `docs/DESIGN.md` §12: replace Control/Default table rows and closing paragraph with the exact replacement text from design.md (binary switcher, `resolved`-based default, removed "System" option)
-- [ ] 5.3 `README.md` stack table: `custom CSS` → `Tailwind CSS v4 (@tailwindcss/vite) over DESIGN.md tokens`
-- [ ] 5.4 Confirm no other doc references the tri-state switcher or the pre-explainer §4.1 ordering
+- [x] 5.1 `docs/DESIGN.md` §4.1: replace bullet list with the exact replacement text from design.md (adds pipeline-explainer bullet, PRD FR-013 reference)
+- [x] 5.2 `docs/DESIGN.md` §12: replace Control/Default table rows and closing paragraph with the exact replacement text from design.md (binary switcher, `resolved`-based default, removed "System" option)
+- [x] 5.3 `README.md` stack table: `custom CSS` → `Tailwind CSS v4 (@tailwindcss/vite) over DESIGN.md tokens`
+- [x] 5.4 Confirm no other doc references the tri-state switcher or the pre-explainer §4.1 ordering — scanned `docs/DESIGN.md` and `README.md` (the only live/current docs in scope); remaining "tri-state" hits are in frozen `openspec/changes/archive/**` and `docs/features/mvp-init-foundation/SDD.md`, which are historical decision records left untouched intentionally
 
 ## Key Learnings
 

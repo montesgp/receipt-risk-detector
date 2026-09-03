@@ -36,7 +36,7 @@ MVP 1 excludes authentication, organizations, persistent history, bank connectio
 
 | Area | Technology |
 | --- | --- |
-| Web | SvelteKit 5, TypeScript, custom CSS |
+| Web | SvelteKit 5, TypeScript, Tailwind CSS v4 (@tailwindcss/vite) over DESIGN.md tokens |
 | API | Python 3.12+, FastAPI, Pydantic |
 | Image processing | Pillow, OpenCV |
 | OCR | PaddleOCR first; Tesseract as benchmark/fallback candidate |
