@@ -53,6 +53,7 @@
       class="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-semibold transition-colors"
       class:bg-ui-action={i18n.locale === option.locale}
       class:text-ui-action-fg={i18n.locale === option.locale}
+      class:bg-transparent={i18n.locale !== option.locale}
       class:text-ui-muted={i18n.locale !== option.locale}
       onclick={() => select(option.locale)}
     >

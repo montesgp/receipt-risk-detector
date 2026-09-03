@@ -5,6 +5,30 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
+/* ui-polish round 2: `--font-sans`/`--font-mono` below named "Geist Sans" /
+   "Geist Mono" since the first slice, but the actual font files were never
+   loaded — every browser silently fell back to system-ui, which is part of
+   why the UI read as generic. Self-hosted (not a Google Fonts/CDN request)
+   variable-weight woff2 files copied from the `geist` npm package
+   (SIL OFL 1.1 — see static/fonts/LICENSE.txt, bundled per the license's
+   redistribution requirement) into static/fonts, so it works offline and
+   without an extra external request. */
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 :root {

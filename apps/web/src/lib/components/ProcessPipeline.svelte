@@ -48,6 +48,7 @@
         class="rounded-ui-sm px-3 py-2 text-sm font-medium transition-colors"
         class:bg-ui-action={active === tab}
         class:text-ui-action-fg={active === tab}
+        class:bg-transparent={active !== tab}
         class:text-ui-muted={active !== tab}
         onclick={() => select(tab)}
         onkeydown={(event) => handleKeydown(event, index)}

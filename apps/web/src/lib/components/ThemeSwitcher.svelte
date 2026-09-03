@@ -91,6 +91,7 @@
         class="flex h-11 w-11 items-center justify-center rounded-full text-base transition-colors"
         class:bg-ui-action={active === option.mode}
         class:text-ui-action-fg={active === option.mode}
+        class:bg-transparent={active !== option.mode}
         class:text-ui-muted={active !== option.mode}
         onclick={() => select(option.mode)}
         onkeydown={(event) => handleKeydown(event, index)}
@@ -103,7 +104,7 @@
 
   <button
     type="button"
-    class="theme-switcher__cycle flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-ui-line px-3 text-sm text-ui-muted transition-colors hover:text-ui-fg md:hidden"
+    class="theme-switcher__cycle flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-ui-line bg-ui-surface px-3 text-sm text-ui-muted transition-colors hover:text-ui-fg md:hidden"
     aria-label={i18n.t('theme.cycleLabel', { label: currentLabel })}
     onclick={cycle}
   >

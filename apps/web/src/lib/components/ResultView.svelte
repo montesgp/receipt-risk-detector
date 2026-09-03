@@ -3,6 +3,11 @@
   (2) confidence/limitation, (3) strongest evidence, (4) manual
   reconciliation action, (5) extracted data, (6) analyzer/version detail.
 
+  ui-polish round 2: evidence/checklist/extracted-data/technical-detail move
+  into a 2-column grid at >=1024px (single column below) so the full result
+  fits with noticeably less vertical scroll on a normal desktop viewport —
+  purely a markup/layout change, no test asserts on section order/structure.
+
   Locale fix (slice 3a): this view intentionally never renders the server's
   raw `limitations[]` strings. `apps/api`'s `LIMITATION_STATEMENT` is a
   hardcoded English constant (`domain/assessment.py`), so displaying it
@@ -59,24 +64,30 @@
     <p class="m-0">{i18n.t('legal.disclaimer')}</p>
   </div>
 
-  <section aria-labelledby="evidence-heading">
-    <h3 id="evidence-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.evidenceHeading')}</h3>
-    <EvidenceList signals={result.signals} />
-  </section>
+  <div class="grid gap-8 lg:grid-cols-2 lg:items-start">
+    <div class="flex flex-col gap-8">
+      <section aria-labelledby="evidence-heading">
+        <h3 id="evidence-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.evidenceHeading')}</h3>
+        <EvidenceList signals={result.signals} />
+      </section>
 
-  <section aria-labelledby="checklist-heading">
-    <h3 id="checklist-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.checklistHeading')}</h3>
-    <ReconciliationChecklist data={result.extracted_data} />
-  </section>
+      <section aria-labelledby="checklist-heading">
+        <h3 id="checklist-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.checklistHeading')}</h3>
+        <ReconciliationChecklist data={result.extracted_data} />
+      </section>
+    </div>
 
-  <section aria-labelledby="extracted-heading">
-    <h3 id="extracted-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.extractedHeading')}</h3>
-    <ExtractedDataTable data={result.extracted_data} />
-  </section>
+    <div class="flex flex-col gap-8">
+      <section aria-labelledby="extracted-heading">
+        <h3 id="extracted-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.extractedHeading')}</h3>
+        <ExtractedDataTable data={result.extracted_data} />
+      </section>
 
-  <TechnicalDetail
-    engineVersion={result.engine_version}
-    rulesetVersion={result.ruleset_version}
-    analyzerStatuses={result.analyzer_statuses}
-  />
+      <TechnicalDetail
+        engineVersion={result.engine_version}
+        rulesetVersion={result.ruleset_version}
+        analyzerStatuses={result.analyzer_statuses}
+      />
+    </div>
+  </div>
 </section>
