@@ -30,23 +30,11 @@
 </script>
 
 {#if sorted.length > 0}
-  <ul class="evidence-list">
+  <ul class="m-0 list-none p-0">
     {#each sorted as signal (signal.code + signal.category)}
       <EvidenceItem {signal} />
     {/each}
   </ul>
 {:else}
-  <p class="evidence-list__empty">{i18n.t('evidence.empty')}</p>
+  <p class="m-0 text-ui-muted">{i18n.t('evidence.empty')}</p>
 {/if}
-
-<style>
-  .evidence-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .evidence-list__empty {
-    color: var(--color-text-muted);
-  }
-</style>

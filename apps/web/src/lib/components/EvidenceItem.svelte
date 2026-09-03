@@ -19,49 +19,16 @@
   });
 </script>
 
-<li class="evidence-item" data-code={signal.code}>
-  <p class="evidence-item__severity">{severityLabel}</p>
-  <p class="evidence-item__description">{signal.description}</p>
-  <dl class="evidence-item__meta">
-    <dt>{i18n.t('evidence.confidenceLabel')}</dt>
+<li
+  class="evidence-item flex flex-col gap-2 border-b border-ui-line px-1 py-4 last:border-b-0"
+  data-code={signal.code}
+>
+  <p class="m-0 text-[0.8125rem] font-semibold uppercase tracking-wide text-ui-muted">{severityLabel}</p>
+  <p class="m-0 max-w-reading">{signal.description}</p>
+  <dl class="m-0 mt-1 flex flex-wrap gap-x-6 gap-y-1">
+    <dt class="text-ui-muted">{i18n.t('evidence.confidenceLabel')}</dt>
     <dd>{confidencePercent}%</dd>
-    <dt>{i18n.t('evidence.scoreContributionLabel')}</dt>
+    <dt class="text-ui-muted">{i18n.t('evidence.scoreContributionLabel')}</dt>
     <dd>{signal.score_contribution}</dd>
   </dl>
 </li>
-
-<style>
-  .evidence-item {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    padding: var(--space-3) 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .evidence-item:last-child {
-    border-bottom: none;
-  }
-
-  .evidence-item__severity {
-    margin: 0;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-
-  .evidence-item__description {
-    margin: 0;
-  }
-
-  .evidence-item__meta {
-    display: flex;
-    gap: var(--space-4);
-    margin: 0;
-  }
-
-  .evidence-item__meta dt {
-    color: var(--color-text-muted);
-  }
-</style>

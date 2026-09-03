@@ -49,64 +49,28 @@
   });
 </script>
 
-<section class="score-summary" class:score-summary--low={tier === 'low'} class:score-summary--review={tier === 'review'} class:score-summary--high={tier === 'high'}>
-  <p class="score-summary__classification">{classificationLabel}</p>
+<section
+  class="score-summary flex flex-col gap-3 rounded-ui border border-ui-line bg-ui-surface p-6"
+  class:score-summary--low={tier === 'low'}
+  class:score-summary--review={tier === 'review'}
+  class:score-summary--high={tier === 'high'}
+  class:border-ui-risk-low={tier === 'low'}
+  class:border-ui-risk-review={tier === 'review'}
+  class:border-ui-risk-high={tier === 'high'}
+>
+  <p class="m-0 text-xl font-semibold">{classificationLabel}</p>
 
   {#if isInconclusive}
-    <p class="score-summary__inconclusive-note">
+    <p class="m-0 text-ui-muted">
       {i18n.t('result.inconclusiveNote', { confidence: confidencePercent })}
     </p>
   {:else}
-    <p class="score-summary__risk">{riskScore} / 100</p>
+    <p class="m-0 mt-1 text-[2.5rem] font-bold leading-none tabular-nums">{riskScore} / 100</p>
   {/if}
 
-  <p class="score-summary__confidence">{i18n.t('result.confidenceLabel', { confidence: confidencePercent })}</p>
+  <p class="m-0 text-ui-muted">{i18n.t('result.confidenceLabel', { confidence: confidencePercent })}</p>
 
   {#if actionLabel}
-    <p class="score-summary__action">{actionLabel}</p>
+    <p class="m-0 text-ui-muted">{actionLabel}</p>
   {/if}
 </section>
-
-<style>
-  .score-summary {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-4);
-    background: var(--color-surface);
-  }
-
-  .score-summary__classification {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
-  }
-
-  .score-summary__risk {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .score-summary__confidence,
-  .score-summary__action,
-  .score-summary__inconclusive-note {
-    margin: 0;
-    color: var(--color-text-muted);
-  }
-
-  .score-summary--low {
-    border-color: var(--color-risk-low);
-  }
-
-  .score-summary--review {
-    border-color: var(--color-risk-review);
-  }
-
-  .score-summary--high {
-    border-color: var(--color-risk-high);
-  }
-</style>

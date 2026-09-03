@@ -70,7 +70,9 @@
       <ProcessingStages />
     {:else if workspace.status === 'result' && workspace.result}
       <ResultView result={workspace.result} />
-      <button type="button" onclick={() => workspace.reset()}>{i18n.t('page.analyzeAnother')}</button>
+      <button type="button" class="btn-secondary self-start" onclick={() => workspace.reset()}>
+        {i18n.t('page.analyzeAnother')}
+      </button>
     {:else if workspace.status === 'error' && workspace.error}
       {@const err = workspace.error}
       {#if err.kind === 'network'}

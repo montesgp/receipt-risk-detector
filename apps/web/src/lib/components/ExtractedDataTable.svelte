@@ -43,14 +43,14 @@
 </script>
 
 {#if entries.length > 0}
-  <table class="extracted-data-table">
+  <table class="w-full border-collapse">
     <tbody>
       {#each entries as [key, field] (key)}
         <tr>
-          <th scope="row">{labelFor(key)}</th>
-          <td>{displayValue(key, field)}</td>
-          <td class="extracted-data-table__confidence">{Math.round(field.confidence * 100)}%</td>
-          <td class="extracted-data-table__checksum">
+          <th scope="row" class="border-b border-ui-line px-3 py-3 text-left font-medium text-ui-muted">{labelFor(key)}</th>
+          <td class="border-b border-ui-line px-3 py-3 text-left">{displayValue(key, field)}</td>
+          <td class="border-b border-ui-line px-3 py-3 text-left font-mono text-sm text-ui-muted">{Math.round(field.confidence * 100)}%</td>
+          <td class="border-b border-ui-line px-3 py-3 text-left font-mono text-sm text-ui-muted">
             {#if field.is_checksum_valid !== undefined && field.is_checksum_valid !== null}
               {field.is_checksum_valid ? i18n.t('result.checksum.valid') : i18n.t('result.checksum.invalid')}
             {/if}
@@ -60,35 +60,5 @@
     </tbody>
   </table>
 {:else}
-  <p class="extracted-data-table__empty">{i18n.t('result.extractedEmpty')}</p>
+  <p class="m-0 text-ui-muted">{i18n.t('result.extractedEmpty')}</p>
 {/if}
-
-<style>
-  .extracted-data-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .extracted-data-table th,
-  .extracted-data-table td {
-    text-align: left;
-    padding: var(--space-2) var(--space-3);
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .extracted-data-table th {
-    color: var(--color-text-muted);
-    font-weight: 500;
-  }
-
-  .extracted-data-table__confidence,
-  .extracted-data-table__checksum {
-    font-family: var(--font-mono);
-    font-size: 0.875rem;
-    color: var(--color-text-muted);
-  }
-
-  .extracted-data-table__empty {
-    color: var(--color-text-muted);
-  }
-</style>
