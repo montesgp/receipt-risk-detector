@@ -212,3 +212,79 @@ No CRITICAL findings against the frozen ui-localization-and-theming spec's theme
 3. ThemeController's prefers-color-scheme fallback only activates when no valid stored value exists, and switching to system explicitly clears the stored key.
 4. DESIGN.md section 12 specifies a responsive breakpoint and a 44x44px touch target that ThemeSwitcher.svelte does not implement, a real undocumented deviation beyond the one already recorded in tasks.md.
 5. The local role=status live region substituting for the not-yet-built LiveRegion.svelte is proven functionally correct by an assertion on its live text content after a click, not merely its presence in markup.
+
+---
+
+## Slice 3a
+
+### Scope
+PR #16 (feat/web-i18n-runtime -> dev), open, NOT merged, all 6 CI checks green. i18n runtime core (resolve.ts, i18n.svelte.ts, enum-map.ts, messages/es.json+en.json), LanguageSwitcher.svelte, +layout.svelte wiring, and the out-of-band LIMITATION_STATEMENT locale fix in ResultView.svelte. tasks.md Slice 3a section: 9/9 Phase 1/2 items [x] plus the ad-hoc Phase 3 fix (2/2) [x]. Slice 3b (literal-copy sweep) and Slice 4 correctly remain unchecked - confirmed the boundary was respected.
+
+### Artifacts read
+- openspec/changes/ui-frontend-implementation/proposal.md, design.md (DD4/DD5, i18n contract, Slice 3 File Changes/Testing Strategy)
+- openspec/specs/ui-localization-and-theming/spec.md (frozen, bilingual scenarios)
+- docs/DESIGN.md section 13 (language switcher UX)
+- apps/web/src/lib/i18n/resolve.ts, i18n.svelte.ts, enum-map.ts, messages/es.json, messages/en.json, apps/web/src/lib/components/LanguageSwitcher.svelte, +layout.svelte diff, ResultView.svelte diff, all new/modified tests, apps/api/src/receipt_risk/domain/assessment.py
+- Engram: sdd/ui-frontend-implementation/spec (#1861), .../tasks (#1863), .../apply-progress (#1864, rev 5)
+
+### Independent runtime evidence (re-run by verifier)
+| Command | Result |
+|---|---|
+| npx vitest run (apps/web) | 21 files, 108/108 passing - matches apply-progress claim exactly |
+| npm run check (apps/web) | 257 files, 0 errors, 0 warnings - matches apply-progress claim exactly |
+| git diff --stat origin/dev...HEAD | 14 files changed, 769 insertions(+), 29 deletions(-) - matches apply-progress claim exactly |
+| No slice 1a/1b/2 regression | All pre-existing suites still pass unchanged |
+
+### Translation quality - independently verified, both files read in full
+es.json and en.json were read end-to-end, key by key (83 keys each). Spanish is natural es-AR register (voseo consistent with slice 1a/1b existing hardcoded strings, e.g. "Arrastra o selecciona un comprobante", "Reintenta en unos instantes"). English is a genuinely accurate, idiomatic translation of the Spanish meaning for every key, not placeholder or machine text - e.g. errors.rejectedFile.fileTooLarge and result.inconclusiveNote (a two-clause sentence with interpolated {confidence}) are faithfully restructured in English rather than word-for-word calqued. No key is empty, untranslated, or a duplicate of the Spanish string. Confirmed: translation quality is genuine, not garbled or placeholder.
+
+### Key-parity test - independently proven real, not tautological
+Temporarily deleted the key common.retry from en.json and re-ran npx vitest run tests/unit/key-parity.test.ts: the test failed with "expected [ common.retry ] to deeply equal []", correctly identifying the orphaned key. Reverted via git checkout. Confirmed: the test is a genuine safety net, not a no-op assertion.
+
+### LIMITATION_STATEMENT fix - independently verified clean, no design smell
+Grepped apps/web/src for "limitations": only types.ts (interface field) and ResultView.svelte's own comment/CSS class names remain - no component reads or renders result.limitations content anywhere. ResultView.svelte unconditionally renders CLIENT_LIMITATION_DISCLAIMER (a client-owned constant), and ResultView.test.ts proves the leak is closed by asserting an injected English server string is absent from the DOM while the Spanish client copy is present, both for non-empty and empty limitations arrays. Read apps/api/src/receipt_risk/domain/assessment.py directly: LIMITATION_STATEMENT is a single hardcoded module-level constant string, always assigned as the sole element of the limitations tuple (limitations=(LIMITATION_STATEMENT,)) with no branching or per-request variation anywhere in the file. Since it can only ever be one fixed string, the fix is clean - there is no currently-possible case where the server sends a different, meaningful limitation that the client would now silently drop. No design smell to flag.
+
+### Locale switcher mechanism - independently proven functional
+tests/unit/i18n-resolution.test.ts test "re-resolves every key when the locale changes, without any network call" constructs new I18n('es'), asserts t('upload.preview.analyze') equals "Analizar", calls setLocale('en'), then asserts the same key now resolves to "Analyze" and localStorage rrd.locale was updated - re-run independently, passes. LanguageSwitcher.test.ts click test independently confirms the same behavior through the rendered component. Confirmed: t() resolution genuinely changes when locale changes.
+
+### DESIGN.md section 13 vs. code - no drift
+| Aspect | DESIGN.md section 13 | Code |
+|---|---|---|
+| Storage key | localStorage rrd.locale | LOCALE_STORAGE_KEY = 'rrd.locale' (resolve.ts), used identically in i18n.svelte.ts and both test files |
+| Resolution order | query lang -> localStorage -> navigator.languages -> es | resolveLocale() checks query, then storage, then navigator.languages (first 2-letter match), then FALLBACK_LOCALE = 'es' - exact match |
+| Query override persistence | Overrides for one visit, then persisted | I18n constructor calls persistLocale(override, ...) when queryLocaleOverride() returns a value - exact match |
+| Fallback chain | Missing key -> Spanish -> raw key, never empty | t(): catalog then fallbackCatalog then interpolate(value ?? key, ...) - never returns empty string |
+| Placement | Header right cluster, left of theme switcher | +layout.svelte: LanguageSwitcher then ThemeSwitcher inside .app-header__switchers - exact match |
+| Server enum mapping | result.classification.CODE / result.action.CODE / evidence.severity.level, unknown signal code falls back to description | enum-map.ts matches key-for-key; signalKey() returns undefined for uncatalogued codes by design, forcing callers onto description |
+
+Confirmed: zero drift between DESIGN.md section 13 and the actual implementation - same rigor as the slice 2 theme-key check.
+
+### No premature t() wiring - slice boundary independently confirmed
+Read DropZone.svelte and ScoreSummary.svelte in full: both still render their original hardcoded Spanish literals verbatim, byte-identical to slice 1a/1b originals, with zero t() calls or lib/i18n imports. git diff --stat confirms neither file appears in this PR diff at all. The one deliberate exception, ResultView.svelte's limitations handling, is documented inline and in tasks.md Phase 3 as an out-of-band bug fix, not scope creep. Confirmed: the slice 3a/3b boundary was genuinely respected.
+
+### Minor finding: awkward announcement copy composition (new, not previously flagged)
+LanguageSwitcher.svelte's select() reuses the button's own aria-label key (header.language.switchToEs/switchToEn, meaning "Switch to Spanish"/"Switch to English") as the language interpolation value for the live-region announcement, producing "Idioma: Cambiar a ingles" / "Language: Switch to English" instead of a plain language name like "Idioma: Ingles" / "Language: English". Grammatically odd but not incorrect information, and the existing test only regex-matches for language or idioma so it does not catch this. Not spec-breaking (the frozen spec only requires the new state to be announced, not phrased a specific way) - WARNING, not CRITICAL.
+
+### Spec compliance matrix (ui-localization-and-theming, bilingual scenarios)
+| Scenario | Covering test | Result |
+|---|---|---|
+| Language switch updates all visible copy | i18n-resolution.test.ts (t() re-resolution) + LanguageSwitcher.test.ts (click test) | PASS (mechanism proven; full-app wiring is slice 3b's job - no regression risk since slice 1a/1b/2 markup is untouched) |
+| Centralized strings source (no orphan-locale strings) | key-parity.test.ts | PASS (independently proven real, see above) |
+| Language persists after reload | LanguageSwitcher.test.ts (localStorage rrd.locale assertion) | PASS |
+| Switchers are keyboard-operable with visible focus (language half) | LanguageSwitcher.test.ts keyboard test (native button Enter-key semantics) | PASS |
+| State change is announced and not color-only (language half) | LanguageSwitcher.test.ts live-region test | PASS (see WARNING above re: announcement phrasing) |
+
+### Issues Summary
+- WARNING: LanguageSwitcher.svelte's live-region announcement reuses the button's aria-label translation key as the interpolated language name, producing an awkward phrase ("Language: Switch to English" instead of "Language: English"). Cosmetic, not spec-breaking; recommend adding a dedicated header.language.nameEs/nameEn key pair in slice 3b.
+- 0 CRITICAL findings.
+
+### Final Verdict: PASS WITH WARNINGS
+No CRITICAL findings. Translation quality (both directions), the key-parity test's realness, the LIMITATION_STATEMENT fix's cleanliness (confirmed the constant can never carry variable content), the locale-switch mechanism's functionality, and DESIGN.md section 13's exact match against the code were all independently re-verified rather than trusted from the apply report. The slice 3a/3b boundary was genuinely respected - DropZone.svelte and ScoreSummary.svelte are byte-identical to their pre-slice-3a originals. One new minor WARNING (announcement copy phrasing) does not block merging PR #16.
+
+## Key Learnings
+
+1. apps/api's LIMITATION_STATEMENT is a single hardcoded module-level string always assigned as the sole tuple element with no branching, so the frontend's decision to ignore result.limitations content entirely cannot silently drop any currently-possible variable content.
+2. Temporarily deleting a key from en.json and re-running key-parity.test.ts is a fast, reliable way to prove a parity test is genuine rather than tautological - it failed exactly as expected and was cleanly reverted via git checkout.
+3. LanguageSwitcher.svelte's live-region announcement reuses each button's own aria-label key ("Switch to X") as the interpolated language name, producing grammatically awkward but not incorrect announcement text that the existing regex-based test does not catch.
+4. Both es.json and en.json use natural, idiomatic language in every one of 83 keys - the English is a genuine meaning-preserving translation, not a word-for-word calque or placeholder text.
+5. DropZone.svelte and ScoreSummary.svelte remain byte-identical to their pre-slice-3a state, absent from this PR's diff entirely, confirming the slice 3a/3b scope boundary was respected in practice, not just on paper.
