@@ -65,12 +65,12 @@ Chain strategy: stacked-to-main
 
 ## Slice 3: Binary Theme Switcher (PR 4, requires Slice 1 merged; sequenced after Slice 2)
 
-- [ ] 3.1 RED: add test "a dark system preference shows Dark checked before any explicit choice" to `ThemeSwitcher.test.ts` (`stubMatchMedia matches:true`, assert checked label is `theme.dark` while `controller.mode === 'system'`) — confirm it fails against current `?? OPTIONS[0]` logic
-- [ ] 3.2 GREEN: `ThemeSwitcher.svelte` — reduce `OPTIONS` to light/dark; derive `active = $derived(controller.resolved)`; `currentOption` and `cycle()` per design.md; `aria-checked`/`tabindex` key off `active`
-- [ ] 3.3 Update `ThemeSwitcher.test.ts`: rename tri-state test to binary (`toHaveLength(3)`→`2`, checked label `theme.system`→`theme.light`), same for English variant, retarget ArrowRight test to light radio (`'light'`→`'dark'`), 44px-target length `3`→`2`, rewrite cycling test to 2-state (`dark`→`light`)
-- [ ] 3.4 Update `theme-persistence.spec.ts`: segmented control count `3`→`2`, cycling-button regex `/Sistema|Claro|Oscuro/i`→`/Claro|Oscuro/i`
-- [ ] 3.5 Confirm `select()`, `LiveRegion`, dual-variant `<style>` block, and `theme.system` i18n key remain unchanged
-- [ ] 3.6 `npm run test -- ThemeSwitcher && npm run test:e2e -- theme-persistence` green
+- [x] 3.1 RED: add test "a dark system preference shows Dark checked before any explicit choice" to `ThemeSwitcher.test.ts` (`stubMatchMedia matches:true`, assert checked label is `theme.dark` while `controller.mode === 'system'`) — confirm it fails against current `?? OPTIONS[0]` logic
+- [x] 3.2 GREEN: `ThemeSwitcher.svelte` — reduce `OPTIONS` to light/dark; derive `active = $derived(controller.resolved)`; `currentOption` and `cycle()` per design.md; `aria-checked`/`tabindex` key off `active`
+- [x] 3.3 Update `ThemeSwitcher.test.ts`: rename tri-state test to binary (`toHaveLength(3)`→`2`, checked label `theme.system`→`theme.light`), same for English variant, retarget ArrowRight test to light radio (`'light'`→`'dark'`), 44px-target length `3`→`2`, rewrite cycling test to 2-state (`dark`→`light`)
+- [x] 3.4 Update `theme-persistence.spec.ts`: segmented control count `3`→`2`, cycling-button regex `/Sistema|Claro|Oscuro/i`→`/Claro|Oscuro/i`
+- [x] 3.5 Confirm `select()`, `LiveRegion`, dual-variant `<style>` block, and `theme.system` i18n key remain unchanged
+- [x] 3.6 `npm run test -- ThemeSwitcher && npm run test:e2e -- theme-persistence` green
 
 ## Slice 4: Pipeline Explainer (PR 5, requires Slice 1+2 merged; requires spec delta authored)
 
