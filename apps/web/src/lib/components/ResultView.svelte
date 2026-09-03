@@ -43,8 +43,10 @@
   });
 </script>
 
-<section class="result-view" aria-labelledby="result-heading">
-  <h2 id="result-heading" bind:this={headingEl} tabindex="-1">{i18n.t('result.heading')}</h2>
+<section class="flex flex-col gap-8" aria-labelledby="result-heading">
+  <h2 id="result-heading" bind:this={headingEl} tabindex="-1" class="m-0 text-2xl font-semibold">
+    {i18n.t('result.heading')}
+  </h2>
 
   <ScoreSummary
     classification={result.classification}
@@ -53,22 +55,22 @@
     recommendedAction={result.recommended_action}
   />
 
-  <div class="result-view__limitations">
-    <p>{i18n.t('legal.disclaimer')}</p>
+  <div class="max-w-reading text-sm text-ui-muted">
+    <p class="m-0">{i18n.t('legal.disclaimer')}</p>
   </div>
 
   <section aria-labelledby="evidence-heading">
-    <h3 id="evidence-heading">{i18n.t('result.evidenceHeading')}</h3>
+    <h3 id="evidence-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.evidenceHeading')}</h3>
     <EvidenceList signals={result.signals} />
   </section>
 
   <section aria-labelledby="checklist-heading">
-    <h3 id="checklist-heading">{i18n.t('result.checklistHeading')}</h3>
+    <h3 id="checklist-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.checklistHeading')}</h3>
     <ReconciliationChecklist data={result.extracted_data} />
   </section>
 
   <section aria-labelledby="extracted-heading">
-    <h3 id="extracted-heading">{i18n.t('result.extractedHeading')}</h3>
+    <h3 id="extracted-heading" class="m-0 mb-3 text-lg font-semibold">{i18n.t('result.extractedHeading')}</h3>
     <ExtractedDataTable data={result.extracted_data} />
   </section>
 
@@ -78,29 +80,3 @@
     analyzerStatuses={result.analyzer_statuses}
   />
 </section>
-
-<style>
-  .result-view {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
-  }
-
-  /* Slice 4: the heading receives programmatic focus on render (see
-     script). `outline: none` would hide that from sighted keyboard users,
-     so it keeps a visible `--color-focus` ring like every other focusable
-     control (DESIGN.md §12/§13 "focus ring uses --color-focus"). */
-  .result-view h2:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 2px;
-  }
-
-  .result-view__limitations {
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
-  }
-
-  .result-view__limitations p {
-    margin: 0;
-  }
-</style>

@@ -28,37 +28,11 @@
   }
 </script>
 
-<ul class="reconciliation-checklist">
+<ul class="m-0 flex list-none flex-col gap-4 p-0">
   {#each CHECKLIST_ITEMS as item (item.key)}
-    <li class="reconciliation-checklist__item">
-      <span class="reconciliation-checklist__label">{i18n.t(item.labelKey)}</span>
-      <span class="reconciliation-checklist__status">{statusFor(item.key)}</span>
+    <li class="flex flex-col gap-1">
+      <span class="font-semibold">{i18n.t(item.labelKey)}</span>
+      <span class="text-sm text-ui-muted">{statusFor(item.key)}</span>
     </li>
   {/each}
 </ul>
-
-<style>
-  .reconciliation-checklist {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .reconciliation-checklist__item {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  .reconciliation-checklist__label {
-    font-weight: 600;
-  }
-
-  .reconciliation-checklist__status {
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
-  }
-</style>
