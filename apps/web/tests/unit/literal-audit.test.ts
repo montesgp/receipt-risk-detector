@@ -13,10 +13,17 @@
  * through `i18n.t(...)`.
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
 
-const COMPONENTS_DIR = join(__dirname, '../../src/lib/components');
+// Vite's import.meta.glob reads file contents at build/test time without
+// Node's fs/path modules -- this workspace deliberately has no @types/node
+// installed (see vite.config.ts's comment on the same tradeoff), so a
+// node:fs-based version of this test fails svelte-check in CI even though
+// it runs fine under plain vitest locally.
+const componentSources = import.meta.glob('../../src/lib/components/*.svelte', {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>;
 
 function stripScriptAndComments(source: string): string {
   return source
@@ -26,14 +33,14 @@ function stripScriptAndComments(source: string): string {
 }
 
 describe('literal-copy audit: no hardcoded Spanish markup outside i18n catalogs', () => {
-  const files = readdirSync(COMPONENTS_DIR).filter((name) => name.endsWith('.svelte'));
+  const files = Object.keys(componentSources).map((path) => path.split('/').pop() as string);
 
   it('found at least one component to scan (sweep coverage sanity check)', () => {
     expect(files.length).toBeGreaterThanOrEqual(14);
   });
 
-  it.each(files)('%s has no hardcoded accented-Spanish text in its markup', (file) => {
-    const source = readFileSync(join(COMPONENTS_DIR, file), 'utf-8');
+  it.each(Object.entries(componentSources))('%s has no hardcoded accented-Spanish text in its markup', (path, source) => {
+    const file = path.split('/').pop();
     const markup = stripScriptAndComments(source);
 
     // Any of these accented characters appearing in template markup means a
