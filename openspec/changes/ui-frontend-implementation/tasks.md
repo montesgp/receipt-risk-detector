@@ -149,15 +149,15 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 ## Slice 2: Theme Switcher
 
 ### Phase 1: Theme core (DD3; spec "Manual theme toggle", "System-preference default", "Theme persists after reload")
-- [ ] 1.1 RED `tests/unit/theme.test.ts`: `system` follows `matchMedia`; explicit choice persists to `localStorage['rrd.theme']`; reduced motion skips transition class
-- [ ] 1.2 GREEN `lib/theme/theme.svelte.ts` — `ThemeController` (`$state`)
-- [ ] 1.3 GREEN `app.html` blocking inline script (DD3): reads `rrd.theme`, sets `data-theme` + `color-scheme` before body paint
-- [ ] 1.4 GREEN `app.css`: `[data-theme='dark']` block + `.theme-transition` (160 ms, `prefers-reduced-motion` guarded)
+- [x] 1.1 RED `tests/unit/theme.test.ts`: `system` follows `matchMedia`; explicit choice persists to `localStorage['rrd.theme']`; reduced motion skips transition class
+- [x] 1.2 GREEN `lib/theme/theme.svelte.ts` — `ThemeController` (`$state`)
+- [x] 1.3 GREEN `app.html` blocking inline script (DD3): reads `rrd.theme`, sets `data-theme` + `color-scheme` before body paint
+- [x] 1.4 GREEN `app.css`: `[data-theme='dark']` block + `.theme-transition` (160 ms, `prefers-reduced-motion` guarded)
 
 ### Phase 2: Switcher UI (spec "Switchers are keyboard-operable with visible focus", "State change is announced and not color-only")
-- [ ] 2.1 RED `ThemeSwitcher` test: tri-state `aria-checked`, keyboard-operable, visible `--color-focus` state
-- [ ] 2.2 GREEN `lib/components/ThemeSwitcher.svelte`
-- [ ] 2.3 GREEN wire `ThemeSwitcher` into layout via context; state change announced through ARIA live region
+- [x] 2.1 RED `ThemeSwitcher` test: tri-state `aria-checked`, keyboard-operable, visible `--color-focus` state
+- [x] 2.2 GREEN `lib/components/ThemeSwitcher.svelte`
+- [x] 2.3 GREEN wire `ThemeSwitcher` into layout via context; state change announced through ARIA live region — **NOTE**: announced via a local `role="status"` region inside `ThemeSwitcher.svelte` itself, not the shared `LiveRegion.svelte` (that component is slice 4 scope and does not exist yet)
 
 #### Slice 2 Review Workload Forecast
 | Field | Value |

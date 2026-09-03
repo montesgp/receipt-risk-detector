@@ -1,5 +1,5 @@
-/* DESIGN.md §6.2 (typography), §6.3 (color tokens), §6.4 (spacing/grid).
-   The [data-theme='dark'] override block is added in slice 2. */
+/* DESIGN.md §6.2 (typography), §6.3 (color tokens), §6.4 (spacing/grid),
+   §12 (theme switcher: [data-theme='dark'] override + .theme-transition). */
 
 :root {
   --color-canvas: #f7f7f5;
@@ -30,6 +30,38 @@
   --font-sans:
     'Geist Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+[data-theme='dark'] {
+  --color-canvas: #0d0d0d;
+  --color-surface: #151515;
+  --color-text: #f3f3f1;
+  --color-text-muted: #a1a19a;
+  --color-border: #30302d;
+  --color-action: #f3f3f1;
+  --color-action-text: #111111;
+  --color-risk-low: #5fc493;
+  --color-risk-review: #d6aa43;
+  --color-risk-high: #ed7b70;
+  --color-focus: #75a0ff;
+}
+
+/* DESIGN.md §12 "Transition": 160 ms on color-related properties only,
+   applied via a temporary class removed on transitionend (ThemeController).
+   Never transitions box-shadow or layout properties. */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition,
+  .theme-transition * {
+    transition: none;
+  }
 }
 
 * {
