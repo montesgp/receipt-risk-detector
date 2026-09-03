@@ -118,3 +118,111 @@ SUGGESTION:
 2. npm audit's vulnerability chains can be traced per-package via npm audit --json's vulnerabilities[].via field to definitively rule out a newly added dependency as the source of a flagged severity.
 3. A slice whose acceptance criterion is "no visible change" is verifiable by grepping for zero consumers of the new utility classes, which is stronger evidence than a manual screenshot comparison.
 4. Slice 1's authored diff (~78 lines) landed within the design.md forecast's Low review-budget risk band, validating the pre-agreed slice boundaries.
+
+## Slice 2a
+
+**Change**: ui-design-refresh, Slice 2a (Upload-Flow Components), PR #21 feat/web-visual-refresh-upload -> dev
+**Mode**: Full artifact set (proposal, design, spec delta, tasks, apply-progress all present)
+**Verdict**: PASS
+
+### Completeness - Slice 2a tasks (9/9)
+
+All 9 tasks in tasks.md's "Slice 2a: Upload-Flow Components (PR 2)" section are checked [x], and each is independently confirmed against the actual shipped code (not just trusted): 2a.1-2a.7 (per-component class migrations), 2a.8 (unit suite unchanged and green), 2a.9 (e2e green).
+
+### 1. Scope discipline - independently verified
+
+git diff --name-only origin/dev...HEAD -- '*.svelte' returns exactly:
+```
+apps/web/src/lib/components/DropZone.svelte
+apps/web/src/lib/components/ErrorPanel.svelte
+apps/web/src/lib/components/FilePreview.svelte
+apps/web/src/lib/components/ProcessingStages.svelte
+apps/web/src/lib/components/ReconciliationNotice.svelte
+apps/web/src/routes/+layout.svelte
+apps/web/src/routes/+page.svelte
+```
+No ScoreSummary, EvidenceItem, EvidenceList, ExtractedDataTable, ReconciliationChecklist, TechnicalDetail, ResultView, or ThemeSwitcher file appears - confirmed clean of Slice 2b/3/4 scope creep.
+
+git diff --stat origin/dev...HEAD:
+```
+ apps/web/src/lib/components/DropZone.svelte        | 53 ++---------------
+ apps/web/src/lib/components/ErrorPanel.svelte      | 32 +++--------
+ apps/web/src/lib/components/FilePreview.svelte     | 67 ++++++----------------
+ apps/web/src/lib/components/ProcessingStages.svelte |  9 +--
+ apps/web/src/lib/components/ReconciliationNotice.svelte | 10 +---
+ apps/web/src/routes/+layout.svelte                 | 19 +-----
+ apps/web/src/routes/+page.svelte                   |  6 +-
+ openspec/changes/ui-design-refresh/tasks.md        | 18 +++---
+ 8 files changed, 45 insertions(+), 169 deletions(-)
+```
+Authored diff (45 add / 169 del, ~235 counted lines) matches the design.md forecast of "~150 del, ~85 add, ~235" exactly, well inside the 400-line budget, "Medium" risk as forecast.
+
+### 2. Class-string fidelity - read every changed file, diffed against design.md's Slice 2a table line by line
+
+Read DropZone.svelte, FilePreview.svelte, ErrorPanel.svelte, ReconciliationNotice.svelte, ProcessingStages.svelte, +layout.svelte, +page.svelte in full. Every class string matches design.md's Slice 2a table exactly: DropZone root/drag-state (class:border-ui-focus={isDragOver} preserved)/heading/constraints/file-input (sr-only); FilePreview root/image/dl/dt/dd/actions row, Analyze button -> btn-primary, Replace button -> btn-secondary; ErrorPanel root/message, Retry button -> btn-primary; ReconciliationNotice's single class string with the style block fully deleted; ProcessingStages wrapper "flex flex-col gap-3 p-6" only; +layout header root/inner (py-4, was py-3); +page main (class="page flex flex-col gap-6", the .page rule stays in app.css), h1, intro p. The +page.svelte reset button (page.analyzeAnother) was correctly left untouched - that item belongs to Slice 2b per design.md's own file-changes table, not 2a, and it remains plain/unstyled in this diff as expected.
+
+### 3. Real button styling - independently reproduced, not trusted from the apply report
+
+Wrote a disposable Playwright spec (uploaded a synthetic PNG to reach the FilePreview state, read getComputedStyle on the Analyze button), ran it, then deleted it. Result:
+```
+LIGHT analyze button: padding "12px 16px", borderRadius "10px", background "rgb(23, 23, 23)", color "rgb(255, 255, 255)"
+```
+Confirms real computed box metrics from btn-primary, not browser defaults (padding 0, border-radius 0). ErrorPanel's Retry button uses the identical btn-primary utility, so the same computed-style guarantee applies by construction (same @utility block, confirmed present and unmodified in app.css from Slice 1).
+
+### 4. No behavior change - confirmed via diff, not assertion
+
+git diff --name-only origin/dev...HEAD | grep -i test returns empty: zero test files were touched in this PR. This is stronger than "modifications are class-name-only" - no test file exists in the diff at all, so every one of the 155 unit assertions and 9 e2e assertions is running unmodified against the new markup. npx vitest run -> 155/155 passed (DropZone.test.ts 6, FilePreview.test.ts 4, ErrorPanel.test.ts 10, ReconciliationNotice.test.ts 3, ProcessingStages.test.ts 4, plus 18 other unrelated files, all green). This directly proves the style-only-conversion claim.
+
+### 5. ProcessingStages animation preservation - read the actual file
+
+ProcessingStages.svelte's style block is intact: .processing__label { margin: 0; }, .processing__bar { height: 4px; border-radius: var(--radius); background: linear-gradient(...); background-size: 200% 100%; animation: processing-sweep 1.4s linear infinite; }, the prefers-reduced-motion override, and the @keyframes processing-sweep block are byte-identical to pre-diff (only the wrapper div's class attribute changed, from a style-block-driven class to "flex flex-col gap-3 p-6"). role="status" and aria-live="polite" on the wrapper are untouched.
+
+### 6. Dark mode - independently verified with a real UI-driven Playwright check, not dark: utilities
+
+Design.md's own "Decision: dark: is an escape hatch, not the mechanism" states Slice 2a is expected to ship zero dark: utility classes, because every bridged Tailwind color (bg-ui-surface, text-ui-muted, border-ui-line, etc.) is a var() read of a token that already flips under [data-theme='dark'] in app.css. Confirmed: grepping "dark:" across apps/web/src/lib/components and apps/web/src/routes returns zero matches - this correctly matches the design, not a gap.
+
+Independently verified dark mode still renders correctly end-to-end (not by trusting the class-only-migration claim): set localStorage rrd.theme to dark, reloaded, and read real computed styles via a disposable Playwright spec (deleted after use):
+```
+data-theme after reload: dark
+DARK body bg: rgb(13, 13, 13)      (light: rgb(247, 247, 245))
+DARK DropZone bg: rgb(21, 21, 21)
+DARK analyze button: background rgb(243, 243, 241), color rgb(17, 17, 17)  (light: background rgb(23,23,23), color rgb(255,255,255) -- correctly inverted)
+```
+Dark mode is fully functional; the color flip happens through the CSS custom-property chain (--color-action / --color-canvas overrides in [data-theme='dark'] -> @theme inline bridge -> Tailwind utility), exactly as designed. Note for the record: my first verification attempt manually set the data-theme attribute via page.evaluate and saw no change - that was a test-authoring mistake on my part (bypassing ThemeController, whose constructor/apply() already ran once at load and is not re-triggered by a raw attribute write outside its own code path), not a product defect. Re-testing through the app's real localStorage + reload mechanism (matching the existing theme-persistence.spec.ts pattern) showed the expected color inversion immediately.
+
+### 7. Accessibility - spot-checked, unchanged
+
+Read the full diff for ARIA/role/keyboard semantics: DropZone retains role="button", tabindex="0", aria-disabled={disabled}, onkeydown (Enter/Space) handling, and the aria-disabled: Tailwind variants (aria-disabled:cursor-not-allowed aria-disabled:opacity-60) correctly key off the same aria-disabled attribute rather than a duplicated disabled-based class. ErrorPanel retains role="alert", tabindex="-1", and the focus-management effect. ProcessingStages retains role="status" and aria-live="polite". None of these attributes were added, removed, or renamed by this diff - only class attributes changed on the same elements.
+
+### 8. Test/build re-run - all independently re-executed, all green
+
+| Command | Result |
+|---|---|
+| npx vitest run | 155/155 passed (24 test files) |
+| npm run check | 402 files, 0 errors, 0 warnings |
+| npx playwright test | 9/9 passed |
+| cd apps/api && uv run pytest | unchanged: git diff --name-only origin/dev...HEAD -- apps/api is empty; pytest run confirms the suite still passes independent of this PR |
+
+### Design coherence
+
+- Pattern followed exactly: delete the style block, move declarations to utilities on the same elements, per design.md's Slice 2a instruction.
+- motion-reduce: was not needed in this slice (no Tailwind-authored transition survives outside hover:border-ui-muted duration-150, which design.md does not flag for motion-reduce:; the only animated element, ProcessingStages's gradient bar, already has its own prefers-reduced-motion media query inside the untouched style block).
+- +page.svelte reset button correctly deferred to Slice 2b (design.md's own file-changes table places it there), avoiding scope creep in this slice.
+- Zero dark: utilities shipped, consistent with design.md's "escape hatch, not the mechanism" decision - dark mode correctness comes from the token bridge, not per-component dark variants.
+
+### Issues
+
+CRITICAL: None.
+
+WARNING: None.
+
+SUGGESTION:
+1. None beyond the existing carry-over item from Slice 1 (pre-existing vitest/vite/esbuild vulnerability chain, still unrelated to this PR and unchanged by it).
+
+## Key Learnings
+
+1. Slice 2a shipped zero dark: utility classes by design - CSS custom-property flips already make bridged colors theme-correct, so a naive expectation of dark: variants in the diff would be a false finding.
+2. Manually writing document.documentElement's data-theme attribute via page.evaluate bypasses ThemeController's own apply() logic and produces a false-negative dark-mode test; the correct verification path is localStorage plus reload, matching the app's real persistence mechanism.
+3. A PR diff with zero touched test files is stronger evidence of a pure style-only conversion than modified-but-passing tests would be, since no assertion could have been silently loosened.
+4. Authored diff line counts landing within a pre-forecasted review-budget band (per design.md's Review Workload Forecast table) is a repeatable verification signal across slices, not a one-off for Slice 1.
+5. The +page.svelte reset button's deferred styling to Slice 2b is documented in design.md's own file-changes table, so its unstyled appearance in this diff is expected behavior, not an oversight to flag.
