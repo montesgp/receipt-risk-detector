@@ -1,6 +1,12 @@
 /* DESIGN.md §6.2 (typography), §6.3 (color tokens), §6.4 (spacing/grid),
    §12 (theme switcher: [data-theme='dark'] override + .theme-transition). */
 
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 :root {
   --color-canvas: #f7f7f5;
   --color-surface: #ffffff;
@@ -44,6 +50,73 @@
   --color-risk-review: #d6aa43;
   --color-risk-high: #ed7b70;
   --color-focus: #75a0ff;
+}
+
+/* Adapter only. Values are var() reads — never literals. app.css's :root and
+   [data-theme='dark'] blocks above stay the single source of truth (DESIGN.md §6.3). */
+@theme inline {
+  --color-ui-canvas: var(--color-canvas);
+  --color-ui-surface: var(--color-surface);
+  --color-ui-fg: var(--color-text);
+  --color-ui-muted: var(--color-text-muted);
+  --color-ui-line: var(--color-border);
+  --color-ui-action: var(--color-action);
+  --color-ui-action-fg: var(--color-action-text);
+  --color-ui-risk-low: var(--color-risk-low);
+  --color-ui-risk-review: var(--color-risk-review);
+  --color-ui-risk-high: var(--color-risk-high);
+  --color-ui-focus: var(--color-focus);
+
+  /* 4px grid (DESIGN.md §6.4): p-1=4px, p-2=8px, p-3=12px, p-4=16px,
+     p-6=24px, p-8=32px, p-12=48px, p-16=64px — exactly the --space-* names. */
+  --spacing: var(--space-1);
+
+  --radius-ui: var(--radius);
+  --radius-ui-sm: calc(var(--radius) - 4px);
+
+  --container-content: var(--content-max-width);
+  --container-reading: var(--reading-max-width);
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-action);
+  border-radius: var(--radius);
+  background: var(--color-action);
+  color: var(--color-action-text);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-action) 86%, var(--color-canvas));
+  }
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--color-action) 74%, var(--color-canvas));
+  }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+@utility btn-secondary {
+  /* identical box metrics */
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--space-2); min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit; font-weight: 600; line-height: 1.2; cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+  &:hover:not(:disabled) { background: var(--color-canvas); border-color: var(--color-text-muted); }
+  &:active:not(:disabled) { background: color-mix(in srgb, var(--color-canvas) 88%, var(--color-text)); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 /* DESIGN.md §12 "Transition": 160 ms on color-related properties only,
