@@ -44,6 +44,15 @@
   "upload.pipeline.step.scoring.title": "We compute risk and confidence",
   "upload.pipeline.step.scoring.detail": "We combine the signals into a risk score and an analysis confidence value.",
 
+  "pipeline.section.heading": "How the service works",
+  "pipeline.tab.pipeline": "How it works",
+  "pipeline.tab.integration": "Bot integration",
+  "pipeline.integration.heading": "The same API, from your bot",
+  "pipeline.integration.description": "The public API is the same one this site uses: a WhatsApp, Telegram or any messaging-app bot can send it a receipt and get back the same risk result.",
+  "pipeline.integration.step.message": "Message with the receipt",
+  "pipeline.integration.step.api": "Our public API",
+  "pipeline.integration.step.reply": "Reply with the risk score",
+
   "processing.label": "Analyzing the receipt…",
 
   "errors.network": "We couldn't reach the service. Please try again.",

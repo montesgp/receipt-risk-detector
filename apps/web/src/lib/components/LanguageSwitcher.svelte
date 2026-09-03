@@ -13,6 +13,11 @@
   Announcements go through the shared `LiveRegion.svelte` (slice 4) — slice
   3a used a local `role="status"` workaround because that component did not
   exist yet.
+
+  ui-polish round 2, item 5: migrated the scoped `<style>` block to Tailwind
+  utilities (matching ThemeSwitcher and the rest of the app) and shrunk the
+  visual footprint — smaller pill, tighter padding. No structural/ARIA
+  change, so the existing test suite is untouched.
 -->
 <script lang="ts">
   import { getI18nContext } from '$lib/i18n/i18n.svelte';
@@ -35,12 +40,20 @@
   }
 </script>
 
-<div class="language-switcher" role="group" aria-label={i18n.t('header.language.groupLabel')}>
+<div
+  class="inline-flex items-center gap-0.5 rounded-full border border-ui-line p-0.5"
+  role="group"
+  aria-label={i18n.t('header.language.groupLabel')}
+>
   {#each OPTIONS as option (option.locale)}
     <button
       type="button"
       aria-pressed={i18n.locale === option.locale}
       aria-label={i18n.t(option.switchLabelKey)}
+      class="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-semibold transition-colors"
+      class:bg-ui-action={i18n.locale === option.locale}
+      class:text-ui-action-fg={i18n.locale === option.locale}
+      class:text-ui-muted={i18n.locale !== option.locale}
       onclick={() => select(option.locale)}
     >
       {option.label}
@@ -48,30 +61,3 @@
   {/each}
 </div>
 <LiveRegion message={announcement} />
-
-<style>
-  .language-switcher {
-    display: inline-flex;
-    gap: var(--space-1);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-1);
-    background: var(--color-surface);
-  }
-
-  .language-switcher button {
-    border: none;
-    background: transparent;
-    color: var(--color-text);
-    padding: var(--space-1) var(--space-2);
-    border-radius: calc(var(--radius) - 4px);
-    cursor: pointer;
-    font: inherit;
-    min-height: 32px;
-  }
-
-  .language-switcher button[aria-pressed='true'] {
-    background: var(--color-action);
-    color: var(--color-action-text);
-  }
-</style>

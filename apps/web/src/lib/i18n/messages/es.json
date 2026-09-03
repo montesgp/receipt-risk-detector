@@ -44,6 +44,15 @@
   "upload.pipeline.step.scoring.title": "Calculamos riesgo y confianza",
   "upload.pipeline.step.scoring.detail": "Combinamos las señales en un puntaje de riesgo y una confianza del análisis.",
 
+  "pipeline.section.heading": "Cómo funciona el servicio",
+  "pipeline.tab.pipeline": "Cómo funciona",
+  "pipeline.tab.integration": "Integración por bots",
+  "pipeline.integration.heading": "La misma API, desde tu bot",
+  "pipeline.integration.description": "La API pública es la misma que usa este sitio: un bot de WhatsApp, Telegram o cualquier app de mensajería puede enviarle un comprobante y recibir el mismo resultado de riesgo.",
+  "pipeline.integration.step.message": "Mensaje con el comprobante",
+  "pipeline.integration.step.api": "Nuestra API pública",
+  "pipeline.integration.step.reply": "Respuesta con el puntaje de riesgo",
+
   "processing.label": "Analizando el comprobante…",
 
   "errors.network": "No pudimos contactar el servicio. Intentá nuevamente.",

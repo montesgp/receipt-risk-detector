@@ -27,6 +27,15 @@
   preference would incorrectly render "Light" as checked. `theme.system`
   stays in both message files for `ThemeMode`/i18n key-parity but is never
   rendered as a selectable option.
+
+  ui-polish round 2, item 5: restyled to a compact icon-only control (label
+  kept as visually-hidden text, so the accessible name/`aria-checked`
+  semantics and the existing test suite are untouched) and migrated the
+  scoped `<style>` block to Tailwind utilities, matching the rest of the
+  app since the Tailwind adoption slice. `.theme-switcher__segmented` /
+  `.theme-switcher__cycle` class names are kept as test selector hooks
+  only — all visual styling now lives in the Tailwind classes alongside
+  them. The >=44px touch target is preserved via `h-11 w-11` (44px).
 -->
 <script lang="ts">
   import { getThemeContext } from '$lib/theme/theme.svelte';
@@ -67,9 +76,9 @@
   }
 </script>
 
-<div class="theme-switcher">
+<div class="inline-flex items-center">
   <div
-    class="theme-switcher__segmented"
+    class="theme-switcher__segmented hidden items-center gap-0.5 rounded-full border border-ui-line p-0.5 md:inline-flex"
     role="radiogroup"
     aria-label={i18n.t('theme.groupLabel')}
   >
@@ -79,81 +88,26 @@
         role="radio"
         aria-checked={active === option.mode}
         tabindex={active === option.mode ? 0 : -1}
+        class="flex h-11 w-11 items-center justify-center rounded-full text-base transition-colors"
+        class:bg-ui-action={active === option.mode}
+        class:text-ui-action-fg={active === option.mode}
+        class:text-ui-muted={active !== option.mode}
         onclick={() => select(option.mode)}
         onkeydown={(event) => handleKeydown(event, index)}
       >
-        {i18n.t(option.labelKey)}
+        <span aria-hidden="true">{option.icon}</span>
+        <span class="sr-only">{i18n.t(option.labelKey)}</span>
       </button>
     {/each}
   </div>
 
   <button
     type="button"
-    class="theme-switcher__cycle"
+    class="theme-switcher__cycle flex h-11 w-11 items-center justify-center rounded-full border border-ui-line text-base text-ui-muted transition-colors hover:text-ui-fg md:hidden"
     aria-label={i18n.t('theme.cycleLabel', { label: currentLabel })}
     onclick={cycle}
   >
     <span aria-hidden="true">{currentOption.icon}</span>
-    <span>{currentLabel}</span>
   </button>
 </div>
 <LiveRegion message={announcement} />
-
-<style>
-  .theme-switcher {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .theme-switcher__segmented {
-    display: none;
-    gap: var(--space-1);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-1);
-    background: var(--color-surface);
-  }
-
-  .theme-switcher__segmented button {
-    border: none;
-    background: transparent;
-    color: var(--color-text);
-    padding: var(--space-1) var(--space-2);
-    border-radius: calc(var(--radius) - 4px);
-    cursor: pointer;
-    font: inherit;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .theme-switcher__segmented button[aria-checked='true'] {
-    background: var(--color-action);
-    color: var(--color-action-text);
-  }
-
-  .theme-switcher__cycle {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-1) var(--space-2);
-    background: var(--color-surface);
-    color: var(--color-text);
-    cursor: pointer;
-    font: inherit;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  /* DESIGN.md §12: segmented control at >=768px, cycling icon button below. */
-  @media (min-width: 768px) {
-    .theme-switcher__segmented {
-      display: inline-flex;
-    }
-
-    .theme-switcher__cycle {
-      display: none;
-    }
-  }
-</style>
