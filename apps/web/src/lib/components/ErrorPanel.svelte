@@ -64,28 +64,12 @@
   });
 </script>
 
-<div class="error-panel" role="alert" bind:this={panelEl} tabindex="-1">
-  <p class="error-panel__message">{message}</p>
-  <button type="button" onclick={onretry} disabled={retryDisabled}>{i18n.t('common.retry')}</button>
+<div
+  class="flex flex-col items-start gap-4 rounded-ui border border-ui-risk-high bg-ui-surface p-6"
+  role="alert"
+  bind:this={panelEl}
+  tabindex="-1"
+>
+  <p class="m-0">{message}</p>
+  <button type="button" class="btn-primary" onclick={onretry} disabled={retryDisabled}>{i18n.t('common.retry')}</button>
 </div>
-
-<style>
-  .error-panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    border: 1px solid var(--color-risk-high);
-    border-radius: var(--radius);
-    padding: var(--space-4);
-    background: var(--color-surface);
-  }
-
-  .error-panel:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 2px;
-  }
-
-  .error-panel__message {
-    margin: 0;
-  }
-</style>

@@ -40,15 +40,15 @@ Chain strategy: stacked-to-main
 
 ## Slice 2a: Upload-Flow Components (PR 2, requires Slice 1 merged)
 
-- [ ] 2a.1 `DropZone.svelte`: delete `<style>`, apply root/drag-state/heading/constraints/file-input classes per design.md table; keep `class:border-ui-focus={isDragOver}`
-- [ ] 2a.2 `FilePreview.svelte`: delete `<style>`, apply root/image/dl/dt/dd/actions classes; Analyze → `btn-primary`, Replace → `btn-secondary`
-- [ ] 2a.3 `ErrorPanel.svelte`: delete `<style>`, apply root/message classes; Retry → `btn-primary`
-- [ ] 2a.4 `ReconciliationNotice.svelte`: delete `<style>`, apply `m-0 max-w-reading text-sm text-ui-muted`
-- [ ] 2a.5 `ProcessingStages.svelte`: apply wrapper-only class `flex flex-col gap-3 p-6`; keep `@keyframes processing-sweep` and rest of `<style>` untouched (proposal scope: redesign out of scope)
-- [ ] 2a.6 `+layout.svelte` header: apply root/inner classes, `py-4` (was `py-3`)
-- [ ] 2a.7 `+page.svelte`: apply `<main>`/`<h1>`/intro `<p>` classes (keep `class="page"`)
-- [ ] 2a.8 Verification (visual/markup-only, no behavior change): run `DropZone.test.ts`, `FilePreview.test.ts`, `ErrorPanel.test.ts`, `ReconciliationNotice.test.ts`, `ProcessingStages.test.ts` unchanged — confirm all still pass (proves role/text assertions untouched by class-only diff)
-- [ ] 2a.9 `npm run test:e2e -- upload` unchanged, confirm green
+- [x] 2a.1 `DropZone.svelte`: delete `<style>`, apply root/drag-state/heading/constraints/file-input classes per design.md table; keep `class:border-ui-focus={isDragOver}`
+- [x] 2a.2 `FilePreview.svelte`: delete `<style>`, apply root/image/dl/dt/dd/actions classes; Analyze → `btn-primary`, Replace → `btn-secondary`
+- [x] 2a.3 `ErrorPanel.svelte`: delete `<style>`, apply root/message classes; Retry → `btn-primary`
+- [x] 2a.4 `ReconciliationNotice.svelte`: delete `<style>`, apply `m-0 max-w-reading text-sm text-ui-muted`
+- [x] 2a.5 `ProcessingStages.svelte`: apply wrapper-only class `flex flex-col gap-3 p-6`; keep `@keyframes processing-sweep` and rest of `<style>` untouched (proposal scope: redesign out of scope)
+- [x] 2a.6 `+layout.svelte` header: apply root/inner classes, `py-4` (was `py-3`)
+- [x] 2a.7 `+page.svelte`: apply `<main>`/`<h1>`/intro `<p>` classes (keep `class="page"`)
+- [x] 2a.8 Verification (visual/markup-only, no behavior change): run `DropZone.test.ts`, `FilePreview.test.ts`, `ErrorPanel.test.ts`, `ReconciliationNotice.test.ts`, `ProcessingStages.test.ts` unchanged — confirm all still pass (proves role/text assertions untouched by class-only diff)
+- [x] 2a.9 `npm run test:e2e -- upload` unchanged, confirm green
 
 ## Slice 2b: Result-View Components (PR 3, requires Slice 1 merged; independent of 2a)
 

@@ -11,12 +11,4 @@
   const i18n = getI18nContext();
 </script>
 
-<p class="reconciliation-notice">{i18n.t('legal.disclaimer')}</p>
-
-<style>
-  .reconciliation-notice {
-    color: var(--color-text-muted);
-    font-size: 0.875rem;
-    margin: 0;
-  }
-</style>
+<p class="m-0 max-w-reading text-sm text-ui-muted">{i18n.t('legal.disclaimer')}</p>

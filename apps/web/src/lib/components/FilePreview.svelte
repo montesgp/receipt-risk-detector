@@ -33,59 +33,24 @@
   });
 </script>
 
-<div class="file-preview">
+<div class="flex flex-col gap-4 rounded-ui border border-ui-line bg-ui-surface p-6">
   {#if previewUrl}
-    <img class="file-preview__image" src={previewUrl} alt={i18n.t('upload.preview.imageAlt')} />
+    <img
+      class="max-h-80 max-w-full rounded-ui object-contain"
+      src={previewUrl}
+      alt={i18n.t('upload.preview.imageAlt')}
+    />
   {/if}
-  <dl class="file-preview__meta">
-    <dt>{i18n.t('upload.preview.name')}</dt>
-    <dd>{file.name}</dd>
-    <dt>{i18n.t('upload.preview.type')}</dt>
-    <dd>{file.type}</dd>
-    <dt>{i18n.t('upload.preview.size')}</dt>
-    <dd>{formatSize(file.size)}</dd>
+  <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+    <dt class="text-ui-muted">{i18n.t('upload.preview.name')}</dt>
+    <dd class="m-0">{file.name}</dd>
+    <dt class="text-ui-muted">{i18n.t('upload.preview.type')}</dt>
+    <dd class="m-0">{file.type}</dd>
+    <dt class="text-ui-muted">{i18n.t('upload.preview.size')}</dt>
+    <dd class="m-0">{formatSize(file.size)}</dd>
   </dl>
-  <div class="file-preview__actions">
-    <button type="button" onclick={onanalyze}>{i18n.t('upload.preview.analyze')}</button>
-    <button type="button" onclick={onreplace}>{i18n.t('upload.preview.replace')}</button>
+  <div class="flex flex-wrap gap-3 pt-1">
+    <button type="button" class="btn-primary" onclick={onanalyze}>{i18n.t('upload.preview.analyze')}</button>
+    <button type="button" class="btn-secondary" onclick={onreplace}>{i18n.t('upload.preview.replace')}</button>
   </div>
 </div>
-
-<style>
-  .file-preview {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: var(--space-4);
-    background: var(--color-surface);
-  }
-
-  .file-preview__image {
-    max-width: 100%;
-    max-height: 320px;
-    object-fit: contain;
-    border-radius: var(--radius);
-  }
-
-  .file-preview__meta {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: var(--space-1) var(--space-2);
-    margin: 0;
-  }
-
-  .file-preview__meta dt {
-    color: var(--color-text-muted);
-  }
-
-  .file-preview__meta dd {
-    margin: 0;
-  }
-
-  .file-preview__actions {
-    display: flex;
-    gap: var(--space-2);
-  }
-</style>
