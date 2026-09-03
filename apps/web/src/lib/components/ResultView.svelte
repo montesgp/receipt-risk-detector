@@ -2,13 +2,20 @@
   DESIGN.md §4.4 "Result" visual priority: (1) classification/risk,
   (2) confidence/limitation, (3) strongest evidence, (4) manual
   reconciliation action, (5) extracted data, (6) analyzer/version detail.
-  Spec "Full result renders from the live response": the mandatory
-  limitation disclaimer from `limitations[]` is always present, never
-  omitted — falls back to the DESIGN.md §5 copy if the server sends none.
-  Spec "No forbidden authenticity language appears" is enforced by every
-  child component only using DESIGN.md §5-approved copy (never raw server
-  text beyond `description`/`limitations`, which the API itself must keep
-  compliant).
+
+  Locale fix (slice 3a): this view intentionally never renders the server's
+  raw `limitations[]` strings. `apps/api`'s `LIMITATION_STATEMENT` is a
+  hardcoded English constant (`domain/assessment.py`), so displaying it
+  verbatim would show English text inside an otherwise Spanish/bilingual
+  frontend regardless of the user's chosen locale — the backend has no
+  concept of the client's locale and is out of scope for this change. The
+  mandatory disclaimer is instead always the client's own copy (identical
+  Spanish text to `ReconciliationNotice.svelte`, which already renders it
+  unconditionally in idle/result per DD7), so the sentence the user sees is
+  always in a locale the client actually controls. It will move behind
+  `t('legal.disclaimer')` in slice 3b along with every other literal in
+  this component. Spec "No forbidden authenticity language appears" is
+  enforced by every child component only using DESIGN.md §5-approved copy.
 -->
 <script lang="ts">
   import type { AnalyzeResponse } from '$lib/api/types';
@@ -20,10 +27,8 @@
 
   let { result }: { result: AnalyzeResponse } = $props();
 
-  const FALLBACK_LIMITATION =
+  const CLIENT_LIMITATION_DISCLAIMER =
     'Este análisis evalúa el comprobante presentado. Confirmá la acreditación en la cuenta beneficiaria antes de entregar productos o servicios.';
-
-  const limitations = $derived(result.limitations.length > 0 ? result.limitations : [FALLBACK_LIMITATION]);
 </script>
 
 <section class="result-view" aria-labelledby="result-heading">
@@ -37,9 +42,7 @@
   />
 
   <div class="result-view__limitations">
-    {#each limitations as limitation (limitation)}
-      <p>{limitation}</p>
-    {/each}
+    <p>{CLIENT_LIMITATION_DISCLAIMER}</p>
   </div>
 
   <section aria-labelledby="evidence-heading">

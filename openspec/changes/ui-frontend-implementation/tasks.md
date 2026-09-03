@@ -171,17 +171,21 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 ## Slice 3a: i18n Runtime + Language Switcher
 
 ### Phase 1: i18n core (DD4, DD5; design i18n contract)
-- [ ] 1.1 RED `tests/unit/i18n-resolution.test.ts`: resolution order `?lang=` → `localStorage['rrd.locale']` → `navigator.languages` → `'es'`; `?lang=zz` ignored (spec bilingual requirement context)
-- [ ] 1.2 GREEN `lib/i18n/resolve.ts`
-- [ ] 1.3 RED `tests/unit/key-parity.test.ts`: `Object.keys(es)` === `Object.keys(en)`, diff printed both ways, every value is a string (spec "Centralized strings source")
-- [ ] 1.4 GREEN `lib/i18n/messages/{es,en}.json` seeded with slice 1a/1b/2 namespaces (upload, errors, result, evidence, theme)
-- [ ] 1.5 GREEN `lib/i18n/i18n.svelte.ts` — `I18n` rune class; missing-key fallback active→`es`→raw key, never `''`, `console.warn` only in `import.meta.env.DEV` (DD5)
-- [ ] 1.6 GREEN `lib/i18n/enum-map.ts` — classification/action/severity/signal-code → message-key mapping, `description` fallback for unknown signal codes
+- [x] 1.1 RED `tests/unit/i18n-resolution.test.ts`: resolution order `?lang=` → `localStorage['rrd.locale']` → `navigator.languages` → `'es'`; `?lang=zz` ignored (spec bilingual requirement context)
+- [x] 1.2 GREEN `lib/i18n/resolve.ts`
+- [x] 1.3 RED `tests/unit/key-parity.test.ts`: `Object.keys(es)` === `Object.keys(en)`, diff printed both ways, every value is a string (spec "Centralized strings source")
+- [x] 1.4 GREEN `lib/i18n/messages/{es,en}.json` seeded with slice 1a/1b/2 namespaces (upload, errors, result, evidence, theme)
+- [x] 1.5 GREEN `lib/i18n/i18n.svelte.ts` — `I18n` rune class; missing-key fallback active→`es`→raw key, never `''`, `console.warn` only in `import.meta.env.DEV` (DD5)
+- [x] 1.6 GREEN `lib/i18n/enum-map.ts` — classification/action/severity/signal-code → message-key mapping, `description` fallback for unknown signal codes — **NOTE**: this apply batch added `tests/unit/enum-map.test.ts` (not explicitly named by this task list) to keep the mapping under TDD since it isn't wired into any component yet.
 
 ### Phase 2: Language switcher (spec "Switchers are keyboard-operable...", "State change is announced...")
-- [ ] 2.1 RED `LanguageSwitcher` test: `aria-pressed`, per-language `aria-label`, keyboard-operable
-- [ ] 2.2 GREEN `lib/components/LanguageSwitcher.svelte`
-- [ ] 2.3 GREEN wire `LanguageSwitcher` into layout; locale switch re-renders from held state, never re-uploads/re-calls API (locked decision, "Result re-render on locale switch")
+- [x] 2.1 RED `LanguageSwitcher` test: `aria-pressed`, per-language `aria-label`, keyboard-operable
+- [x] 2.2 GREEN `lib/components/LanguageSwitcher.svelte`
+- [x] 2.3 GREEN wire `LanguageSwitcher` into layout; locale switch re-renders from held state, never re-uploads/re-calls API (locked decision, "Result re-render on locale switch")
+
+### Phase 3: LIMITATION_STATEMENT locale-mismatch fix (frontend-only; out-of-band bug found in slice 1b verify)
+- [x] 3.1 GREEN `ResultView.svelte` — stop rendering the server's raw `limitations[]` strings; `apps/api`'s `LIMITATION_STATEMENT` is a hardcoded English constant that would otherwise leak untranslated English text into the Spanish/bilingual UI regardless of locale. The view now always renders its own client-owned disclaimer sentence (identical Spanish copy to `ReconciliationNotice.svelte`), which will move behind `t('legal.disclaimer')` in slice 3b along with every other literal in this component. `apps/api` was not touched (frontend-only fix, per instructions).
+- [x] 3.2 GREEN updated `tests/unit/ResultView.test.ts` to assert the client disclaimer always renders and the raw server `limitations[]` text never does, regardless of what the server sends.
 
 #### Slice 3a Review Workload Forecast
 | Field | Value |
