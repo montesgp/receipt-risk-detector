@@ -1,6 +1,11 @@
 {
   "common.retry": "Retry",
 
+  "page.title": "Analyze a receipt before reconciling it",
+  "page.intro": "We detect signs of manipulation, digital provenance and inconsistencies to help you review a transfer.",
+  "page.statusRegionLabel": "Analysis status",
+  "page.analyzeAnother": "Analyze another receipt",
+
   "header.brand": "Receipt Risk Detector",
   "header.language.groupLabel": "Language",
   "header.language.switchToEs": "Switch to Spanish",

@@ -36,11 +36,8 @@
 </script>
 
 <main class="page">
-  <h1>Analizá un comprobante antes de conciliarlo</h1>
-  <p>
-    Detectamos señales de manipulación, procedencia digital e inconsistencias para ayudarte a
-    revisar una transferencia.
-  </p>
+  <h1>{i18n.t('page.title')}</h1>
+  <p>{i18n.t('page.intro')}</p>
 
   <!-- DD7: always mounted, both in idle and result contexts, never behind a
        state branch. -->
@@ -50,7 +47,7 @@
     <LiveRegion message={liveMessage} />
   {/if}
 
-  <div role="region" aria-label="Estado del análisis">
+  <div role="region" aria-label={i18n.t('page.statusRegionLabel')}>
     {#if idleError?.kind === 'client-validation'}
       <ErrorPanel
         variant="rejected-file"
@@ -73,7 +70,7 @@
       <ProcessingStages />
     {:else if workspace.status === 'result' && workspace.result}
       <ResultView result={workspace.result} />
-      <button type="button" onclick={() => workspace.reset()}>Analizar otro comprobante</button>
+      <button type="button" onclick={() => workspace.reset()}>{i18n.t('page.analyzeAnother')}</button>
     {:else if workspace.status === 'error' && workspace.error}
       {@const err = workspace.error}
       {#if err.kind === 'network'}

@@ -1,6 +1,11 @@
 {
   "common.retry": "Reintentar",
 
+  "page.title": "Analizá un comprobante antes de conciliarlo",
+  "page.intro": "Detectamos señales de manipulación, procedencia digital e inconsistencias para ayudarte a revisar una transferencia.",
+  "page.statusRegionLabel": "Estado del análisis",
+  "page.analyzeAnother": "Analizar otro comprobante",
+
   "header.brand": "Receipt Risk Detector",
   "header.language.groupLabel": "Idioma",
   "header.language.switchToEs": "Cambiar a español",
