@@ -30,6 +30,20 @@
   "upload.preview.analyze": "Analizar",
   "upload.preview.replace": "Reemplazar",
 
+  "upload.pipeline.heading": "Qué hace este análisis",
+  "upload.pipeline.step.upload.title": "Subís el comprobante",
+  "upload.pipeline.step.upload.detail": "Arrastrás o elegís una imagen del comprobante en PNG, JPG o WebP, hasta 10 MB.",
+  "upload.pipeline.step.validation.title": "Validamos el archivo",
+  "upload.pipeline.step.validation.detail": "Revisamos formato, tamaño y dimensiones antes de analizar el contenido.",
+  "upload.pipeline.step.provenance.title": "Inspeccionamos metadata y procedencia",
+  "upload.pipeline.step.provenance.detail": "Leemos la metadata del archivo y las credenciales de contenido C2PA cuando están presentes.",
+  "upload.pipeline.step.extraction.title": "Extraemos los datos con OCR",
+  "upload.pipeline.step.extraction.detail": "El servicio lee monto, fecha, CBU/CVU y CUIT/CUIL del comprobante con OCR propio.",
+  "upload.pipeline.step.identifiers.title": "Validamos los identificadores",
+  "upload.pipeline.step.identifiers.detail": "Comprobamos los dígitos verificadores de CBU/CVU y CUIT/CUIL extraídos.",
+  "upload.pipeline.step.scoring.title": "Calculamos riesgo y confianza",
+  "upload.pipeline.step.scoring.detail": "Combinamos las señales en un puntaje de riesgo y una confianza del análisis.",
+
   "processing.label": "Analizando el comprobante…",
 
   "errors.network": "No pudimos contactar el servicio. Intentá nuevamente.",

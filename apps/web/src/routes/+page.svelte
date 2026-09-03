@@ -1,6 +1,7 @@
 <script lang="ts">
   import { AnalysisWorkspace } from '$lib/features/receipt-analysis/workspace.svelte';
   import DropZone from '$lib/components/DropZone.svelte';
+  import PipelineExplainer from '$lib/components/PipelineExplainer.svelte';
   import FilePreview from '$lib/components/FilePreview.svelte';
   import ProcessingStages from '$lib/components/ProcessingStages.svelte';
   import ErrorPanel from '$lib/components/ErrorPanel.svelte';
@@ -60,6 +61,7 @@
 
     {#if workspace.status === 'idle'}
       <DropZone disabled={false} onselect={(file) => workspace.selectFile(file)} />
+      <PipelineExplainer />
     {:else if workspace.status === 'selected' && workspace.file}
       <FilePreview
         file={workspace.file}

@@ -30,6 +30,20 @@
   "upload.preview.analyze": "Analyze",
   "upload.preview.replace": "Replace",
 
+  "upload.pipeline.heading": "What this analysis does",
+  "upload.pipeline.step.upload.title": "You upload the receipt",
+  "upload.pipeline.step.upload.detail": "You drag or pick a receipt image in PNG, JPG or WebP, up to 10 MB.",
+  "upload.pipeline.step.validation.title": "We validate the file",
+  "upload.pipeline.step.validation.detail": "We check format, size and dimensions before analysing the content.",
+  "upload.pipeline.step.provenance.title": "We inspect metadata and provenance",
+  "upload.pipeline.step.provenance.detail": "We read the file metadata and C2PA content credentials when they are present.",
+  "upload.pipeline.step.extraction.title": "We extract the data with OCR",
+  "upload.pipeline.step.extraction.detail": "The service reads amount, date, CBU/CVU and CUIT/CUIL from the receipt with its own OCR.",
+  "upload.pipeline.step.identifiers.title": "We validate the identifiers",
+  "upload.pipeline.step.identifiers.detail": "We check the verification digits of the extracted CBU/CVU and CUIT/CUIL.",
+  "upload.pipeline.step.scoring.title": "We compute risk and confidence",
+  "upload.pipeline.step.scoring.detail": "We combine the signals into a risk score and an analysis confidence value.",
+
   "processing.label": "Analyzing the receipt…",
 
   "errors.network": "We couldn't reach the service. Please try again.",
