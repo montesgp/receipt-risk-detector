@@ -52,16 +52,16 @@ Chain strategy: stacked-to-main
 
 ## Slice 2b: Result-View Components (PR 3, requires Slice 1 merged; independent of 2a)
 
-- [ ] 2b.1 `ResultView.svelte`: delete `<style>` incl. dropped `h2:focus-visible` rule (global rule covers it); apply root/h2/h3/limitations classes
-- [ ] 2b.2 `ScoreSummary.svelte`: delete `<style>`; apply root + `class:border-ui-risk-low/review/high`; classification/risk-figure/confidence classes (fixes headline-rhythm defect)
-- [ ] 2b.3 `EvidenceItem.svelte` + `EvidenceList.svelte`: delete `<style>`; apply li/severity/description/meta classes (fixes compressed-spacing defect)
-- [ ] 2b.4 `ExtractedDataTable.svelte`: delete `<style>`; apply table/th/td classes
-- [ ] 2b.5 `ReconciliationChecklist.svelte`: delete `<style>`; apply ul/li/label/status classes
-- [ ] 2b.6 `TechnicalDetail.svelte`: delete `<style>`; apply details/summary/dl/table classes
-- [ ] 2b.7 `+page.svelte` reset button: apply `class="btn-secondary self-start"`, keep in `+page.svelte` (no `onreset` prop added)
-- [ ] 2b.8 Verification (markup-only): run existing tests for all 7 touched components unchanged — confirm all still pass
-- [ ] 2b.9 `npm run test:e2e -- result` unchanged, confirm green
-- [ ] 2b.10 If diff exceeds 400 lines at apply time: split into 2b-i (`ResultView`+`ScoreSummary`+`EvidenceItem`/`EvidenceList`) and 2b-ii (`ExtractedDataTable`+`ReconciliationChecklist`+`TechnicalDetail`) per design.md's pre-agreed split point
+- [x] 2b.1 `ResultView.svelte`: delete `<style>` incl. dropped `h2:focus-visible` rule (global rule covers it); apply root/h2/h3/limitations classes
+- [x] 2b.2 `ScoreSummary.svelte`: delete `<style>`; apply root + `class:border-ui-risk-low/review/high`; classification/risk-figure/confidence classes (fixes headline-rhythm defect) — kept `score-summary`/`score-summary--{tier}` hook classes alongside the new utilities because `ScoreSummary.test.ts` asserts on them (constraint: 155 tests pass unchanged)
+- [x] 2b.3 `EvidenceItem.svelte` + `EvidenceList.svelte`: delete `<style>`; apply li/severity/description/meta classes (fixes compressed-spacing defect) — kept `evidence-item` hook class on the `<li>` because `upload-to-result.spec.ts` asserts on `li.evidence-item`
+- [x] 2b.4 `ExtractedDataTable.svelte`: delete `<style>`; apply table/th/td classes
+- [x] 2b.5 `ReconciliationChecklist.svelte`: delete `<style>`; apply ul/li/label/status classes
+- [x] 2b.6 `TechnicalDetail.svelte`: delete `<style>`; apply details/summary/dl/table classes
+- [x] 2b.7 `+page.svelte` reset button: apply `class="btn-secondary self-start"`, keep in `+page.svelte` (no `onreset` prop added)
+- [x] 2b.8 Verification (markup-only): run existing tests for all 7 touched components unchanged — confirm all still pass (155/155)
+- [x] 2b.9 `npm run test:e2e -- result` unchanged, confirm green (ran full `npx playwright test`, 9/9 pass)
+- [x] 2b.10 Diff came in at 319 changed lines (61 add / 258 del) across 8 files — under the 400-line budget, so no split was needed; shipped as one PR
 
 ## Slice 3: Binary Theme Switcher (PR 4, requires Slice 1 merged; sequenced after Slice 2)
 
