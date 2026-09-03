@@ -80,6 +80,13 @@ describe('ErrorPanel', () => {
     expect(screen.getByRole('alert').textContent).toContain(es['errors.rejectedFile.generic']);
   });
 
+  it('moves focus to the alert message when it renders (focus management, slice 4)', async () => {
+    renderPanel({ variant: 'network', onretry: vi.fn() });
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(screen.getByRole('alert'));
+  });
+
   it('calls onretry when the retry action is available and clicked', () => {
     const onretry = vi.fn();
     renderPanel({ variant: 'network', onretry });

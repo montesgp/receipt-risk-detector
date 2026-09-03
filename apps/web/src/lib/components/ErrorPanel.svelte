@@ -50,9 +50,21 @@
   });
 
   const retryDisabled = $derived(variant === 'rate-limited' && retryAfterSeconds !== undefined);
+
+  // Slice 4 focus management: `+page.svelte` mounts a fresh `ErrorPanel` per
+  // failed attempt. Moving focus to the alert itself (rather than leaving it
+  // on the now-removed drop zone/analyze button, or resetting to the page
+  // top) means a screen-reader user lands directly on the actionable
+  // message instead of having to relocate it after the DOM changed under
+  // them.
+  let panelEl: HTMLDivElement | undefined;
+
+  $effect(() => {
+    panelEl?.focus();
+  });
 </script>
 
-<div class="error-panel" role="alert">
+<div class="error-panel" role="alert" bind:this={panelEl} tabindex="-1">
   <p class="error-panel__message">{message}</p>
   <button type="button" onclick={onretry} disabled={retryDisabled}>{i18n.t('common.retry')}</button>
 </div>
@@ -66,6 +78,11 @@
     border-radius: var(--radius);
     padding: var(--space-4);
     background: var(--color-surface);
+  }
+
+  .error-panel:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
 
   .error-panel__message {

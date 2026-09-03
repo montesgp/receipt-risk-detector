@@ -6,8 +6,22 @@
   import ErrorPanel from '$lib/components/ErrorPanel.svelte';
   import ReconciliationNotice from '$lib/components/ReconciliationNotice.svelte';
   import ResultView from '$lib/components/ResultView.svelte';
+  import LiveRegion from '$lib/components/LiveRegion.svelte';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
   const workspace = new AnalysisWorkspace();
+  const i18n = getI18nContext();
+
+  // Slice 4: `ProcessingStages` already announces itself through its own
+  // visible `role="status"` region, and `ErrorPanel` already uses
+  // `role="alert"` (an implicit assertive live region) — this closes the
+  // one real gap, the `result` transition, which had no announcement at
+  // all. Kept empty (and unmounted, see markup below) for every other
+  // status so there is never more than one `role="status"` node live at
+  // once.
+  const liveMessage = $derived(
+    workspace.status === 'result' ? i18n.t('a11y.resultAnnouncement') : ''
+  );
 
   // DESIGN.md §4.5: preserve the file only when retry is safe. Both
   // server-rejected files (400/413/415/422) and client-side validation
@@ -31,6 +45,10 @@
   <!-- DD7: always mounted, both in idle and result contexts, never behind a
        state branch. -->
   <ReconciliationNotice />
+
+  {#if liveMessage}
+    <LiveRegion message={liveMessage} />
+  {/if}
 
   <div role="region" aria-label="Estado del análisis">
     {#if idleError?.kind === 'client-validation'}

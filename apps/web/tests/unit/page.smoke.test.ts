@@ -102,6 +102,12 @@ describe('+page.svelte wiring', () => {
     // limitations fallback render the identical DESIGN.md §5 sentence when
     // the server sends no `limitations[]` — at least one match is required.
     expect(screen.getAllByText(DISCLAIMER_TEXT).length).toBeGreaterThan(0);
+
+    // Slice 4: the result transition is announced through the shared
+    // LiveRegion (ProcessingStages already unmounted, so this is now the
+    // only role="status" node) and focus moved to the result heading.
+    expect(screen.getByRole('status').textContent).toMatch(/completo|disponible/i);
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: /Resultado del análisis/i }));
   });
 
   it('shows a distinct connectivity error, never a result, on a network failure — disclaimer stays present', async () => {

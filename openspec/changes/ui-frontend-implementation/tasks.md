@@ -222,9 +222,10 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 ## Slice 4: Accessibility Polish + Playwright e2e
 
 ### Phase 1: a11y (DESIGN.md §14, spec "State change is announced and not color-only")
-- [ ] 1.1 RED `tests/unit/live-region.test.ts`: `LiveRegion` announces processing/result/error transitions
-- [ ] 1.2 GREEN `lib/components/LiveRegion.svelte`
-- [ ] 1.3 GREEN focus management in `ResultView.svelte` — move focus to result heading on render
+- [x] 1.1 RED `tests/unit/live-region.test.ts`: `LiveRegion` announces processing/result/error transitions
+- [x] 1.2 GREEN `lib/components/LiveRegion.svelte` — **NOTE**: `ProcessingStages` keeps its own inline `role="status"` (its text is part of the visible UI, not announcement-only — a different use case); `ThemeSwitcher`/`LanguageSwitcher` migrated their slice-2/3a local workarounds to this shared component; `+page.svelte` gained a new conditionally-rendered top-level instance that announces the `result` transition specifically (the one real gap — errors already use `role="alert"`, an implicit assertive live region)
+- [x] 1.3 GREEN focus management in `ResultView.svelte` — move focus to result heading on render; also added the same pattern to `ErrorPanel.svelte` (move focus to the alert) per the apply batch's explicit ask, beyond this task's literal wording
+- [x] 1.4 (ad-hoc, verify follow-up from slice 2) GREEN `ThemeSwitcher.svelte` — fix both undocumented DESIGN.md §12 deviations flagged in slice 2 verify: add the responsive segmented-control (>=768px) / cycling icon button (<768px) variant, and raise the touch target from 32px to 44x44px minimum
 
 ### Phase 2: e2e (design "Playwright slice 4 sketch")
 - [ ] 2.1 GREEN finalize `playwright.config.ts`; `tests/e2e/upload-to-result.spec.ts` — route-intercept `**/v1/receipts/analyze`, `setInputFiles` synthetic PNG, assert result heading, `74 / 100`, ≥1 evidence item, masked CBU `/^\*+\d{4}$/`, limitation sentence

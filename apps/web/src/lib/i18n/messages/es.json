@@ -82,5 +82,8 @@
   "evidence.severity.high": "Alta",
   "evidence.severity.critical": "Crítica",
   "evidence.confidenceLabel": "Confianza",
-  "evidence.scoreContributionLabel": "Aporte al puntaje"
+  "evidence.scoreContributionLabel": "Aporte al puntaje",
+
+  "a11y.resultAnnouncement": "Análisis completo. El resultado está disponible.",
+  "a11y.errorAnnouncement": "Ocurrió un error. Revisá el mensaje para continuar."
 }
