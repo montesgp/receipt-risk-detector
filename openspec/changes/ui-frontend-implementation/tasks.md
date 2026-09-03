@@ -228,15 +228,15 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 - [x] 1.4 (ad-hoc, verify follow-up from slice 2) GREEN `ThemeSwitcher.svelte` — fix both undocumented DESIGN.md §12 deviations flagged in slice 2 verify: add the responsive segmented-control (>=768px) / cycling icon button (<768px) variant, and raise the touch target from 32px to 44x44px minimum
 
 ### Phase 2: e2e (design "Playwright slice 4 sketch")
-- [ ] 2.1 GREEN finalize `playwright.config.ts`; `tests/e2e/upload-to-result.spec.ts` — route-intercept `**/v1/receipts/analyze`, `setInputFiles` synthetic PNG, assert result heading, `74 / 100`, ≥1 evidence item, masked CBU `/^\*+\d{4}$/`, limitation sentence
-- [ ] 2.2 GREEN `tests/e2e/theme-persistence.spec.ts` — set `localStorage['rrd.theme']='dark'`, reload, assert `<html data-theme="dark">` on first paint via `addInitScript` probe (no flash)
-- [ ] 2.3 GREEN `tests/e2e/locale-switch.spec.ts` — switch to EN, assert heading text changed with no second network request
-- [ ] 2.4 GREEN opt-in real-API spec behind `RUN_REAL_API` env flag; excluded from CI by default (design Open Questions: recommended not to run in CI)
-- [ ] 2.5 GREEN `.github/workflows/ci.yml` — add Playwright e2e job (excludes the opt-in real-API spec)
+- [x] 2.1 GREEN finalize `playwright.config.ts`; `tests/e2e/upload-to-result.spec.ts` — route-intercept `**/v1/receipts/analyze`, `setInputFiles` synthetic PNG, assert result heading, `74 / 100`, ≥1 evidence item, masked CBU `/^\*+\d{4}$/`, limitation sentence — **NOTE**: also added a validation-error-state case (415 UNSUPPORTED_IMAGE) and a connectivity-error-state case (`route.abort`) to this spec per the apply batch's explicit minimum-coverage ask, beyond this task's literal wording
+- [x] 2.2 GREEN `tests/e2e/theme-persistence.spec.ts` — set `localStorage['rrd.theme']='dark'`, reload, assert `<html data-theme="dark">` on first paint via `addInitScript` probe (no flash); also added an OS-preference-fallback case and the ThemeSwitcher responsive-breakpoint + 44px-touch-target verification (the two slice-2 verify follow-ups) as real-browser viewport/boundingBox assertions, since jsdom cannot apply stylesheet media queries to computed layout
+- [x] 2.3 GREEN `tests/e2e/locale-switch.spec.ts` — switch to EN, assert heading text changed with no second network request; also asserts the Spanish default and that the switch persists after reload
+- [x] 2.4 GREEN opt-in real-API spec behind `RUN_REAL_API` env flag (`tests/e2e/real-api.spec.ts`, tagged `@real-api`); excluded from CI by default via `playwright.config.ts`'s `grepInvert` (design Open Questions: recommended not to run in CI)
+- [x] 2.5 GREEN `.github/workflows/ci.yml` — add a `web-e2e` Playwright job (chromium only, `needs: web`), excludes the opt-in real-API spec by default; uploads the HTML report as an artifact
 
 ### Phase 3: Final audit
-- [ ] 3.1 Manual keyboard-only pass through the full upload→result flow, recorded in the PR description (DESIGN.md §14 checklist)
-- [ ] 3.2 Manual confirmation no status is communicated by color alone (`ScoreSummary`, `ThemeSwitcher`, `LanguageSwitcher`)
+- [x] 3.1 Manual keyboard-only pass through the full upload→result flow, recorded in the PR description (DESIGN.md §14 checklist)
+- [x] 3.2 Manual confirmation no status is communicated by color alone (`ScoreSummary`, `ThemeSwitcher`, `LanguageSwitcher`) — also audited `EvidenceItem` per the apply batch's explicit ask; recorded in the PR description
 
 #### Slice 4 Review Workload Forecast
 | Field | Value |
