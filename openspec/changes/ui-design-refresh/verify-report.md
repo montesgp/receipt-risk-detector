@@ -226,3 +226,75 @@ SUGGESTION:
 3. A PR diff with zero touched test files is stronger evidence of a pure style-only conversion than modified-but-passing tests would be, since no assertion could have been silently loosened.
 4. Authored diff line counts landing within a pre-forecasted review-budget band (per design.md's Review Workload Forecast table) is a repeatable verification signal across slices, not a one-off for Slice 1.
 5. The +page.svelte reset button's deferred styling to Slice 2b is documented in design.md's own file-changes table, so its unstyled appearance in this diff is expected behavior, not an oversight to flag.
+
+## Slice 2b
+
+**Change**: ui-design-refresh, Slice 2b (Result-View Components), PR #22 feat/web-visual-refresh-result -> dev
+**Mode**: Full artifact set (proposal, design, spec delta, tasks, apply-progress all present)
+**Verdict**: PASS WITH WARNINGS
+
+### Completeness - Slice 2b tasks (10/10)
+
+All 10 tasks in tasks.md's Slice 2b section are checked [x] and independently confirmed against the shipped code: 2b.1-2b.6 (per-component class migrations, including the two documented class-hook deviations on 2b.2/2b.3), 2b.7 (reset button styling, deferred correctly from 2a), 2b.8 (155/155 unit unchanged and green), 2b.9 (9/9 e2e green), 2b.10 (diff came in at 319 lines, under the 400-line budget, no split needed).
+
+### Scope discipline - independently verified
+
+git diff --name-only origin/dev...HEAD -- '*.svelte' returns exactly the 8 authorized files: EvidenceItem.svelte, EvidenceList.svelte, ExtractedDataTable.svelte, ReconciliationChecklist.svelte, ResultView.svelte, ScoreSummary.svelte, TechnicalDetail.svelte, +page.svelte. No DropZone/FilePreview/ProcessingStages/ErrorPanel/ReconciliationNotice/ThemeSwitcher/LanguageSwitcher/LiveRegion file appears.
+
+git diff --stat origin/dev...HEAD: 9 files changed, 71 insertions, 268 deletions across the 8 components/routes plus tasks.md. Authored diff (excluding the tasks checklist) is 51 add / 248 del, about 299 lines, matching the design.md forecast of about 300 and the apply report's own count. Well within the 400-line budget.
+
+### 1. Legacy class-hook question - definitive verdict
+
+Are the kept legacy classes genuinely inert? Yes, confirmed by direct grep, not by trusting the apply report:
+- Searching for score-summary and evidence-item across apps/web/src returns matches ONLY in ScoreSummary.svelte and EvidenceItem.svelte, as class attribute values on the root elements, never as CSS selectors.
+- app.css (the only stylesheet in the project) contains zero occurrences of either string.
+- No style block in any .svelte file references these class names either; the style blocks that previously defined the score-summary and evidence-item rules were deleted in this same diff.
+- Conclusion: the legacy class names are fully dead selectors today, present only as inert string markers on the DOM node, read by test code via querySelector/locator, never matched by any CSS rule. Zero visual or behavioral impact confirmed.
+
+Is this acceptable long-term, or should a follow-up replace the test selectors? Recommendation: open a follow-up task to migrate the two test files to role/text/data-testid selectors and then delete the legacy classes, rather than accepting them as permanent hooks. Reasoning:
+- ScoreSummary.test.ts asserts against a class name for what is actually a semantic/accessibility property (risk tier), which Testing Library guidance treats as an anti-pattern (implementation-detail coupling); the same information is derivable from the visible text or a dedicated data-tier attribute if a non-visual hook is wanted.
+- upload-to-result.spec.ts's locator on the evidence-item class could be replaced by a role-based locator scoped to the evidence list, which is more robust to future markup changes and needs no hook class at all.
+- Leaving these two dead classes permanently is low-risk, but every future style-only refactor of these two components will have to remember to preserve them, a self-perpetuating trap that a role/text-based test rewrite removes for good. This is a WARNING, not a CRITICAL: it does not block this PR, but should not be deferred indefinitely.
+- Do not fold this into the current PR; it is a test-only change orthogonal to Slice 2b's style-migration scope and would need its own small, reviewable diff.
+
+### 2. INCONCLUSIVE no-forced-color - verified against actual component logic, not the passing test alone
+
+Read ScoreSummary.svelte directly. RISK_TIER is a Record mapping LOW_RISK, REVIEW_RECOMMENDED, SUSPICIOUS, HIGH_RISK to tier strings; INCONCLUSIVE is intentionally absent (an inline comment confirms this is deliberate). tier is derived from RISK_TIER[classification], which evaluates to undefined for INCONCLUSIVE. All six class directives (score-summary tier modifiers, border-ui-risk-low/review/high) test tier equal to low/review/high, all of which are false when tier is undefined. Confirmed: no color/tier class is applied for INCONCLUSIVE by the actual conditional logic, independent of the test suite.
+
+### 3. masked_value-only plus optional is_checksum_valid - diffed the actual conditional logic
+
+git diff origin/dev...HEAD -- ExtractedDataTable.svelte shows the entire script block, including the masked_value-first branching in displayValue() and the is_checksum_valid undefined/null guard, is byte-identical before and after; only the markup class attributes changed. No logic changed.
+
+### 4. Reset button styling - independently verified via real computed styles, not class names
+
+Wrote a disposable Playwright spec (uploaded a synthetic PNG through the mocked analyze route to reach the result screen, then deleted the spec after use). Computed styles for the "Analizar otro comprobante" button: padding 12px 16px, borderRadius 10px, minHeight 44px, cursor pointer, fontWeight 600. minHeight of exactly 44px and non-zero padding/border-radius confirm real btn-secondary styling is applied, not browser-default button chrome. Bounding box height measured about 45px, satisfying the 44px touch-target minimum (DESIGN.md section 12).
+
+### 5. Dark mode spot-check - ScoreSummary and ExtractedDataTable
+
+Set localStorage rrd.theme to dark via page.addInitScript before navigation, matching theme-persistence.spec.ts pattern, not direct data-theme attribute manipulation (previously identified in Slice 2a's verify pass as a false-negative trap that bypasses ThemeController). Confirmed the html element carries data-theme dark after load, then read real computed styles post-render: ScoreSummary background rgb(21, 21, 21) with a non-default risk-review border tint, padding 24px, border-radius 10px; ExtractedDataTable border-collapse collapse with th padding 12px, text-align left, border-bottom 1px solid. Both components render with dark-theme-correct surface/border colors, confirming the token-bridge chain still resolves correctly for the Slice 2b components, exactly as designed. Zero dark-variant utility classes are used or needed in any of the 7 touched components, confirmed via grep.
+
+### 6. Test/build re-run - all independently re-executed, all green
+
+| Command | Result |
+|---|---|
+| npx vitest run | 155/155 passed (24 test files) |
+| npm run check | 402 files, 0 errors, 0 warnings |
+| npx playwright test | 9/9 passed |
+| cd apps/api and uv run pytest | 129 passed, 4 skipped, 0 failures; apps/api confirmed untouched by this slice via empty diff |
+
+### Design coherence
+
+- Every per-element class string in ResultView, ScoreSummary, EvidenceItem, EvidenceList, ExtractedDataTable, ReconciliationChecklist, TechnicalDetail was read in full and matches design.md's Slice 2b table exactly, including the headline-rhythm fix and the compressed-spacing fix.
+- ResultView's h2:focus-visible rule was correctly dropped per design.md, relying on the existing global focus-visible rule.
+- Deviation from design.md (kept score-summary tier classes and evidence-item class-name hooks instead of a literal replace): correctly identified, disclosed inline in tasks.md and the apply-progress artifact, and judged above as zero-impact but warranting a follow-up test-selector migration (WARNING, not CRITICAL, since it does not contradict any spec requirement, only design.md's literal wording).
+- +page.svelte reset button stayed in +page.svelte per the locked decision (no onreset prop introduced), confirmed via grep returning no matches for onreset anywhere in the diff.
+
+### Issues
+
+CRITICAL: None.
+
+WARNING:
+1. The two class-hook deviations (score-summary tier classes in ScoreSummary.svelte, evidence-item in EvidenceItem.svelte) are confirmed zero-impact today but represent permanent dead CSS selectors kept alive solely because two tests couple to class names instead of role/text. Recommend a small follow-up PR to rewrite ScoreSummary.test.ts and tests/e2e/upload-to-result.spec.ts onto role/text-based or data-testid selectors, then delete both legacy classes. Do not fold into this PR's scope.
+
+SUGGESTION:
+1. Carry-over from Slices 1/2a: the pre-existing vitest/vite/esbuild critical/high vulnerability chain remains unrelated to and unchanged by this PR; still recommended as a separate dependency-upgrade follow-up.
