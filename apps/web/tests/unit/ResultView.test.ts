@@ -58,15 +58,20 @@ describe('ResultView', () => {
     expect(screen.getByText(/2026\.09\.01/)).toBeTruthy();
   });
 
-  it('always renders the limitations disclaimer from the response', () => {
+  it('always renders the client-owned limitation disclaimer, ignoring the raw server limitations[]', () => {
+    // Locale fix (slice 3a): `apps/api`'s LIMITATION_STATEMENT is a hardcoded
+    // English constant, so the client must never echo `limitations[]`
+    // verbatim — only its own (currently Spanish, t()-ified in slice 3b)
+    // disclaimer copy, regardless of what the server sends.
     render(ResultView, {
-      props: { result: buildResponse({ limitations: ['Aviso de límite personalizado del servidor.'] }) }
+      props: { result: buildResponse({ limitations: ['This is the raw English server limitation text.'] }) }
     });
 
-    expect(screen.getByText(/Aviso de límite personalizado del servidor\./)).toBeTruthy();
+    expect(screen.getByText(/Confirmá la acreditación/i)).toBeTruthy();
+    expect(screen.queryByText(/This is the raw English server limitation text\./)).toBeNull();
   });
 
-  it('renders a fallback limitation sentence if limitations[] is empty', () => {
+  it('still renders the disclaimer when limitations[] is empty', () => {
     render(ResultView, { props: { result: buildResponse({ limitations: [] }) } });
 
     expect(screen.getByText(/Confirmá la acreditación/i)).toBeTruthy();
