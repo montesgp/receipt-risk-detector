@@ -6,8 +6,12 @@
   component only reports the raw picked/dropped File.
 -->
 <script lang="ts">
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
+
   let { disabled = false, onselect }: { disabled?: boolean; onselect: (file: File) => void } =
     $props();
+
+  const i18n = getI18nContext();
 
   let inputEl: HTMLInputElement | undefined;
   let isDragOver = $state(false);
@@ -63,8 +67,8 @@
   ondragover={onDragOver}
   ondragleave={onDragLeave}
 >
-  <p class="drop-zone__heading">Arrastrá o seleccioná un comprobante</p>
-  <p class="drop-zone__constraints">PNG, JPG o WebP · máximo 10 MB</p>
+  <p class="drop-zone__heading">{i18n.t('upload.dropzone.heading')}</p>
+  <p class="drop-zone__constraints">{i18n.t('upload.dropzone.constraints')}</p>
   <input
     bind:this={inputEl}
     id="receipt-file"

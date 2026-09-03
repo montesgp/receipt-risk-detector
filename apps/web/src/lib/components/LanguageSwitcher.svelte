@@ -25,7 +25,7 @@
 
   function select(locale: Locale): void {
     i18n.setLocale(locale);
-    const languageName = i18n.t(locale === 'es' ? 'header.language.switchToEs' : 'header.language.switchToEn');
+    const languageName = i18n.t(locale === 'es' ? 'header.language.nameEs' : 'header.language.nameEn');
     announcement = i18n.t('header.language.announcement', { language: languageName });
   }
 </script>

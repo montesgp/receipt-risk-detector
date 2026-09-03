@@ -199,8 +199,8 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 ## Slice 3b: Literal-Copy Replacement Sweep
 
 ### Phase 1: Namespace — upload/errors
-- [ ] 1.1 RED update `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` tests asserting `t()`-driven copy replaces hardcoded literals
-- [ ] 1.2 GREEN replace hardcoded Spanish literals in those components with `t()` calls; add any missing keys to `es.json`/`en.json`
+- [x] 1.1 RED update `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` tests asserting `t()`-driven copy replaces hardcoded literals — **NOTE**: also fixed the `LanguageSwitcher` announcement bug (was interpolating the button's "switch to" `aria-label` key instead of a language name) and added `LanguageSwitcher.test.ts` cases proving the correct announcement text in both directions (es→en, en→es); also updated `tests/unit/page.smoke.test.ts` to supply an `I18n` context (it renders `+page.svelte` standalone, without `+layout.svelte`, and now needs the same context every touched component reads)
+- [x] 1.2 GREEN replace hardcoded Spanish literals in `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` with `t()` calls against existing slice 3a keys; added `header.language.nameEs`/`header.language.nameEn` to `es.json`/`en.json` for the `LanguageSwitcher` fix (the only new keys this batch — no new upload/errors/legal keys were needed, slice 3a's seed already covered them)
 
 ### Phase 2: Namespace — result/evidence/theme
 - [ ] 2.1 RED update `ScoreSummary`/`EvidenceList`/`ExtractedDataTable`/`ReconciliationChecklist`/`TechnicalDetail`/`ResultView`/`ThemeSwitcher` tests asserting `t()`-driven copy

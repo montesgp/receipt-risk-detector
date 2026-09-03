@@ -4,11 +4,15 @@
   identifiers here — this component only reflects the raw File metadata.
 -->
 <script lang="ts">
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
+
   let {
     file,
     onanalyze,
     onreplace
   }: { file: File; onanalyze: () => void; onreplace: () => void } = $props();
+
+  const i18n = getI18nContext();
 
   function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -31,19 +35,19 @@
 
 <div class="file-preview">
   {#if previewUrl}
-    <img class="file-preview__image" src={previewUrl} alt="Vista previa del comprobante seleccionado" />
+    <img class="file-preview__image" src={previewUrl} alt={i18n.t('upload.preview.imageAlt')} />
   {/if}
   <dl class="file-preview__meta">
-    <dt>Nombre</dt>
+    <dt>{i18n.t('upload.preview.name')}</dt>
     <dd>{file.name}</dd>
-    <dt>Tipo</dt>
+    <dt>{i18n.t('upload.preview.type')}</dt>
     <dd>{file.type}</dd>
-    <dt>Tamaño</dt>
+    <dt>{i18n.t('upload.preview.size')}</dt>
     <dd>{formatSize(file.size)}</dd>
   </dl>
   <div class="file-preview__actions">
-    <button type="button" onclick={onanalyze}>Analizar</button>
-    <button type="button" onclick={onreplace}>Reemplazar</button>
+    <button type="button" onclick={onanalyze}>{i18n.t('upload.preview.analyze')}</button>
+    <button type="button" onclick={onreplace}>{i18n.t('upload.preview.replace')}</button>
   </div>
 </div>
 

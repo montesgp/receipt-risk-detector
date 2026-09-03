@@ -7,6 +7,8 @@
   action stays disabled until then.
 -->
 <script lang="ts">
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
+
   type Variant = 'network' | 'timeout' | 'rate-limited' | 'rejected-file';
 
   let {
@@ -21,29 +23,30 @@
     onretry: () => void;
   } = $props();
 
+  const i18n = getI18nContext();
+
   // Every message here is authored copy, never `detail`/a stack trace, per
   // the "Server-side validation error is explained" spec scenario.
-  const REJECTED_FILE_MESSAGES: Record<string, string> = {
-    MISSING_FILE: 'No se recibió ningún archivo. Elegí un comprobante para continuar.',
-    FILE_TOO_LARGE: 'El archivo supera el límite de 10 MB. Elegí un comprobante más liviano.',
-    UNSUPPORTED_IMAGE: 'El formato no es compatible. Usá PNG, JPG o WebP.',
-    IMAGE_DIMENSIONS_EXCEEDED: 'Las dimensiones de la imagen exceden lo permitido.',
-    MALFORMED_RESPONSE: 'El servidor devolvió una respuesta inesperada.'
+  const REJECTED_FILE_MESSAGE_KEYS: Record<string, string> = {
+    MISSING_FILE: 'errors.rejectedFile.missingFile',
+    FILE_TOO_LARGE: 'errors.rejectedFile.fileTooLarge',
+    UNSUPPORTED_IMAGE: 'errors.rejectedFile.unsupportedImage',
+    IMAGE_DIMENSIONS_EXCEEDED: 'errors.rejectedFile.imageDimensionsExceeded',
+    MALFORMED_RESPONSE: 'errors.rejectedFile.malformedResponse'
   };
 
   const message = $derived.by(() => {
-    if (variant === 'network') return 'No pudimos contactar el servicio. Intentá nuevamente.';
-    if (variant === 'timeout') return 'El análisis no terminó a tiempo. Podés reintentar.';
+    if (variant === 'network') return i18n.t('errors.network');
+    if (variant === 'timeout') return i18n.t('errors.timeout');
     if (variant === 'rate-limited') {
       const wait =
         retryAfterSeconds !== undefined
-          ? `Reintentá en ${retryAfterSeconds} segundos.`
-          : 'Reintentá en unos instantes.';
-      return `Hay demasiadas solicitudes en este momento. ${wait}`;
+          ? i18n.t('errors.rateLimited.waitSeconds', { seconds: retryAfterSeconds })
+          : i18n.t('errors.rateLimited.waitGeneric');
+      return `${i18n.t('errors.rateLimited.prefix')} ${wait}`;
     }
-    return code && REJECTED_FILE_MESSAGES[code]
-      ? REJECTED_FILE_MESSAGES[code]
-      : 'Ocurrió un problema al procesar el comprobante. Elegí otro archivo.';
+    const key = code && REJECTED_FILE_MESSAGE_KEYS[code];
+    return i18n.t(key ?? 'errors.rejectedFile.generic');
   });
 
   const retryDisabled = $derived(variant === 'rate-limited' && retryAfterSeconds !== undefined);
@@ -51,7 +54,7 @@
 
 <div class="error-panel" role="alert">
   <p class="error-panel__message">{message}</p>
-  <button type="button" onclick={onretry} disabled={retryDisabled}>Reintentar</button>
+  <button type="button" onclick={onretry} disabled={retryDisabled}>{i18n.t('common.retry')}</button>
 </div>
 
 <style>

@@ -5,12 +5,13 @@
   disclaimer. See DESIGN.md §5 "Result language" for the exact required
   sentence and the forbidden-word list.
 -->
-<script lang="ts"></script>
+<script lang="ts">
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
-<p class="reconciliation-notice">
-  Este análisis evalúa el comprobante presentado. Confirmá la acreditación en la cuenta
-  beneficiaria antes de entregar productos o servicios.
-</p>
+  const i18n = getI18nContext();
+</script>
+
+<p class="reconciliation-notice">{i18n.t('legal.disclaimer')}</p>
 
 <style>
   .reconciliation-notice {
