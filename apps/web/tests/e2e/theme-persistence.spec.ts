@@ -64,7 +64,7 @@ test.describe('theme switcher responsive control (DESIGN.md §12)', () => {
     await expect(page.locator('.theme-switcher__cycle')).toBeHidden();
 
     const radios = page.getByRole('radio');
-    await expect(radios).toHaveCount(3);
+    await expect(radios).toHaveCount(2);
     for (const radio of await radios.all()) {
       const box = await radio.boundingBox();
       expect(box).not.toBeNull();
@@ -86,7 +86,7 @@ test.describe('theme switcher responsive control (DESIGN.md §12)', () => {
     // The current state (e.g. "Sistema"/"System") is visible text, not only
     // an aria-label (DESIGN.md §12 "a cycling icon button with a visible
     // current-state label").
-    await expect(cycleButton).toHaveText(/Sistema|Claro|Oscuro/i);
+    await expect(cycleButton).toHaveText(/Claro|Oscuro/i);
 
     const box = await cycleButton.boundingBox();
     expect(box).not.toBeNull();

@@ -1,5 +1,5 @@
 // Spec "Switchers are keyboard-operable with visible focus" and "State
-// change is announced and not color-only": tri-state `aria-checked`,
+// change is announced and not color-only": binary `aria-checked`,
 // keyboard-operable (native `<button>` + arrow-key roving), and the new
 // state announced via an ARIA live region (`role="status"`).
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -15,9 +15,9 @@ afterEach(() => {
   window.localStorage.clear();
 });
 
-function stubMatchMedia() {
+function stubMatchMedia(matches = false) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: false,
+    matches,
     media: query,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
@@ -38,21 +38,21 @@ function renderSwitcher(locale: 'es' | 'en' = 'es') {
 }
 
 describe('ThemeSwitcher', () => {
-  it('exposes a tri-state radiogroup with aria-checked reflecting the current mode', () => {
+  it('exposes a binary radiogroup with aria-checked reflecting the resolved theme', () => {
     renderSwitcher();
 
     const radios = screen.getAllByRole('radio');
-    expect(radios).toHaveLength(3);
+    expect(radios).toHaveLength(2);
     const checked = radios.find((radio) => radio.getAttribute('aria-checked') === 'true');
-    expect(checked?.textContent).toMatch(new RegExp(es['theme.system'], 'i'));
+    expect(checked?.textContent).toMatch(new RegExp(es['theme.light'], 'i'));
   });
 
-  it('exposes a tri-state radiogroup in English when locale is en', () => {
+  it('exposes a binary radiogroup in English when locale is en', () => {
     renderSwitcher('en');
 
     const radios = screen.getAllByRole('radio');
     const checked = radios.find((radio) => radio.getAttribute('aria-checked') === 'true');
-    expect(checked?.textContent).toMatch(new RegExp(en['theme.system'], 'i'));
+    expect(checked?.textContent).toMatch(new RegExp(en['theme.light'], 'i'));
   });
 
   it('selects a theme on click and reflects it in aria-checked', async () => {
@@ -77,11 +77,11 @@ describe('ThemeSwitcher', () => {
   it('is keyboard-operable: ArrowRight moves selection without a pointer device', async () => {
     const controller = renderSwitcher();
 
-    const systemRadio = screen.getByRole('radio', { name: new RegExp(es['theme.system'], 'i') });
-    systemRadio.focus();
-    await fireEvent.keyDown(systemRadio, { key: 'ArrowRight' });
+    const lightRadio = screen.getByRole('radio', { name: new RegExp(es['theme.light'], 'i') });
+    lightRadio.focus();
+    await fireEvent.keyDown(lightRadio, { key: 'ArrowRight' });
 
-    expect(controller.mode).toBe('light');
+    expect(controller.mode).toBe('dark');
   });
 
   // DESIGN.md §12 "Control": segmented control (>=768px) and cycling icon
@@ -123,20 +123,40 @@ describe('ThemeSwitcher', () => {
     });
 
     expect(container.querySelector('.theme-switcher__cycle')).toBeTruthy();
-    expect(container.querySelectorAll('.theme-switcher__segmented button')).toHaveLength(3);
+    expect(container.querySelectorAll('.theme-switcher__segmented button')).toHaveLength(2);
   });
 
-  it('the cycling button advances mode on click (system -> light -> dark -> system)', async () => {
+  it('the cycling button advances mode on click (light -> dark -> light)', async () => {
     const controller = renderSwitcher();
 
     const cycleButton = screen.getByRole('button', { name: /Cambiar tema/i });
     await fireEvent.click(cycleButton);
-    expect(controller.mode).toBe('light');
-
-    await fireEvent.click(cycleButton);
     expect(controller.mode).toBe('dark');
 
     await fireEvent.click(cycleButton);
+    expect(controller.mode).toBe('light');
+  });
+
+  // design.md "Decision: binary switcher keys off `controller.resolved`":
+  // `mode` stays 'system' until the first explicit choice (ThemeController is
+  // untouched), so a checked-state derived from `mode` would incorrectly show
+  // "Light" on a dark-first-paint. This proves the bug is fixed by deriving
+  // the checked state from `controller.resolved` instead.
+  it('a dark system preference shows Dark checked before any explicit choice', () => {
+    stubMatchMedia(true);
+    const controller = new ThemeController();
+    render(ThemeSwitcher, {
+      context: new Map<unknown, unknown>([
+        [THEME_CONTEXT_KEY, controller],
+        [I18N_CONTEXT_KEY, new I18n('es')]
+      ])
+    });
+
     expect(controller.mode).toBe('system');
+    expect(controller.resolved).toBe('dark');
+
+    const radios = screen.getAllByRole('radio');
+    const checked = radios.find((radio) => radio.getAttribute('aria-checked') === 'true');
+    expect(checked?.textContent).toMatch(new RegExp(es['theme.dark'], 'i'));
   });
 });

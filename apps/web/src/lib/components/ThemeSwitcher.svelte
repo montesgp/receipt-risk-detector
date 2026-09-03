@@ -1,7 +1,7 @@
 <!--
-  DESIGN.md §12 "Theme switcher UX": tri-state control (System · Light ·
-  Dark), `aria-checked` semantics, focus ring via `--color-focus`, state
-  change announced through an ARIA live region. Spec "Switchers are
+  DESIGN.md §12 "Theme switcher UX": binary control (Light · Dark),
+  `aria-checked` semantics, focus ring via `--color-focus`, state change
+  announced through an ARIA live region. Spec "Switchers are
   keyboard-operable with visible focus" / "State change is announced and
   not color-only".
 
@@ -19,29 +19,35 @@
   before hydration and needs no extra state. A hidden variant is inert to
   assistive tech (removed from the accessibility tree by `display: none`),
   so there is exactly one reachable control at any viewport width.
+
+  ui-design-refresh slice 3 fix: `controller.mode` stays 'system' until the
+  user makes an explicit choice (ThemeController is untouched), so a binary
+  control's checked/current state derives from `controller.resolved` (always
+  'light' | 'dark') instead of `mode` — otherwise a dark-first-paint via OS
+  preference would incorrectly render "Light" as checked. `theme.system`
+  stays in both message files for `ThemeMode`/i18n key-parity but is never
+  rendered as a selectable option.
 -->
 <script lang="ts">
-  import { getThemeContext, type ThemeMode } from '$lib/theme/theme.svelte';
+  import { getThemeContext } from '$lib/theme/theme.svelte';
   import { getI18nContext } from '$lib/i18n/i18n.svelte';
   import LiveRegion from './LiveRegion.svelte';
 
   const controller = getThemeContext();
   const i18n = getI18nContext();
 
-  const OPTIONS: { mode: ThemeMode; labelKey: string; icon: string }[] = [
-    { mode: 'system', labelKey: 'theme.system', icon: '🖥' },
+  const OPTIONS: { mode: 'light' | 'dark'; labelKey: string; icon: string }[] = [
     { mode: 'light', labelKey: 'theme.light', icon: '☀' },
     { mode: 'dark', labelKey: 'theme.dark', icon: '🌙' }
   ];
 
   let announcement = $state('');
 
-  const currentOption = $derived(
-    OPTIONS.find((candidate) => candidate.mode === controller.mode) ?? OPTIONS[0]
-  );
+  const active = $derived(controller.resolved);
+  const currentOption = $derived(OPTIONS.find((option) => option.mode === active) ?? OPTIONS[0]);
   const currentLabel = $derived(i18n.t(currentOption.labelKey));
 
-  function select(mode: ThemeMode): void {
+  function select(mode: 'light' | 'dark'): void {
     controller.setTheme(mode);
     const option = OPTIONS.find((candidate) => candidate.mode === mode);
     const label = option ? i18n.t(option.labelKey) : mode;
@@ -57,9 +63,7 @@
   }
 
   function cycle(): void {
-    const index = OPTIONS.findIndex((candidate) => candidate.mode === controller.mode);
-    const nextIndex = (index + 1) % OPTIONS.length;
-    select(OPTIONS[nextIndex].mode);
+    select(active === 'light' ? 'dark' : 'light');
   }
 </script>
 
@@ -73,8 +77,8 @@
       <button
         type="button"
         role="radio"
-        aria-checked={controller.mode === option.mode}
-        tabindex={controller.mode === option.mode ? 0 : -1}
+        aria-checked={active === option.mode}
+        tabindex={active === option.mode ? 0 : -1}
         onclick={() => select(option.mode)}
         onkeydown={(event) => handleKeydown(event, index)}
       >
