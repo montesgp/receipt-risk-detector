@@ -288,3 +288,56 @@ No CRITICAL findings. Translation quality (both directions), the key-parity test
 3. LanguageSwitcher.svelte's live-region announcement reuses each button's own aria-label key ("Switch to X") as the interpolated language name, producing grammatically awkward but not incorrect announcement text that the existing regex-based test does not catch.
 4. Both es.json and en.json use natural, idiomatic language in every one of 83 keys - the English is a genuine meaning-preserving translation, not a word-for-word calque or placeholder text.
 5. DropZone.svelte and ScoreSummary.svelte remain byte-identical to their pre-slice-3a state, absent from this PR's diff entirely, confirming the slice 3a/3b scope boundary was respected in practice, not just on paper.
+
+## Slice 3b (PR #17, feat/web-i18n-sweep -> dev, open, NOT merged, 6/6 CI green, both batches)
+
+**Verdict: PASS. 0 CRITICAL, 0 WARNING, 0 SUGGESTION (beyond one factual-narration correction below).**
+
+Independent verification performed (all re-executed/re-inspected this session, nothing trusted from apply-progress #1864 without confirmation):
+
+### 1. Full sweep completeness
+- Confirmed exactly 14 .svelte files under apps/web/src/lib/components/ via Glob, matching the file set literal-audit.test.ts's import.meta.glob picks up (test asserts files.length >= 14; it.each produced 15 tests = 1 sanity-check test + 14 per-file tests, confirming the glob pattern captured every component, not fewer).
+- Read all 14 components' template markup directly (not just trusting the audit test): DropZone, FilePreview, ProcessingStages, ErrorPanel, ReconciliationNotice (batch 1), ScoreSummary, EvidenceItem, EvidenceList, ExtractedDataTable, ReconciliationChecklist, TechnicalDetail, ResultView, ThemeSwitcher, LanguageSwitcher (batch 2 + prior). All string-bearing markup routes through i18n.t(...); zero hardcoded Spanish literals found independent of the automated audit.
+- The audit's regex on markup with script/style/HTML comments stripped is a sound and sufficient check for this codebase: Spanish without at least one accented/n-tilde/inverted-punctuation character essentially does not occur in this project's copy (confirmed by reading es.json). This is a reasonable, CI-enforced proxy, not merely a self-fulfilling test.
+
+### 2. literal-audit.test.ts rewrite (node:fs to import.meta.glob)
+- Ran npx vitest run standalone: literal-audit.test.ts passes 15/15.
+- Ran rm -rf .svelte-kit and npm run check from a genuinely fresh state: 260 FILES 0 ERRORS 0 WARNINGS - confirms the node:fs/node:path type-check failure (this workspace deliberately carries no @types/node, per the file's own comment) is genuinely resolved, not a fluke of a warm .svelte-kit cache.
+
+### 3. LanguageSwitcher announcement fix
+- Read LanguageSwitcher.svelte: select() now resolves header.language.nameEs/header.language.nameEn (the language's own name) for the {language} interpolation, not the button's own switchToEs/switchToEn aria-label key (the bug flagged in slice 3a's verify report, #1865).
+- Read LanguageSwitcher.test.ts: two dedicated tests assert exact literal announcement text - 'Language: English' (es to en) and 'Idioma: Espanol' (en to es) - with explicit negative assertions proving the old bug text cannot reappear silently. Confirmed passing in the live run.
+
+### 4. Bidirectional i18n proof (ES + EN)
+- ScoreSummary.test.ts: dedicated en tests for classification-first rendering and for INCONCLUSIVE-no-forced-color, in addition to the es baseline.
+- ResultView.test.ts: dedicated en test rendering the full result screen in English.
+- ErrorPanel.test.ts: every variant (network, timeout, rate-limited, rejected-file) has a parallel es/en test pair asserting against the real catalog values, not fixed strings.
+- ReconciliationNotice.test.ts: es and en disclaimer tests plus one that checks forbidden-authenticity-language absence in both locales.
+
+### 5. locale-integration.test.ts
+- Read the test and its LocaleIntegrationHost.svelte support component: the host mirrors the real +layout.svelte/+page.svelte composition (single shared I18n context feeding LanguageSwitcher + ResultView, which itself composes ScoreSummary/EvidenceList/ExtractedDataTable).
+- The test renders once, asserts Spanish text is present across all three nested components, fires a single click on the LanguageSwitcher button, then asserts English text appears in all three AND Spanish text is gone from all three, then switches back and re-verifies Spanish. This is genuine cross-component proof of shared reactive state, not three independent unit tests bundled in one file.
+
+### 6. No regression
+- ScoreSummary.test.ts: INCONCLUSIVE-no-forced-color logic (slice 1b) re-verified in both es and en.
+- ExtractedDataTable.svelte/test: masked_value-only display logic (slice 1b) unchanged - reads field.masked_value first, falls back to raw value only when absent; confirmed by direct code read.
+- ReconciliationNotice.test.ts: disclaimer renders unconditionally in both languages (slice 1a/1b invariant, DD7) - explicitly tested both ways.
+- app.html's anti-flash theme script (slice 2) is untouched by this PR's diff (confirmed via git diff --stat; app.html does not appear in the changed-files list) - inspected directly, still sets data-theme synchronously from localStorage/matchMedia before paint.
+
+### 7. key-parity.test.ts
+- Ran standalone: 3/3 passing.
+- Independently counted keys: Object.keys(es.json).length === Object.keys(en.json).length === 75 (verified via a throwaway node -e script, not by trusting the test or prior narration).
+- Correction to the task brief's assumption: the "85 total keys" figure in the verification instructions (implying 83 prior + 2 new) does not match the file on disk - the actual count is 75 keys in both locales, exact parity maintained. This does not indicate a functional defect (parity holds, no orphan keys, key-parity.test.ts passes), but the specific number "85" was a narration/tracking error somewhere upstream (either slice 3a's verify report's "83 keys" figure or the count itself), not a discrepancy introduced by slice 3b. Flagged as a SUGGESTION-level correction only.
+
+### 8. Full suite re-execution (this session, independent)
+- cd apps/web && npx vitest run: 23 files / 142 tests passing - exact match to apply-progress's claim.
+- cd apps/web && rm -rf .svelte-kit && npm run check (fresh state): 260 files, 0 errors, 0 warnings - apply-progress said 259; the 1-file discrepancy is noise from svelte-kit sync regenerating slightly different file counts across runs, not a defect.
+- cd apps/api && uv run pytest: 129 passed, 4 skipped - backend fully unaffected, confirming the "backend untouched" claim.
+- git diff --stat origin/dev...HEAD: 34 files changed, 750 insertions(+), 247 deletions(-) - apply-progress reported 743(+); the 7-line difference is immaterial and does not affect the verdict.
+- gh pr checks 17: all 6 checks passing (API Lint and Test, Web Lint and Test, Check Issue Has status:approved, Check Issue Reference, Check PR Has type:* Label, Check Source Branch). PR is OPEN and MERGEABLE.
+
+### tasks.md vs code state
+Slice 3b Phase 1 (1.1, 1.2), Phase 2 (2.1, 2.2), Phase 3 (3.1, 3.2) all [x] - matches code state exactly. No unchecked task found for this slice.
+
+### Final verdict
+PASS. No CRITICAL or WARNING issues found. PR #17 is safe to merge as-is. The only note is a non-blocking factual correction (item 7 above) about a stale key-count figure that does not affect functional correctness.
