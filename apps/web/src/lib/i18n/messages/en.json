@@ -5,6 +5,8 @@
   "header.language.groupLabel": "Language",
   "header.language.switchToEs": "Switch to Spanish",
   "header.language.switchToEn": "Switch to English",
+  "header.language.nameEs": "Spanish",
+  "header.language.nameEn": "English",
   "header.language.announcement": "Language: {language}",
 
   "theme.groupLabel": "Theme",

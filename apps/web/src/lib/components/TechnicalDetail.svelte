@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
   import type { AnalyzerStatusModel } from '$lib/api/types';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
   let {
     engineVersion,
@@ -15,14 +16,16 @@
     rulesetVersion: string;
     analyzerStatuses: AnalyzerStatusModel[];
   } = $props();
+
+  const i18n = getI18nContext();
 </script>
 
 <details class="technical-detail">
-  <summary>Detalle técnico</summary>
+  <summary>{i18n.t('result.technical.summary')}</summary>
   <dl class="technical-detail__versions">
-    <dt>Versión del motor</dt>
+    <dt>{i18n.t('result.technical.engineVersion')}</dt>
     <dd><code>{engineVersion}</code></dd>
-    <dt>Versión del conjunto de reglas</dt>
+    <dt>{i18n.t('result.technical.rulesetVersion')}</dt>
     <dd><code>{rulesetVersion}</code></dd>
   </dl>
 
@@ -30,9 +33,9 @@
     <table class="technical-detail__analyzers">
       <thead>
         <tr>
-          <th scope="col">Analizador</th>
-          <th scope="col">Estado</th>
-          <th scope="col">Duración</th>
+          <th scope="col">{i18n.t('result.technical.analyzerColumn')}</th>
+          <th scope="col">{i18n.t('result.technical.statusColumn')}</th>
+          <th scope="col">{i18n.t('result.technical.durationColumn')}</th>
         </tr>
       </thead>
       <tbody>

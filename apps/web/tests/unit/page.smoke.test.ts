@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import Page from '../../src/routes/+page.svelte';
+import { I18N_CONTEXT_KEY, I18n } from '../../src/lib/i18n/i18n.svelte';
 
 afterEach(() => {
   cleanup();
@@ -19,6 +20,14 @@ const DISCLAIMER_TEXT = /Confirmá la acreditación en la cuenta beneficiaria/i;
 
 function makeFile(type = 'image/png', size = 1024): File {
   return new File([new Uint8Array(size)], 'receipt.png', { type });
+}
+
+// `+page.svelte` reads i18n from context, which `+layout.svelte` normally
+// provides; this smoke test renders the page in isolation, so it must supply
+// the same context itself (mirrors the pattern used by
+// DropZone/FilePreview/etc. component tests).
+function renderPage() {
+  return render(Page, { context: new Map([[I18N_CONTEXT_KEY, new I18n('es')]]) });
 }
 
 function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}): Response {
@@ -49,7 +58,7 @@ async function selectFileViaInput(file: File): Promise<void> {
 
 describe('+page.svelte wiring', () => {
   it('renders the idle drop zone and the disclaimer on first load', () => {
-    render(Page);
+    renderPage();
 
     expect(screen.getByText(/Arrastrá o seleccioná un comprobante/i)).toBeTruthy();
     expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
@@ -76,7 +85,7 @@ describe('+page.svelte wiring', () => {
       )
     );
 
-    render(Page);
+    renderPage();
     expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
 
     await selectFileViaInput(makeFile());
@@ -98,7 +107,7 @@ describe('+page.svelte wiring', () => {
   it('shows a distinct connectivity error, never a result, on a network failure — disclaimer stays present', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
 
-    render(Page);
+    renderPage();
     await selectFileViaInput(makeFile());
     screen.getByRole('button', { name: /Analizar/i }).click();
 
@@ -113,7 +122,7 @@ describe('+page.svelte wiring', () => {
       vi.fn().mockResolvedValue(jsonResponse(429, problem(429, 'RATE_LIMITED'), { 'retry-after': '15' }))
     );
 
-    render(Page);
+    renderPage();
     await selectFileViaInput(makeFile());
     screen.getByRole('button', { name: /Analizar/i }).click();
 
@@ -127,7 +136,7 @@ describe('+page.svelte wiring', () => {
       vi.fn().mockResolvedValue(jsonResponse(415, problem(415, 'UNSUPPORTED_IMAGE')))
     );
 
-    render(Page);
+    renderPage();
     await selectFileViaInput(makeFile());
     screen.getByRole('button', { name: /Analizar/i }).click();
 
@@ -140,7 +149,7 @@ describe('+page.svelte wiring', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    render(Page);
+    renderPage();
     await selectFileViaInput(makeFile('image/png', 11 * 1024 * 1024));
 
     expect(fetchMock).not.toHaveBeenCalled();

@@ -7,6 +7,9 @@
   accompanies the color per §10 accessibility).
 -->
 <script lang="ts">
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
+  import { actionKey, classificationKey } from '$lib/i18n/enum-map';
+
   let {
     classification,
     riskScore,
@@ -23,6 +26,8 @@
     recommendedAction: string;
   } = $props();
 
+  const i18n = getI18nContext();
+
   const RISK_TIER: Record<string, string> = {
     LOW_RISK: 'low',
     REVIEW_RECOMMENDED: 'review',
@@ -31,41 +36,34 @@
     // INCONCLUSIVE intentionally omitted: no forced risk-tier color.
   };
 
-  const CLASSIFICATION_LABEL: Record<string, string> = {
-    LOW_RISK: 'Riesgo bajo',
-    REVIEW_RECOMMENDED: 'Revisión recomendada',
-    SUSPICIOUS: 'Sospechoso',
-    HIGH_RISK: 'Riesgo alto',
-    INCONCLUSIVE: 'No concluyente'
-  };
-
-  const ACTION_LABEL: Record<string, string> = {
-    STANDARD_MANUAL_RECONCILIATION: 'Realizá la conciliación manual habitual.',
-    PRIORITY_MANUAL_RECONCILIATION: 'Priorizá la conciliación manual antes de continuar.',
-    DO_NOT_RELY_ON_RECEIPT: 'No te bases en este comprobante para acreditar el pago.'
-  };
-
   const tier = $derived(RISK_TIER[classification]);
   const isInconclusive = $derived(classification === 'INCONCLUSIVE');
   const confidencePercent = $derived(Math.round(confidenceScore));
+  const classificationLabel = $derived.by(() => {
+    const key = classificationKey(classification);
+    return key ? i18n.t(key) : classification;
+  });
+  const actionLabel = $derived.by(() => {
+    const key = actionKey(recommendedAction);
+    return key ? i18n.t(key) : undefined;
+  });
 </script>
 
 <section class="score-summary" class:score-summary--low={tier === 'low'} class:score-summary--review={tier === 'review'} class:score-summary--high={tier === 'high'}>
-  <p class="score-summary__classification">{CLASSIFICATION_LABEL[classification] ?? classification}</p>
+  <p class="score-summary__classification">{classificationLabel}</p>
 
   {#if isInconclusive}
     <p class="score-summary__inconclusive-note">
-      No detectamos evidencia suficiente. La confianza del análisis ({confidencePercent}%) es baja;
-      priorizá la conciliación manual.
+      {i18n.t('result.inconclusiveNote', { confidence: confidencePercent })}
     </p>
   {:else}
     <p class="score-summary__risk">{riskScore} / 100</p>
   {/if}
 
-  <p class="score-summary__confidence">Confianza del análisis: {confidencePercent}%</p>
+  <p class="score-summary__confidence">{i18n.t('result.confidenceLabel', { confidence: confidencePercent })}</p>
 
-  {#if ACTION_LABEL[recommendedAction]}
-    <p class="score-summary__action">{ACTION_LABEL[recommendedAction]}</p>
+  {#if actionLabel}
+    <p class="score-summary__action">{actionLabel}</p>
   {/if}
 </section>
 

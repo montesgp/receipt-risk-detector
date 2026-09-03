@@ -199,16 +199,16 @@ their own, whereas a single slice-3 PR would combine two unrelated risks
 ## Slice 3b: Literal-Copy Replacement Sweep
 
 ### Phase 1: Namespace — upload/errors
-- [ ] 1.1 RED update `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` tests asserting `t()`-driven copy replaces hardcoded literals
-- [ ] 1.2 GREEN replace hardcoded Spanish literals in those components with `t()` calls; add any missing keys to `es.json`/`en.json`
+- [x] 1.1 RED update `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` tests asserting `t()`-driven copy replaces hardcoded literals — **NOTE**: also fixed the `LanguageSwitcher` announcement bug (was interpolating the button's "switch to" `aria-label` key instead of a language name) and added `LanguageSwitcher.test.ts` cases proving the correct announcement text in both directions (es→en, en→es); also updated `tests/unit/page.smoke.test.ts` to supply an `I18n` context (it renders `+page.svelte` standalone, without `+layout.svelte`, and now needs the same context every touched component reads)
+- [x] 1.2 GREEN replace hardcoded Spanish literals in `DropZone`/`FilePreview`/`ProcessingStages`/`ErrorPanel`/`ReconciliationNotice` with `t()` calls against existing slice 3a keys; added `header.language.nameEs`/`header.language.nameEn` to `es.json`/`en.json` for the `LanguageSwitcher` fix (the only new keys this batch — no new upload/errors/legal keys were needed, slice 3a's seed already covered them)
 
 ### Phase 2: Namespace — result/evidence/theme
-- [ ] 2.1 RED update `ScoreSummary`/`EvidenceList`/`ExtractedDataTable`/`ReconciliationChecklist`/`TechnicalDetail`/`ResultView`/`ThemeSwitcher` tests asserting `t()`-driven copy
-- [ ] 2.2 GREEN replace remaining literals; add missing keys
+- [x] 2.1 RED update `ScoreSummary`/`EvidenceList`/`ExtractedDataTable`/`ReconciliationChecklist`/`TechnicalDetail`/`ResultView`/`ThemeSwitcher` tests asserting `t()`-driven copy — **NOTE**: also added `tests/unit/locale-integration.test.ts` (with a test-only `tests/unit/support/LocaleIntegrationHost.svelte` mirroring the real `+layout.svelte`/`+page.svelte` composition) proving a single `LanguageSwitcher` click re-renders `ScoreSummary` + `EvidenceList` + `ExtractedDataTable` together from shared state, not just each component in isolation
+- [x] 2.2 GREEN replace remaining literals in `ScoreSummary`/`EvidenceItem`/`EvidenceList`/`ExtractedDataTable`/`ReconciliationChecklist`/`TechnicalDetail`/`ResultView`/`ThemeSwitcher` with `t()` calls against existing slice 3a `result.*`/`evidence.*`/`theme.*` keys and `lib/i18n/enum-map.ts` helpers (`classificationKey`/`actionKey`/`severityKey`); no new keys were needed — the slice 3a seed already covered this namespace
 
 ### Phase 3: Verification
-- [ ] 3.1 GREEN re-run `key-parity.test.ts` — confirm no orphan keys after full sweep
-- [ ] 3.2 GREEN add a literal-string audit check (grep-based CI step or documented manual audit) proving no user-facing string remains hardcoded outside the message store (Success Criteria)
+- [x] 3.1 GREEN re-run `key-parity.test.ts` — confirm no orphan keys after full sweep (3/3 passing, no keys added this batch)
+- [x] 3.2 GREEN added `tests/unit/literal-audit.test.ts` — a grep-based Vitest check that scans every `.svelte` file under `lib/components/` (all 14, both batches) for hardcoded accented-Spanish characters in template markup (script/comment/style blocks excluded), runs as part of the existing `npx vitest run` CI job, and fails future regressions automatically
 
 #### Slice 3b Review Workload Forecast
 | Field | Value |

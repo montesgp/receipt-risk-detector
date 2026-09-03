@@ -62,6 +62,29 @@ describe('LanguageSwitcher', () => {
     expect(status.textContent).toMatch(/language|idioma/i);
   });
 
+  it('announces the resolved language NAME, not the switch-to button label (es -> en)', async () => {
+    renderSwitcher('es');
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Cambiar a inglés' }));
+
+    const status = screen.getByRole('status');
+    // Announcement renders in the NEW active locale (English, since we just
+    // switched to it), naming the language itself — never the button's
+    // "switch to" label copy.
+    expect(status.textContent).toBe('Language: English');
+    expect(status.textContent).not.toMatch(/Switch to/i);
+  });
+
+  it('announces the resolved language NAME in Spanish (en -> es)', async () => {
+    renderSwitcher('en');
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Switch to Spanish' }));
+
+    const status = screen.getByRole('status');
+    expect(status.textContent).toBe('Idioma: Español');
+    expect(status.textContent).not.toMatch(/Cambiar a/i);
+  });
+
   it('persists the choice to localStorage', async () => {
     window.localStorage.clear();
     renderSwitcher('es');

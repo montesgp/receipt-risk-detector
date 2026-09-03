@@ -9,18 +9,22 @@
 <script lang="ts">
   import type { ExtractedFieldModel } from '$lib/api/types';
   import { formatAmount, formatDateTime } from '$lib/features/receipt-analysis/format';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
   let { data }: { data: Record<string, ExtractedFieldModel> } = $props();
 
-  const FIELD_LABEL: Record<string, string> = {
-    amount: 'Monto',
-    destination_cbu: 'CBU/CVU destino',
-    cuit: 'CUIT/CUIL',
-    date_time: 'Fecha y hora'
+  const i18n = getI18nContext();
+
+  const FIELD_LABEL_KEY: Record<string, string> = {
+    amount: 'result.field.amount',
+    destination_cbu: 'result.field.destination_cbu',
+    cuit: 'result.field.cuit',
+    date_time: 'result.field.date_time'
   };
 
   function labelFor(key: string): string {
-    return FIELD_LABEL[key] ?? key;
+    const messageKey = FIELD_LABEL_KEY[key];
+    return messageKey ? i18n.t(messageKey) : key;
   }
 
   // Never unmask: a masked field is rendered from `masked_value` only. Raw
@@ -48,7 +52,7 @@
           <td class="extracted-data-table__confidence">{Math.round(field.confidence * 100)}%</td>
           <td class="extracted-data-table__checksum">
             {#if field.is_checksum_valid !== undefined && field.is_checksum_valid !== null}
-              {field.is_checksum_valid ? 'Dígito verificador válido' : 'Dígito verificador inválido'}
+              {field.is_checksum_valid ? i18n.t('result.checksum.valid') : i18n.t('result.checksum.invalid')}
             {/if}
           </td>
         </tr>
@@ -56,7 +60,7 @@
     </tbody>
   </table>
 {:else}
-  <p class="extracted-data-table__empty">No se extrajeron datos estructurados de este comprobante.</p>
+  <p class="extracted-data-table__empty">{i18n.t('result.extractedEmpty')}</p>
 {/if}
 
 <style>

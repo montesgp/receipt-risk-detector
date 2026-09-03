@@ -5,10 +5,14 @@
   API yet, so this shows one honest indeterminate stage rather than
   simulating granular progress the API cannot actually report.
 -->
-<script lang="ts"></script>
+<script lang="ts">
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
+
+  const i18n = getI18nContext();
+</script>
 
 <div role="status" aria-live="polite" class="processing">
-  <p class="processing__label">Analizando el comprobante…</p>
+  <p class="processing__label">{i18n.t('processing.label')}</p>
   <div class="processing__bar" aria-hidden="true"></div>
 </div>
 

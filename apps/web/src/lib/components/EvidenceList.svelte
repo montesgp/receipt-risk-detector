@@ -6,8 +6,11 @@
 <script lang="ts">
   import type { SignalModel } from '$lib/api/types';
   import EvidenceItem from './EvidenceItem.svelte';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
   let { signals }: { signals: SignalModel[] } = $props();
+
+  const i18n = getI18nContext();
 
   const SEVERITY_RANK: Record<string, number> = {
     critical: 4,
@@ -33,7 +36,7 @@
     {/each}
   </ul>
 {:else}
-  <p class="evidence-list__empty">No se registraron señales de riesgo para este comprobante.</p>
+  <p class="evidence-list__empty">{i18n.t('evidence.empty')}</p>
 {/if}
 
 <style>
