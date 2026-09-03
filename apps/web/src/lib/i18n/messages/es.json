@@ -14,6 +14,7 @@
   "theme.light": "Claro",
   "theme.dark": "Oscuro",
   "theme.announcement": "Tema: {label}",
+  "theme.cycleLabel": "Cambiar tema (actual: {label})",
 
   "upload.dropzone.heading": "Arrastrá o seleccioná un comprobante",
   "upload.dropzone.constraints": "PNG, JPG o WebP · máximo 10 MB",

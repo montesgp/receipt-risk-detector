@@ -9,10 +9,15 @@
   pattern), set once by the layout via `setI18nContext`. Switching locale
   only flips which catalog `t()` reads from — it never re-uploads or
   re-calls the API (design.md "Result re-render on locale switch").
+
+  Announcements go through the shared `LiveRegion.svelte` (slice 4) — slice
+  3a used a local `role="status"` workaround because that component did not
+  exist yet.
 -->
 <script lang="ts">
   import { getI18nContext } from '$lib/i18n/i18n.svelte';
   import type { Locale } from '$lib/i18n/resolve';
+  import LiveRegion from './LiveRegion.svelte';
 
   const i18n = getI18nContext();
 
@@ -42,7 +47,7 @@
     </button>
   {/each}
 </div>
-<p class="visually-hidden" role="status" aria-live="polite">{announcement}</p>
+<LiveRegion message={announcement} />
 
 <style>
   .language-switcher {
@@ -68,17 +73,5 @@
   .language-switcher button[aria-pressed='true'] {
     background: var(--color-action);
     color: var(--color-action-text);
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
 </style>
