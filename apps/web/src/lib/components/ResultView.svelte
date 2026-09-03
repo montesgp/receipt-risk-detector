@@ -24,15 +24,15 @@
   import ReconciliationChecklist from './ReconciliationChecklist.svelte';
   import ExtractedDataTable from './ExtractedDataTable.svelte';
   import TechnicalDetail from './TechnicalDetail.svelte';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
   let { result }: { result: AnalyzeResponse } = $props();
 
-  const CLIENT_LIMITATION_DISCLAIMER =
-    'Este análisis evalúa el comprobante presentado. Confirmá la acreditación en la cuenta beneficiaria antes de entregar productos o servicios.';
+  const i18n = getI18nContext();
 </script>
 
 <section class="result-view" aria-labelledby="result-heading">
-  <h2 id="result-heading">Resultado del análisis</h2>
+  <h2 id="result-heading">{i18n.t('result.heading')}</h2>
 
   <ScoreSummary
     classification={result.classification}
@@ -42,21 +42,21 @@
   />
 
   <div class="result-view__limitations">
-    <p>{CLIENT_LIMITATION_DISCLAIMER}</p>
+    <p>{i18n.t('legal.disclaimer')}</p>
   </div>
 
   <section aria-labelledby="evidence-heading">
-    <h3 id="evidence-heading">Evidencia principal</h3>
+    <h3 id="evidence-heading">{i18n.t('result.evidenceHeading')}</h3>
     <EvidenceList signals={result.signals} />
   </section>
 
   <section aria-labelledby="checklist-heading">
-    <h3 id="checklist-heading">Checklist de conciliación manual</h3>
+    <h3 id="checklist-heading">{i18n.t('result.checklistHeading')}</h3>
     <ReconciliationChecklist data={result.extracted_data} />
   </section>
 
   <section aria-labelledby="extracted-heading">
-    <h3 id="extracted-heading">Datos extraídos</h3>
+    <h3 id="extracted-heading">{i18n.t('result.extractedHeading')}</h3>
     <ExtractedDataTable data={result.extracted_data} />
   </section>
 

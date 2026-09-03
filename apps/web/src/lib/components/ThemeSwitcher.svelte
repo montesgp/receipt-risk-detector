@@ -12,13 +12,15 @@
 -->
 <script lang="ts">
   import { getThemeContext, type ThemeMode } from '$lib/theme/theme.svelte';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
   const controller = getThemeContext();
+  const i18n = getI18nContext();
 
-  const OPTIONS: { mode: ThemeMode; label: string }[] = [
-    { mode: 'system', label: 'Sistema' },
-    { mode: 'light', label: 'Claro' },
-    { mode: 'dark', label: 'Oscuro' }
+  const OPTIONS: { mode: ThemeMode; labelKey: string }[] = [
+    { mode: 'system', labelKey: 'theme.system' },
+    { mode: 'light', labelKey: 'theme.light' },
+    { mode: 'dark', labelKey: 'theme.dark' }
   ];
 
   let announcement = $state('');
@@ -26,7 +28,8 @@
   function select(mode: ThemeMode): void {
     controller.setTheme(mode);
     const option = OPTIONS.find((candidate) => candidate.mode === mode);
-    announcement = `Tema: ${option?.label ?? mode}`;
+    const label = option ? i18n.t(option.labelKey) : mode;
+    announcement = i18n.t('theme.announcement', { label });
   }
 
   function handleKeydown(event: KeyboardEvent, index: number): void {
@@ -38,7 +41,7 @@
   }
 </script>
 
-<div class="theme-switcher" role="radiogroup" aria-label="Tema">
+<div class="theme-switcher" role="radiogroup" aria-label={i18n.t('theme.groupLabel')}>
   {#each OPTIONS as option, index (option.mode)}
     <button
       type="button"
@@ -48,7 +51,7 @@
       onclick={() => select(option.mode)}
       onkeydown={(event) => handleKeydown(event, index)}
     >
-      {option.label}
+      {i18n.t(option.labelKey)}
     </button>
   {/each}
 </div>

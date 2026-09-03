@@ -5,27 +5,27 @@
 -->
 <script lang="ts">
   import type { SignalModel } from '$lib/api/types';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
+  import { severityKey } from '$lib/i18n/enum-map';
 
   let { signal }: { signal: SignalModel } = $props();
 
-  const SEVERITY_LABEL: Record<string, string> = {
-    info: 'Informativa',
-    low: 'Baja',
-    medium: 'Media',
-    high: 'Alta',
-    critical: 'Crítica'
-  };
+  const i18n = getI18nContext();
 
   const confidencePercent = $derived(Math.round(signal.confidence * 100));
+  const severityLabel = $derived.by(() => {
+    const key = severityKey(signal.severity);
+    return key ? i18n.t(key) : signal.severity;
+  });
 </script>
 
 <li class="evidence-item" data-code={signal.code}>
-  <p class="evidence-item__severity">{SEVERITY_LABEL[signal.severity] ?? signal.severity}</p>
+  <p class="evidence-item__severity">{severityLabel}</p>
   <p class="evidence-item__description">{signal.description}</p>
   <dl class="evidence-item__meta">
-    <dt>Confianza</dt>
+    <dt>{i18n.t('evidence.confidenceLabel')}</dt>
     <dd>{confidencePercent}%</dd>
-    <dt>Aporte al puntaje</dt>
+    <dt>{i18n.t('evidence.scoreContributionLabel')}</dt>
     <dd>{signal.score_contribution}</dd>
   </dl>
 </li>

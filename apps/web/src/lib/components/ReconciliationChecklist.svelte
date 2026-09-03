@@ -8,27 +8,30 @@
 -->
 <script lang="ts">
   import type { ExtractedFieldModel } from '$lib/api/types';
+  import { getI18nContext } from '$lib/i18n/i18n.svelte';
 
   let { data }: { data: Record<string, ExtractedFieldModel> } = $props();
 
-  const CHECKLIST_ITEMS: { key: string; label: string }[] = [
-    { key: 'amount', label: 'Monto acreditado' },
-    { key: 'date_time', label: 'Fecha aproximada' },
-    { key: 'destination_cbu', label: 'CBU/CVU beneficiario' },
-    { key: 'cuit', label: 'CUIT/CUIL beneficiario' }
+  const i18n = getI18nContext();
+
+  const CHECKLIST_ITEMS: { key: string; labelKey: string }[] = [
+    { key: 'amount', labelKey: 'result.checklist.amount' },
+    { key: 'date_time', labelKey: 'result.checklist.date_time' },
+    { key: 'destination_cbu', labelKey: 'result.checklist.destination_cbu' },
+    { key: 'cuit', labelKey: 'result.checklist.cuit' }
   ];
 
   function statusFor(key: string): string {
     const field = data[key];
-    if (!field) return 'No extraído del comprobante — verificá manualmente.';
-    return 'Presente en el comprobante — comparalo con tu cuenta.';
+    if (!field) return i18n.t('result.checklist.missing');
+    return i18n.t('result.checklist.present');
   }
 </script>
 
 <ul class="reconciliation-checklist">
   {#each CHECKLIST_ITEMS as item (item.key)}
     <li class="reconciliation-checklist__item">
-      <span class="reconciliation-checklist__label">{item.label}</span>
+      <span class="reconciliation-checklist__label">{i18n.t(item.labelKey)}</span>
       <span class="reconciliation-checklist__status">{statusFor(item.key)}</span>
     </li>
   {/each}
