@@ -24,6 +24,10 @@ dependencies = [
     # (design.md's "cold-start and image size are High risks on Railway").
     "torch>=2.4",
     "torchvision>=0.19",
+    # adapters/ocr/field_parsers.py's date scanner: dateutil.parser.parse
+    # handles the wide format coverage (numeric/ISO/day-month-name, with or
+    # without seconds/timezone) that a hand-rolled parser would duplicate.
+    "python-dateutil>=2.9",
 ]
 
 [project.optional-dependencies]
@@ -85,6 +89,7 @@ select = ["E", "F", "I", "UP", "B", "TID", "S602", "S604", "S605", "S607"]
 "rapidocr_onnxruntime".msg = "The OCR engine is an adapter-only dependency."
 "torch".msg = "PyTorch is an adapter-only dependency (adapters/vision/**)."
 "torchvision".msg = "torchvision is an adapter-only dependency (adapters/vision/**)."
+"dateutil".msg = "python-dateutil is an adapter-only dependency (adapters/ocr/**)."
 
 [tool.ruff.lint.per-file-ignores]
 "src/receipt_risk/adapters/**" = ["TID251"]
