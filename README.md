@@ -36,7 +36,7 @@ MVP 1 excludes authentication, organizations, persistent history, bank connectio
 
 | Area | Technology |
 | --- | --- |
-| Web | SvelteKit 5, TypeScript, custom CSS |
+| Web | SvelteKit 5, TypeScript, Tailwind CSS v4 (@tailwindcss/vite) over DESIGN.md tokens |
 | API | Python 3.12+, FastAPI, Pydantic |
 | Image processing | Pillow, OpenCV |
 | OCR | PaddleOCR first; Tesseract as benchmark/fallback candidate |
@@ -110,7 +110,23 @@ API:  http://localhost:8000
 Docs: http://localhost:8000/docs
 ```
 
-These commands are target-state documentation until the initial scaffold is implemented.
+`docker compose up --build` is target-state until it is wired end-to-end. Until then, run the API
+and the web client separately:
+
+```bash
+# Terminal 1 — API (must allow the web dev server's origin)
+cd apps/api
+RECEIPT_RISK_CORS_ALLOWED_ORIGINS=http://localhost:5173 uv run uvicorn receipt_risk.bootstrap.app:app --reload
+
+# Terminal 2 — Web client
+cd apps/web
+npm install
+npm run dev
+```
+
+Without `RECEIPT_RISK_CORS_ALLOWED_ORIGINS` set to the web dev server's origin, every request from
+the browser fails as a network error indistinguishable from the API being down. See
+[Local-Setup](docs/wiki/Local-Setup.md) for the full walkthrough, including `apps/web/env.sample`.
 
 ## Repository layout
 

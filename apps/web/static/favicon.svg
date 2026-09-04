@@ -1,0 +1,34 @@
+<!--
+  ui-polish round 3: bug found and fixed here — the previous comment in this
+  file contained literal double-hyphen runs (from CSS custom property names),
+  which the XML spec forbids inside a comment. That made this whole file
+  invalid XML: it still worked as a plain HTTP GET (no XML parsing there)
+  and even rendered in some link rel=icon paths, but broke as a strict
+  img/favicon-tab render in real Chrome. Comment text below is written
+  without a literal double hyphen. Also simplified from 6 shapes to 4 and
+  thickened the stroke, since a fine multi-line receipt icon reads as noise
+  at 16px; a bold rounded square with a magnifying glass reads clearly at
+  favicon sizes. Same metaphor as before: inspecting a receipt, not a
+  checkmark or shield, so it never implies an authenticity guarantee.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <style>
+    .mark {
+      fill: none;
+      stroke: #141414;
+      stroke-width: 2.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    @media (prefers-color-scheme: dark) {
+      .mark {
+        stroke: #f3f3f1;
+      }
+    }
+  </style>
+  <rect class="mark" x="5" y="5" width="14" height="18" rx="2.5" />
+  <line class="mark" x1="9" y1="11.5" x2="15" y2="11.5" />
+  <line class="mark" x1="9" y1="16.5" x2="15" y2="16.5" />
+  <circle class="mark" cx="22.5" cy="22.5" r="5.5" />
+  <line class="mark" x1="26.3" y1="26.3" x2="29.5" y2="29.5" />
+</svg>

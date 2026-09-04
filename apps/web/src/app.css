@@ -1,0 +1,204 @@
+/* DESIGN.md §6.2 (typography), §6.3 (color tokens), §6.4 (spacing/grid),
+   §12 (theme switcher: [data-theme='dark'] override + .theme-transition). */
+
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* ui-polish round 2: `--font-sans`/`--font-mono` below named "Geist Sans" /
+   "Geist Mono" since the first slice, but the actual font files were never
+   loaded — every browser silently fell back to system-ui, which is part of
+   why the UI read as generic. Self-hosted (not a Google Fonts/CDN request)
+   variable-weight woff2 files copied from the `geist` npm package
+   (SIL OFL 1.1 — see static/fonts/LICENSE.txt, bundled per the license's
+   redistribution requirement) into static/fonts, so it works offline and
+   without an extra external request. */
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  --color-canvas: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-text: #141414;
+  --color-text-muted: #666666;
+  --color-border: #deded9;
+  --color-action: #171717;
+  --color-action-text: #ffffff;
+  --color-risk-low: #247a52;
+  --color-risk-review: #8a6500;
+  --color-risk-high: #a33a32;
+  --color-focus: #346beb;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --content-max-width: 1120px;
+  --reading-max-width: 760px;
+  --radius: 10px;
+
+  --font-sans:
+    'Geist Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+[data-theme='dark'] {
+  --color-canvas: #0d0d0d;
+  --color-surface: #151515;
+  --color-text: #f3f3f1;
+  --color-text-muted: #a1a19a;
+  --color-border: #30302d;
+  --color-action: #f3f3f1;
+  --color-action-text: #111111;
+  --color-risk-low: #5fc493;
+  --color-risk-review: #d6aa43;
+  --color-risk-high: #ed7b70;
+  --color-focus: #75a0ff;
+}
+
+/* Adapter only. Values are var() reads — never literals. app.css's :root and
+   [data-theme='dark'] blocks above stay the single source of truth (DESIGN.md §6.3). */
+@theme inline {
+  --color-ui-canvas: var(--color-canvas);
+  --color-ui-surface: var(--color-surface);
+  --color-ui-fg: var(--color-text);
+  --color-ui-muted: var(--color-text-muted);
+  --color-ui-line: var(--color-border);
+  --color-ui-action: var(--color-action);
+  --color-ui-action-fg: var(--color-action-text);
+  --color-ui-risk-low: var(--color-risk-low);
+  --color-ui-risk-review: var(--color-risk-review);
+  --color-ui-risk-high: var(--color-risk-high);
+  --color-ui-focus: var(--color-focus);
+
+  /* 4px grid (DESIGN.md §6.4): p-1=4px, p-2=8px, p-3=12px, p-4=16px,
+     p-6=24px, p-8=32px, p-12=48px, p-16=64px — exactly the --space-* names. */
+  --spacing: var(--space-1);
+
+  --radius-ui: var(--radius);
+  --radius-ui-sm: calc(var(--radius) - 4px);
+
+  --container-content: var(--content-max-width);
+  --container-reading: var(--reading-max-width);
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-action);
+  border-radius: var(--radius);
+  background: var(--color-action);
+  color: var(--color-action-text);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-action) 86%, var(--color-canvas));
+  }
+  &:active:not(:disabled) {
+    background: color-mix(in srgb, var(--color-action) 74%, var(--color-canvas));
+  }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+@utility btn-secondary {
+  /* identical box metrics */
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--space-2); min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit; font-weight: 600; line-height: 1.2; text-decoration: none; cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease;
+  &:hover:not(:disabled) { background: var(--color-canvas); border-color: var(--color-text-muted); }
+  &:active:not(:disabled) { background: color-mix(in srgb, var(--color-canvas) 88%, var(--color-text)); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+/* DESIGN.md §12 "Transition": 160 ms on color-related properties only,
+   applied via a temporary class removed on transitionend (ThemeController).
+   Never transitions box-shadow or layout properties. */
+.theme-transition,
+.theme-transition * {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition,
+  .theme-transition * {
+    transition: none;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.page {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+}

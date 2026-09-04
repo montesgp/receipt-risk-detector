@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- ui-polish round 3: the SVG alone was invalid XML (see favicon.svg's
+         own comment for the bug), so it silently failed as a real browser
+         tab icon while still passing a plain HTTP fetch. Fixed the SVG and
+         added PNG fallbacks — belt-and-suspenders for browsers/contexts
+         that don't resolve an SVG favicon (e.g. bookmarks, some non-Chromium
+         engines) or want a fixed-size touch icon. -->
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="%sveltekit.assets%/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="%sveltekit.assets%/favicon-180.png" />
+    <script>
+      // DD3 (design.md): must run synchronously, before body paint, to avoid
+      // a flash of the wrong theme — a Svelte component hydrates too late.
+      // Mirrors ThemeController's resolution: an explicit `rrd.theme` value
+      // wins, otherwise fall back to `prefers-color-scheme` (DESIGN.md §12).
+      (function () {
+        try {
+          var stored = localStorage.getItem('rrd.theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        } catch (e) {
+          // localStorage/matchMedia unavailable — leave the default light tokens.
+        }
+      })();
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

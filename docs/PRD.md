@@ -239,6 +239,16 @@ bilingual ES/EN UI copy and a working light/dark theme switcher, both with persi
 Original wording (superseded): MVP 1 UI copy is Spanish-first. User-facing strings shall be
 centralized so English can be added without restructuring components.
 
+### FR-013 — Pipeline explainer
+
+The idle upload state shall present a static, non-interactive, bilingual explainer summarizing the
+six real analysis steps derived from FR-001 through FR-007 (upload, file validation, metadata/C2PA
+provenance inspection, OCR extraction, CBU/CVU and CUIT/CUIL identifier validation, and risk/
+confidence scoring). The explainer carries no live-region semantics (`role="status"` /
+`aria-live`) and is distinct from the uploading-state `ProcessingStages` widget. It never displaces
+the reconciliation-limitation disclaimer (FR-011/DESIGN.md §5) and never claims capabilities the
+system does not have (see the forbidden-authenticity-language rule).
+
 ## 9. Non-functional requirements
 
 ### NFR-001 — Performance
