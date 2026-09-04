@@ -2,6 +2,7 @@
   import { AnalysisWorkspace } from '$lib/features/receipt-analysis/workspace.svelte';
   import DropZone from '$lib/components/DropZone.svelte';
   import ProcessPipeline from '$lib/components/ProcessPipeline.svelte';
+  import ApiCallout from '$lib/components/ApiCallout.svelte';
   import FilePreview from '$lib/components/FilePreview.svelte';
   import ProcessingStages from '$lib/components/ProcessingStages.svelte';
   import ErrorPanel from '$lib/components/ErrorPanel.svelte';
@@ -39,6 +40,12 @@
 <main class="page flex flex-col gap-6">
   <h1 class="m-0 text-3xl font-semibold tracking-tight">{i18n.t('page.title')}</h1>
   <p class="m-0 max-w-reading text-ui-muted">{i18n.t('page.intro')}</p>
+
+  <!-- ui-polish round 3: clarifies this page is a manual-verification demo
+       of the underlying capability, not the product itself — placed early,
+       above the drop zone, so a technical reader sees it before assuming
+       this is "the product". -->
+  <ApiCallout />
 
   <!-- DD7: always mounted, both in idle and result contexts, never behind a
        state branch. -->

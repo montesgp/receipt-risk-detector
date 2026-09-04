@@ -53,6 +53,11 @@
   "pipeline.integration.step.api": "Nuestra API pública",
   "pipeline.integration.step.reply": "Respuesta con el puntaje de riesgo",
 
+  "apiCallout.heading": "Este sitio es una demo de verificación manual",
+  "apiCallout.body": "El producto es la API pública: está pensada para que bots de mensajería o sistemas que reciben miles de comprobantes por día la consuman directamente. Este sitio solo expone esa misma API para probarla a mano.",
+  "apiCallout.interactiveDocsLink": "Documentación interactiva (Swagger)",
+  "apiCallout.referenceDocsLink": "Referencia de la API (GitHub)",
+
   "processing.label": "Analizando el comprobante…",
 
   "errors.network": "No pudimos contactar el servicio. Intentá nuevamente.",

@@ -36,6 +36,12 @@
   `.theme-switcher__cycle` class names are kept as test selector hooks
   only — all visual styling now lives in the Tailwind classes alongside
   them. The >=44px touch target is preserved via `h-11 w-11` (44px).
+
+  ui-polish round 3: swapped the platform emoji (☀/🌙, which render
+  inconsistently across OS/browser emoji fonts and read as childish next to
+  the rest of the monochrome brand) for the same sun/moon line-icon pair
+  used by most dark-mode toggles (Lucide/Feather-style paths), stroked with
+  `currentColor` to match the navbar mark's line weight.
 -->
 <script lang="ts">
   import { getThemeContext } from '$lib/theme/theme.svelte';
@@ -45,9 +51,9 @@
   const controller = getThemeContext();
   const i18n = getI18nContext();
 
-  const OPTIONS: { mode: 'light' | 'dark'; labelKey: string; icon: string }[] = [
-    { mode: 'light', labelKey: 'theme.light', icon: '☀' },
-    { mode: 'dark', labelKey: 'theme.dark', icon: '🌙' }
+  const OPTIONS: { mode: 'light' | 'dark'; labelKey: string }[] = [
+    { mode: 'light', labelKey: 'theme.light' },
+    { mode: 'dark', labelKey: 'theme.dark' }
   ];
 
   let announcement = $state('');
@@ -76,6 +82,26 @@
   }
 </script>
 
+{#snippet sunIcon()}
+  <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4" />
+    <line x1="12" y1="2" x2="12" y2="4.5" />
+    <line x1="12" y1="19.5" x2="12" y2="22" />
+    <line x1="2" y1="12" x2="4.5" y2="12" />
+    <line x1="19.5" y1="12" x2="22" y2="12" />
+    <line x1="4.93" y1="4.93" x2="6.64" y2="6.64" />
+    <line x1="17.36" y1="17.36" x2="19.07" y2="19.07" />
+    <line x1="4.93" y1="19.07" x2="6.64" y2="17.36" />
+    <line x1="17.36" y1="6.64" x2="19.07" y2="4.93" />
+  </svg>
+{/snippet}
+
+{#snippet moonIcon()}
+  <svg viewBox="0 0 24 24" class="h-[18px] w-[18px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z" />
+  </svg>
+{/snippet}
+
 <div class="inline-flex items-center">
   <div
     class="theme-switcher__segmented hidden items-center gap-0.5 rounded-full border border-ui-line p-0.5 md:inline-flex"
@@ -88,7 +114,7 @@
         role="radio"
         aria-checked={active === option.mode}
         tabindex={active === option.mode ? 0 : -1}
-        class="flex h-11 w-11 items-center justify-center rounded-full text-base transition-colors"
+        class="flex h-11 w-11 items-center justify-center rounded-full transition-colors"
         class:bg-ui-action={active === option.mode}
         class:text-ui-action-fg={active === option.mode}
         class:bg-transparent={active !== option.mode}
@@ -96,7 +122,7 @@
         onclick={() => select(option.mode)}
         onkeydown={(event) => handleKeydown(event, index)}
       >
-        <span aria-hidden="true">{option.icon}</span>
+        {@render (option.mode === 'light' ? sunIcon : moonIcon)()}
         <span class="sr-only">{i18n.t(option.labelKey)}</span>
       </button>
     {/each}
@@ -108,7 +134,7 @@
     aria-label={i18n.t('theme.cycleLabel', { label: currentLabel })}
     onclick={cycle}
   >
-    <span aria-hidden="true">{currentOption.icon}</span>
+    {@render (currentOption.mode === 'light' ? sunIcon : moonIcon)()}
     <!-- DESIGN.md §12: "a cycling icon button with a visible current-state
          label" — state must be conveyed as visible text, not only via
          aria-label. Kept minimal (small text, no extra chrome). -->

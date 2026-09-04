@@ -18,6 +18,12 @@
   utilities (matching ThemeSwitcher and the rest of the app) and shrunk the
   visual footprint — smaller pill, tighter padding. No structural/ARIA
   change, so the existing test suite is untouched.
+
+  ui-polish round 3: bumped back to h-11 (44px) so it lines up with
+  ThemeSwitcher's segmented control at the same height in the header row —
+  the two controls sitting side by side at different heights (32px vs 44px)
+  read as visually unpolished on its own, independent of either one's
+  internal styling.
 -->
 <script lang="ts">
   import { getI18nContext } from '$lib/i18n/i18n.svelte';
@@ -50,7 +56,7 @@
       type="button"
       aria-pressed={i18n.locale === option.locale}
       aria-label={i18n.t(option.switchLabelKey)}
-      class="flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-semibold transition-colors"
+      class="flex h-11 min-w-11 items-center justify-center rounded-full px-3 text-xs font-semibold transition-colors"
       class:bg-ui-action={i18n.locale === option.locale}
       class:text-ui-action-fg={i18n.locale === option.locale}
       class:bg-transparent={i18n.locale !== option.locale}

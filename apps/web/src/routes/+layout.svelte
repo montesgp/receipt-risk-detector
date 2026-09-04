@@ -31,16 +31,15 @@
         aria-hidden="true"
         fill="none"
         stroke="currentColor"
-        stroke-width="2"
+        stroke-width="2.75"
         stroke-linecap="round"
         stroke-linejoin="round"
       >
-        <rect x="5" y="4" width="15" height="21" rx="2" />
-        <line x1="9" y1="10" x2="16" y2="10" />
-        <line x1="9" y1="14.5" x2="16" y2="14.5" />
-        <line x1="9" y1="19" x2="13" y2="19" />
-        <circle cx="22" cy="22" r="5" />
-        <line x1="25.5" y1="25.5" x2="29" y2="29" />
+        <rect x="5" y="5" width="14" height="18" rx="2.5" />
+        <line x1="9" y1="11.5" x2="15" y2="11.5" />
+        <line x1="9" y1="16.5" x2="15" y2="16.5" />
+        <circle cx="22.5" cy="22.5" r="5.5" />
+        <line x1="26.3" y1="26.3" x2="29.5" y2="29.5" />
       </svg>
       <span class="app-header__brand">Receipt Risk Detector</span>
     </span>

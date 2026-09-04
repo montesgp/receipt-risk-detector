@@ -53,6 +53,11 @@
   "pipeline.integration.step.api": "Our public API",
   "pipeline.integration.step.reply": "Reply with the risk score",
 
+  "apiCallout.heading": "This site is a manual-verification demo",
+  "apiCallout.body": "The product is the public API: it's built for messaging bots or systems that receive thousands of receipts a day to call it directly. This site just exposes that same API so you can try it by hand.",
+  "apiCallout.interactiveDocsLink": "Interactive docs (Swagger)",
+  "apiCallout.referenceDocsLink": "API reference (GitHub)",
+
   "processing.label": "Analyzing the receipt…",
 
   "errors.network": "We couldn't reach the service. Please try again.",
