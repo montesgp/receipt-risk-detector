@@ -29,7 +29,8 @@
       "expected_analyzer_statuses": {
         "ocr": "completed",
         "metadata": "completed",
-        "provenance": "completed"
+        "provenance": "completed",
+        "vision": "completed"
       },
       "expected_classification": "LOW_RISK",
       "notes": "Baseline: all core fields legible, valid check digits, no provenance claim."
@@ -58,7 +59,8 @@
       "expected_analyzer_statuses": {
         "ocr": "completed",
         "metadata": "completed",
-        "provenance": "completed"
+        "provenance": "completed",
+        "vision": "completed"
       },
       "expected_classification": "REVIEW_RECOMMENDED",
       "notes": "Identical render to the baseline with only the block-2 check digit mutated 1 -> 2."
@@ -82,7 +84,8 @@
       "expected_analyzer_statuses": {
         "ocr": "completed",
         "metadata": "completed",
-        "provenance": "completed"
+        "provenance": "completed",
+        "vision": "completed"
       },
       "expected_classification": "LOW_RISK",
       "notes": "Rotated, contrast-reduced, blurred, low-quality JPEG re-encode of the baseline; exercises the OCR adapter's single preprocessing retry (slice 3)."
@@ -104,6 +107,150 @@
         "code": "UNSUPPORTED_IMAGE"
       },
       "notes": "First 2 KB of a valid JPEG; must be rejected at ingestion before any analyzer runs."
+    },
+    {
+      "id": "reference_bank2_clean",
+      "path": "images/reference/reference_bank2_clean.png",
+      "sha256": "6f2eff31011018d4d3a64f8bea9da315f77a89bba12394d186008fb39bc84234",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'bank2' template, clean render."
+    },
+    {
+      "id": "reference_bank2_degraded",
+      "path": "images/reference/reference_bank2_degraded.jpg",
+      "sha256": "1239689e3c074bdf767a42ef1db0ae26589a3d88818ba45f166b50f8d4786ab4",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'bank2' template, degraded variant."
+    },
+    {
+      "id": "reference_compact_clean",
+      "path": "images/reference/reference_compact_clean.png",
+      "sha256": "ac787c8bb26b268613a596f4aea0bb975dce98ef866a711a98e7b1252d33e436",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'compact' template, clean render."
+    },
+    {
+      "id": "reference_compact_degraded",
+      "path": "images/reference/reference_compact_degraded.jpg",
+      "sha256": "8b9a4dd466a6be42fffba6fd135c85a7ba14ebaefb06ffd6052871d3ec2065fd",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'compact' template, degraded variant."
+    },
+    {
+      "id": "reference_dark_header_clean",
+      "path": "images/reference/reference_dark_header_clean.png",
+      "sha256": "16305691f57473eeaa3aaf9d0b5a67c397fe4ffa1dd0bb2ab1c50bc2a40d8970",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'dark_header' template, clean render."
+    },
+    {
+      "id": "reference_dark_header_degraded",
+      "path": "images/reference/reference_dark_header_degraded.jpg",
+      "sha256": "3726a1cb417406437030d4a4ab01777a3aa33adcf7b2cfd583a2567ea2537df6",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'dark_header' template, degraded variant."
     }
   ]
 }

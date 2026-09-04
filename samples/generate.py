@@ -50,6 +50,31 @@ FIRST_ROW_Y = 280
 ROW_HEIGHT = 130
 LABEL_VALUE_GAP = 6
 
+# Reference-set template constants (visual-anomaly-detection change):
+# three additional deterministic templates so the vision adapter's
+# reference-embedding set spans more than one visual "mode" (design.md
+# "Reference set construction"). Every value below is a literal constant
+# -- same no-RNG/no-system-font/no-timestamp invariant as the rest of this
+# module.
+INSTITUTION_NAME_2 = "Cooperativa Financiera del Sur"
+HEADER_BAND_COLOR_2 = (18, 74, 133)
+HEADER_BAND_HEIGHT_2 = 180
+
+COMPACT_CANVAS_SIZE = (800, 1200)
+COMPACT_TITLE_FONT_SIZE = 34
+COMPACT_LABEL_FONT_SIZE = 20
+COMPACT_VALUE_FONT_SIZE = 24
+COMPACT_LEFT_MARGIN = 50
+COMPACT_TITLE_Y = 60
+COMPACT_FIRST_ROW_Y = 170
+COMPACT_ROW_HEIGHT = 80
+
+DARK_HEADER_COLOR = (24, 24, 28)
+DARK_HEADER_TEXT_COLOR = (240, 240, 245)
+DARK_HEADER_HEIGHT = 220
+BOX_ROW_COLOR = (235, 238, 242)
+BOX_ROW_PADDING = 14
+
 # Declared field values shared by the "clean" and "invalid CBU" fixtures.
 # Amounts/CBU/CUIT are the proposal's published known-answer literals —
 # fabricated for testing, not a real transfer.
@@ -107,6 +132,114 @@ def _render_receipt(cbu: str) -> Image.Image:
     return image
 
 
+def _render_receipt_bank2(cbu: str) -> Image.Image:
+    """Second bank identity: different institution string, a coloured
+    header band, right-aligned value column."""
+    image = Image.new("RGB", CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([(0, 0), (CANVAS_SIZE[0], HEADER_BAND_HEIGHT_2)], fill=HEADER_BAND_COLOR_2)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), VALUE_FONT_SIZE)
+
+    draw.text((LEFT_MARGIN, TITLE_Y - 30), INSTITUTION_NAME_2, font=title_font, fill=BACKGROUND)
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y + 40),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=BACKGROUND,
+    )
+
+    for index, (label, value_template) in enumerate(ROWS):
+        value = value_template.format(cbu=cbu)
+        row_y = FIRST_ROW_Y + index * ROW_HEIGHT
+        draw.text((LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        value_width = draw.textlength(value, font=value_font)
+        draw.text(
+            (CANVAS_SIZE[0] - LEFT_MARGIN - value_width, row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
+def _render_receipt_compact(cbu: str) -> Image.Image:
+    """Compact layout: smaller canvas, tighter rows, different font sizes."""
+    image = Image.new("RGB", COMPACT_CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), COMPACT_TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), COMPACT_LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), COMPACT_VALUE_FONT_SIZE)
+
+    draw.text(
+        (COMPACT_LEFT_MARGIN, COMPACT_TITLE_Y), INSTITUTION_NAME, font=title_font, fill=TEXT_COLOR
+    )
+    draw.text(
+        (COMPACT_LEFT_MARGIN, COMPACT_TITLE_Y + 45),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=TEXT_COLOR,
+    )
+
+    for index, (label, value_template) in enumerate(ROWS):
+        value = value_template.format(cbu=cbu)
+        row_y = COMPACT_FIRST_ROW_Y + index * COMPACT_ROW_HEIGHT
+        draw.text((COMPACT_LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        draw.text(
+            (COMPACT_LEFT_MARGIN, row_y + COMPACT_LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
+def _render_receipt_dark_header(cbu: str) -> Image.Image:
+    """Dark-header, boxed-rows layout: a dark banner and shaded row
+    backgrounds behind each label/value pair."""
+    image = Image.new("RGB", CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([(0, 0), (CANVAS_SIZE[0], DARK_HEADER_HEIGHT)], fill=DARK_HEADER_COLOR)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), VALUE_FONT_SIZE)
+
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y - 10), INSTITUTION_NAME, font=title_font, fill=DARK_HEADER_TEXT_COLOR
+    )
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y + 60),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=DARK_HEADER_TEXT_COLOR,
+    )
+
+    for index, (label, value_template) in enumerate(ROWS):
+        value = value_template.format(cbu=cbu)
+        row_y = FIRST_ROW_Y + index * ROW_HEIGHT
+        box_top = row_y - BOX_ROW_PADDING
+        box_bottom = row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP + VALUE_FONT_SIZE + BOX_ROW_PADDING
+        draw.rectangle(
+            [(LEFT_MARGIN - BOX_ROW_PADDING, box_top), (CANVAS_SIZE[0] - LEFT_MARGIN, box_bottom)],
+            fill=BOX_ROW_COLOR,
+        )
+        draw.text((LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        draw.text(
+            (LEFT_MARGIN, row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
 def _degrade(image: Image.Image) -> Image.Image:
     """Apply the fixed, deterministic degradation pipeline used by
     `low_quality_skewed.jpg` (design.md "Fixture Design")."""
@@ -149,6 +282,29 @@ def generate() -> dict[str, str]:
     truncated_path.write_bytes(valid_jpeg_bytes[:2048])
     digests["corrupted_truncated"] = _sha256_of(truncated_path)
 
+    # Reference-set templates (visual-anomaly-detection change): each new
+    # template gets a clean render plus its one degraded variant, giving
+    # the vision adapter's reference set coverage across template, layout,
+    # and degradation axes (design.md "Reference set construction").
+    reference_dir = IMAGES_DIR / "reference"
+    reference_dir.mkdir(parents=True, exist_ok=True)
+
+    templates: tuple[tuple[str, Image.Image], ...] = (
+        ("bank2", _render_receipt_bank2(VALID_CBU)),
+        ("compact", _render_receipt_compact(VALID_CBU)),
+        ("dark_header", _render_receipt_dark_header(VALID_CBU)),
+    )
+    for slug, rendered in templates:
+        clean_id = f"reference_{slug}_clean"
+        clean_path = reference_dir / f"{clean_id}.png"
+        rendered.save(clean_path, format="PNG")
+        digests[clean_id] = _sha256_of(clean_path)
+
+        degraded_id = f"reference_{slug}_degraded"
+        degraded_path = reference_dir / f"{degraded_id}.jpg"
+        _degrade(rendered).convert("RGB").save(degraded_path, format="JPEG", quality=JPEG_QUALITY)
+        digests[degraded_id] = _sha256_of(degraded_path)
+
     return digests
 
 
@@ -158,6 +314,73 @@ def _jpeg_bytes(image: Image.Image) -> bytes:
     buf = io.BytesIO()
     image.convert("RGB").save(buf, format="JPEG", quality=90)
     return buf.getvalue()
+
+
+_REFERENCE_TEMPLATE_SLUGS: tuple[str, ...] = ("bank2", "compact", "dark_header")
+
+
+def _reference_fixture_entries(digests: dict[str, str]) -> list[dict[str, object]]:
+    """Manifest entries for the vision reference-set images (visual-anomaly-
+    detection change). These carry `vision`-only expectations: no financial
+    signals are asserted since these fixtures exist for
+    `build_reference_embeddings.py`, not for financial-validation tests."""
+    entries: list[dict[str, object]] = []
+    for slug in _REFERENCE_TEMPLATE_SLUGS:
+        clean_id = f"reference_{slug}_clean"
+        entries.append(
+            {
+                "id": clean_id,
+                "path": f"images/reference/{clean_id}.png",
+                "sha256": digests[clean_id],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "notes": f"Vision reference-set image: '{slug}' template, clean render.",
+            }
+        )
+        degraded_id = f"reference_{slug}_degraded"
+        entries.append(
+            {
+                "id": degraded_id,
+                "path": f"images/reference/{degraded_id}.jpg",
+                "sha256": digests[degraded_id],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "notes": f"Vision reference-set image: '{slug}' template, degraded variant.",
+            }
+        )
+    return entries
 
 
 def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
@@ -193,6 +416,7 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "ocr": "completed",
                     "metadata": "completed",
                     "provenance": "completed",
+                    "vision": "completed",
                 },
                 "expected_classification": "LOW_RISK",
                 "notes": (
@@ -224,6 +448,7 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "ocr": "completed",
                     "metadata": "completed",
                     "provenance": "completed",
+                    "vision": "completed",
                 },
                 "expected_classification": "REVIEW_RECOMMENDED",
                 "notes": (
@@ -251,6 +476,7 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "ocr": "completed",
                     "metadata": "completed",
                     "provenance": "completed",
+                    "vision": "completed",
                 },
                 "expected_classification": "LOW_RISK",
                 "notes": (
@@ -276,6 +502,7 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     " analyzer runs."
                 ),
             },
+            *_reference_fixture_entries(digests),
         ],
     }
 
