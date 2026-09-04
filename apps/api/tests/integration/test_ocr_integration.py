@@ -64,6 +64,39 @@ def test_real_engine_extracts_all_core_fields_from_clean_fixture() -> None:
     assert extracted["amount"] == "125000.00"
 
 
+def test_real_engine_extracts_all_core_fields_from_alt_vocabulary_fixture() -> None:
+    """generic-receipt-field-extraction: disjoint label vocabulary, inline
+    `label: value` lines, AR-locale amount, digit-for-letter-typo'd month
+    name -- proves label-independent extraction against the real engine,
+    not just hand-written `RawTextBox` fixtures."""
+    import anyio
+
+    alt_vocabulary = fixture("alt_vocabulary_inline")
+    adapter = PaddleOnnxOcrAdapter()
+
+    result = anyio.run(adapter.extract, _ref_for(alt_vocabulary))
+
+    assert result.status == "completed"
+    extracted = {f.name: f.normalized for f in result.extracted_fields}
+    assert extracted["destination_cbu"] == "2850590940090418135201"
+    assert extracted["cuit"] == "20172543597"
+    assert extracted["amount"] == "8000"
+
+
+def test_real_engine_selects_destination_pair_on_two_party_labeled_fixture() -> None:
+    import anyio
+
+    two_party = fixture("two_party_labeled")
+    adapter = PaddleOnnxOcrAdapter()
+
+    result = anyio.run(adapter.extract, _ref_for(two_party))
+
+    assert result.status == "completed"
+    extracted = {f.name: f.normalized for f in result.extracted_fields}
+    assert extracted["destination_cbu"] == "2850590940090418135201"
+    assert extracted["cuit"] == "20172543597"
+
+
 def test_real_engine_completes_on_low_quality_skewed_fixture_without_retry() -> None:
     """Documents actual behavior (see module docstring): this fixture's
     degradation does not trigger the retry branch with the real engine --
