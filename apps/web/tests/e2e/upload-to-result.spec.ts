@@ -30,7 +30,7 @@ test.describe('upload to result', () => {
 
     const explainerHeading = page.getByRole('heading', { name: /qué hace este análisis/i });
     await expect(explainerHeading).toBeVisible();
-    await expect(page.locator('li')).toHaveCount(6);
+    await expect(page.locator('li')).toHaveCount(7);
 
     // The idle-state reconciliation-limitation disclaimer must still be
     // visible; the explainer must not displace it.
