@@ -242,9 +242,7 @@ def test_scan_date_candidates_unparseable_text_yields_no_candidate() -> None:
 
 def test_select_date_bounds_are_ranking_only_never_a_rejection_filter() -> None:
     reference = datetime(2026, 9, 1, tzinfo=UTC)
-    implausible = _scan_date_candidates(
-        [_box("15 de marzo de 1920")], excluded_orders=frozenset()
-    )
+    implausible = _scan_date_candidates([_box("15 de marzo de 1920")], excluded_orders=frozenset())
     assert len(implausible) == 1
     selected = _select_date(implausible, reference=reference)
     assert selected is not None
@@ -475,8 +473,14 @@ def test_two_party_labeled_and_no_labels_both_select_the_destination_pair() -> N
     assert labeled_by_name["destination_cbu"].normalized == destination_cbu
     assert labeled_by_name["cuit"].normalized == destination_cuit
 
-    no_label_values = [origin_cbu, "ORIGEN EJEMPLO", origin_cuit, destination_cbu,
-                        "PATRICIO EJEMPLO", destination_cuit]
+    no_label_values = [
+        origin_cbu,
+        "ORIGEN EJEMPLO",
+        origin_cuit,
+        destination_cbu,
+        "PATRICIO EJEMPLO",
+        destination_cuit,
+    ]
     no_label_fields = extract_core_fields(_values_only_boxes(no_label_values))
     no_label_by_name = {field.name: field for field in no_label_fields}
     assert no_label_by_name["destination_cbu"].normalized == destination_cbu
