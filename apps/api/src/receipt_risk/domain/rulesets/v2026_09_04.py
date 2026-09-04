@@ -1,4 +1,12 @@
-"""Ruleset version `2026-09-01` — the MVP1 default.
+"""Ruleset version `2026-09-04` — adds the vision analyzer role.
+
+Supersedes `v2026_09_01` as the MVP1 default (visual-anomaly-detection
+change): adds `SignalCode.VISUAL_ANOMALY_DETECTED` and rebalances
+`_ANALYZER_EVIDENCE_WEIGHTS` for the new `vision` role. `v2026_09_01`
+is kept unmodified and still registered in `rulesets/__init__.py` so any
+request logged with `ruleset_version="2026-09-01"` stays reproducible
+(CONTRIBUTING.md: scoring changes bump `ruleset_version` rather than
+mutate a shipped one in place).
 
 Weights, multipliers and the evidence-coverage threshold are reasoned
 defaults, not benchmarked values (proposal.md: "reasonable defaults, not
@@ -26,6 +34,9 @@ _WEIGHTS: dict[SignalCode, int] = {
     # A tool outage is not evidence of fraud -- it only lowers
     # `confidence_score` through `status_quality` (design.md).
     SignalCode.ANALYZER_UNAVAILABLE: 0,
+    # A pixel-space outlier is weak, unbenchmarked evidence -- it can raise
+    # a score, never force a verdict (no _CRITICAL_FLOOR entry below).
+    SignalCode.VISUAL_ANOMALY_DETECTED: 20,
 }
 
 _SEVERITY_MULTIPLIER: dict[Severity, Decimal] = {
@@ -40,13 +51,21 @@ _CRITICAL_FLOOR: dict[SignalCode, int] = {
     SignalCode.VALID_AI_GENERATED_CLAIM: 85,
 }
 
-# Keyed by analyzer *role* (ocr/metadata/provenance), not by adapter name
-# (`paddleocr-onnx`/`exiftool`/`c2pa`) — see `domain/scoring.py`'s
-# `_ADAPTER_ROLE` mapping for the adapter-name -> role translation.
+# Keyed by analyzer *role* (ocr/metadata/provenance/vision), not by adapter
+# name (`paddleocr-onnx`/`exiftool`/`c2pa`/`mobilenetv3-embedding`) — see
+# `domain/scoring.py`'s `_ADAPTER_ROLE` mapping for the adapter-name -> role
+# translation.
+#
+# The pre-vision triple (ocr 0.50 / metadata 0.20 / provenance 0.30) is
+# scaled by 0.85 and rounded to 2dp so the four roles sum to exactly 1.00
+# once vision's 0.15 is added (design.md "Evidence-weight rebalance"):
+# ocr rounds up (0.425 -> 0.43) and provenance rounds down (0.255 -> 0.25)
+# because ocr is the only role with fractional `_completeness`.
 _ANALYZER_EVIDENCE_WEIGHTS: dict[str, Decimal] = {
-    "ocr": Decimal("0.50"),
-    "metadata": Decimal("0.20"),
-    "provenance": Decimal("0.30"),
+    "ocr": Decimal("0.43"),
+    "metadata": Decimal("0.17"),
+    "provenance": Decimal("0.25"),
+    "vision": Decimal("0.15"),
 }
 
 _STATUS_QUALITY: dict[str, Decimal] = {
@@ -63,8 +82,8 @@ _BANDS: tuple[tuple[int, Classification], ...] = (
     (100, Classification.HIGH_RISK),
 )
 
-RULESET_2026_09_01 = ScoringRuleset(
-    version="2026-09-01",
+RULESET_2026_09_04 = ScoringRuleset(
+    version="2026-09-04",
     weights=_WEIGHTS,
     severity_multiplier=_SEVERITY_MULTIPLIER,
     critical_floor=_CRITICAL_FLOOR,

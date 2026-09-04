@@ -10,7 +10,7 @@ from receipt_risk.adapters.api.mappers import assessment_to_response
 from receipt_risk.application.errors import IngestionError, IngestionErrorCode
 from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
 from receipt_risk.domain.assessment import assemble
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 from receipt_risk.domain.signals import Severity, SignalCategory, SignalCode, ValidationSignal
 
 _RESPONSE_FIELDS = {
@@ -61,7 +61,7 @@ def _assessment():
         analysis_id="sha256:abc123",
         results=results,
         signals=[signal],
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         engine_version="0.1.0",
         duration_ms=2310,
     )
@@ -102,7 +102,7 @@ def _assessment_with_visual_anomaly():
         analysis_id="sha256:abc123",
         results=results,
         signals=[signal],
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         engine_version="0.1.0",
         duration_ms=2310,
     )

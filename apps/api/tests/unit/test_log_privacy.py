@@ -15,7 +15,7 @@ from receipt_risk.application.analyze_receipt import AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.application.models import DecodedImageInfo, SafeImageRef
 from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 
 _RAW_CBU = "2850590940090418135201"
 _RAW_CUIT = "20172543597"
@@ -78,7 +78,7 @@ def test_no_raw_bytes_or_unmasked_cbu_cuit_amount_in_logs_across_success_and_fai
         provenance=_CompletedPort(),
         vision=_CompletedPort(),
         ingestion=ingestion,
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
     )
     data = b"\x89PNG\r\n\x1a\nfake-bytes-for-privacy-test"
 

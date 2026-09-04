@@ -19,7 +19,7 @@ from receipt_risk.application.analyze_receipt import (
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.application.models import DecodedImageInfo, SafeImageRef
 from receipt_risk.domain.analysis import AnalyzerResult
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 
 
 class _StubDecoder:
@@ -72,7 +72,7 @@ def _use_case(
         provenance=provenance or _CompletedPort(),
         vision=vision or _CompletedPort(),
         ingestion=ingestion,
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         budget=budget,
     )
 

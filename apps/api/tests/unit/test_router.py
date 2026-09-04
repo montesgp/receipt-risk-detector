@@ -13,7 +13,7 @@ from receipt_risk.application.analyze_receipt import AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.application.models import DecodedImageInfo, SafeImageRef
 from receipt_risk.domain.analysis import AnalyzerResult
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 
 
 class _StubDecoder:
@@ -42,7 +42,7 @@ def _app(tmp_path: Path) -> FastAPI:
         provenance=_CompletedPort(),
         vision=_CompletedPort(),
         ingestion=ingestion,
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
     )
     app.dependency_overrides[get_use_case] = lambda: use_case
     return app
@@ -57,7 +57,7 @@ def test_post_analyze_returns_full_assessment_with_ruleset_and_engine_version(
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["ruleset_version"] == "2026-09-01"
+    assert body["ruleset_version"] == "2026-09-04"
     assert body["engine_version"] == "0.1.0"
     assert "risk_score" in body
     assert "confidence_score" in body

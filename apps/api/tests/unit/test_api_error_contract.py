@@ -20,7 +20,7 @@ from receipt_risk.adapters.api.router import router
 from receipt_risk.application.analyze_receipt import AnalysisTimeoutError, AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.application.models import DecodedImageInfo
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 
 
 class _StubDecoder:
@@ -50,7 +50,7 @@ def _app(tmp_path: Path, *, decoder=None, use_case=None) -> FastAPI:
             provenance=_NoopPort(),
             vision=_NoopPort(),
             ingestion=ingestion,
-            ruleset=RULESET_2026_09_01,
+            ruleset=RULESET_2026_09_04,
         )
         app.dependency_overrides[get_use_case] = lambda: real_use_case
     return app

@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
 from receipt_risk.domain.ruleset import Classification
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 from receipt_risk.domain.scoring import score
 from receipt_risk.domain.signals import Severity, SignalCategory, SignalCode, ValidationSignal
 
@@ -50,7 +50,7 @@ def test_risk_score_contribution_uses_decimal_weight_severity_confidence() -> No
         _metadata_result(),
         _provenance_result(),
     ]
-    breakdown = score([signal], results, RULESET_2026_09_01)
+    breakdown = score([signal], results, RULESET_2026_09_04)
     # weight 40 * severity_multiplier(high)=1.5 * confidence 1.00 = 60
     assert breakdown.risk_score == 60
 
@@ -75,10 +75,10 @@ def test_risk_score_capped_at_100_and_raised_to_critical_floor_for_critical_sign
         _metadata_result(),
         _provenance_result(),
     ]
-    breakdown = score([huge, huge, huge, critical], results, RULESET_2026_09_01)
+    breakdown = score([huge, huge, huge, critical], results, RULESET_2026_09_04)
     assert breakdown.risk_score == 100
 
-    breakdown_floor_only = score([critical], results, RULESET_2026_09_01)
+    breakdown_floor_only = score([critical], results, RULESET_2026_09_04)
     assert breakdown_floor_only.risk_score >= 85
 
 
@@ -88,7 +88,7 @@ def test_confidence_independent_of_risk_ocr_fails_others_succeed_not_inconclusiv
         _metadata_result(),
         _provenance_result(),
     ]
-    breakdown = score([], results, RULESET_2026_09_01)
+    breakdown = score([], results, RULESET_2026_09_04)
     # metadata 0.17 + provenance 0.25 = 0.42 (post-rebalance weights; ocr failed contributes 0)
     assert breakdown.evidence_coverage == Decimal("0.42")
     assert breakdown.confidence_score == 42
@@ -101,7 +101,7 @@ def test_inconclusive_when_all_analyzers_fail_coverage_zero() -> None:
         _metadata_result(status="failed"),
         _provenance_result(status="failed"),
     ]
-    breakdown = score([], results, RULESET_2026_09_01)
+    breakdown = score([], results, RULESET_2026_09_04)
     assert breakdown.evidence_coverage == Decimal("0.00")
     assert breakdown.classification is Classification.INCONCLUSIVE
 
@@ -117,7 +117,7 @@ def test_adapter_role_maps_mobilenetv3_embedding_to_vision() -> None:
         _provenance_result(),
         _vision_result(),
     ]
-    breakdown = score([], results, RULESET_2026_09_01)
+    breakdown = score([], results, RULESET_2026_09_04)
     # ocr 0.43 + metadata 0.17 + provenance 0.25 + vision 0.15, all completed = 1.00
     assert breakdown.evidence_coverage == Decimal("1.00")
     assert breakdown.confidence_score == 100
@@ -128,7 +128,7 @@ def test_adapter_role_maps_mobilenetv3_embedding_to_vision() -> None:
         _provenance_result(),
         _vision_result(status="failed"),
     ]
-    breakdown_no_vision = score([], results_no_vision, RULESET_2026_09_01)
+    breakdown_no_vision = score([], results_no_vision, RULESET_2026_09_04)
     assert breakdown_no_vision.evidence_coverage == Decimal("0.85")
 
 
@@ -145,6 +145,6 @@ def test_deterministic_score_same_input_and_ruleset_twice_identical_triple() -> 
         _metadata_result(),
         _provenance_result(),
     ]
-    first = score([signal], results, RULESET_2026_09_01)
-    second = score([signal], results, RULESET_2026_09_01)
+    first = score([signal], results, RULESET_2026_09_04)
+    second = score([signal], results, RULESET_2026_09_04)
     assert first == second

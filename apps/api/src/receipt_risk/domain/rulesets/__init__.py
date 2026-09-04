@@ -12,9 +12,11 @@ from typing import Final
 
 from receipt_risk.domain.ruleset import ScoringRuleset
 from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 
 RULESETS: Final[dict[str, ScoringRuleset]] = {
     RULESET_2026_09_01.version: RULESET_2026_09_01,
+    RULESET_2026_09_04.version: RULESET_2026_09_04,
 }
 
 __all__ = ["RULESETS"]
