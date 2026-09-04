@@ -26,6 +26,9 @@ _WEIGHTS: dict[SignalCode, int] = {
     # A tool outage is not evidence of fraud -- it only lowers
     # `confidence_score` through `status_quality` (design.md).
     SignalCode.ANALYZER_UNAVAILABLE: 0,
+    # A pixel-space outlier is weak, unbenchmarked evidence -- it can raise
+    # a score, never force a verdict (no _CRITICAL_FLOOR entry below).
+    SignalCode.VISUAL_ANOMALY_DETECTED: 20,
 }
 
 _SEVERITY_MULTIPLIER: dict[Severity, Decimal] = {
@@ -40,13 +43,21 @@ _CRITICAL_FLOOR: dict[SignalCode, int] = {
     SignalCode.VALID_AI_GENERATED_CLAIM: 85,
 }
 
-# Keyed by analyzer *role* (ocr/metadata/provenance), not by adapter name
-# (`paddleocr-onnx`/`exiftool`/`c2pa`) — see `domain/scoring.py`'s
-# `_ADAPTER_ROLE` mapping for the adapter-name -> role translation.
+# Keyed by analyzer *role* (ocr/metadata/provenance/vision), not by adapter
+# name (`paddleocr-onnx`/`exiftool`/`c2pa`/`mobilenetv3-embedding`) — see
+# `domain/scoring.py`'s `_ADAPTER_ROLE` mapping for the adapter-name -> role
+# translation.
+#
+# The pre-vision triple (ocr 0.50 / metadata 0.20 / provenance 0.30) is
+# scaled by 0.85 and rounded to 2dp so the four roles sum to exactly 1.00
+# once vision's 0.15 is added (design.md "Evidence-weight rebalance"):
+# ocr rounds up (0.425 -> 0.43) and provenance rounds down (0.255 -> 0.25)
+# because ocr is the only role with fractional `_completeness`.
 _ANALYZER_EVIDENCE_WEIGHTS: dict[str, Decimal] = {
-    "ocr": Decimal("0.50"),
-    "metadata": Decimal("0.20"),
-    "provenance": Decimal("0.30"),
+    "ocr": Decimal("0.43"),
+    "metadata": Decimal("0.17"),
+    "provenance": Decimal("0.25"),
+    "vision": Decimal("0.15"),
 }
 
 _STATUS_QUALITY: dict[str, Decimal] = {

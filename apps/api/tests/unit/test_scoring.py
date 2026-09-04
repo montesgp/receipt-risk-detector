@@ -89,8 +89,9 @@ def test_confidence_independent_of_risk_ocr_fails_others_succeed_not_inconclusiv
         _provenance_result(),
     ]
     breakdown = score([], results, RULESET_2026_09_01)
-    assert breakdown.evidence_coverage == Decimal("0.50")
-    assert breakdown.confidence_score == 50
+    # metadata 0.17 + provenance 0.25 = 0.42 (post-rebalance weights; ocr failed contributes 0)
+    assert breakdown.evidence_coverage == Decimal("0.42")
+    assert breakdown.confidence_score == 42
     assert breakdown.classification is not Classification.INCONCLUSIVE
 
 
@@ -103,6 +104,32 @@ def test_inconclusive_when_all_analyzers_fail_coverage_zero() -> None:
     breakdown = score([], results, RULESET_2026_09_01)
     assert breakdown.evidence_coverage == Decimal("0.00")
     assert breakdown.classification is Classification.INCONCLUSIVE
+
+
+def _vision_result(status="completed") -> AnalyzerResult:
+    return AnalyzerResult(analyzer="mobilenetv3-embedding", version="1.0.0", status=status)
+
+
+def test_adapter_role_maps_mobilenetv3_embedding_to_vision() -> None:
+    results = [
+        _ocr_result(extracted_fields=_all_core_fields()),
+        _metadata_result(),
+        _provenance_result(),
+        _vision_result(),
+    ]
+    breakdown = score([], results, RULESET_2026_09_01)
+    # ocr 0.43 + metadata 0.17 + provenance 0.25 + vision 0.15, all completed = 1.00
+    assert breakdown.evidence_coverage == Decimal("1.00")
+    assert breakdown.confidence_score == 100
+
+    results_no_vision = [
+        _ocr_result(extracted_fields=_all_core_fields()),
+        _metadata_result(),
+        _provenance_result(),
+        _vision_result(status="failed"),
+    ]
+    breakdown_no_vision = score([], results_no_vision, RULESET_2026_09_01)
+    assert breakdown_no_vision.evidence_coverage == Decimal("0.85")
 
 
 def test_deterministic_score_same_input_and_ruleset_twice_identical_triple() -> None:

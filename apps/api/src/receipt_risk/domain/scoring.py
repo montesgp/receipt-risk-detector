@@ -34,6 +34,7 @@ _ADAPTER_ROLE: Mapping[str, str] = {
     "paddleocr-onnx": "ocr",
     "exiftool": "metadata",
     "c2pa": "provenance",
+    "mobilenetv3-embedding": "vision",
 }
 
 

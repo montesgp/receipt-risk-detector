@@ -60,3 +60,20 @@ def test_extraction_failure_reason_enum_values() -> None:
     assert ExtractionFailureReason.LOW_CONFIDENCE == "low_confidence"
     assert ExtractionFailureReason.NO_TEXT_DETECTED == "no_text_detected"
     assert ExtractionFailureReason.TIMEOUT == "timeout"
+
+
+def test_visual_category_and_visual_anomaly_code_exist() -> None:
+    assert SignalCategory.VISUAL == "visual"
+    assert SignalCode.VISUAL_ANOMALY_DETECTED == "VISUAL_ANOMALY_DETECTED"
+
+    signal = ValidationSignal(
+        code=SignalCode.VISUAL_ANOMALY_DETECTED,
+        category=SignalCategory.VISUAL,
+        severity=Severity.MEDIUM,
+        confidence=Decimal("0.70"),
+        description="This receipt's visual appearance is an outlier relative to the "
+        "bundled set of known-legitimate receipt renders.",
+        evidence={"cosine_distance": "0.52", "threshold": "0.45"},
+    )
+    assert signal.category == SignalCategory.VISUAL
+    assert signal.code == SignalCode.VISUAL_ANOMALY_DETECTED

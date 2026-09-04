@@ -38,6 +38,21 @@ def test_ruleset_analyzer_evidence_weights_sum_to_one() -> None:
     assert total == Decimal("1.00")
 
 
+def test_evidence_weights_sum_to_one_across_four_roles() -> None:
+    weights = RULESET_2026_09_01.analyzer_evidence_weights
+    assert set(weights) == {"ocr", "metadata", "provenance", "vision"}
+    assert weights["ocr"] == Decimal("0.43")
+    assert weights["metadata"] == Decimal("0.17")
+    assert weights["provenance"] == Decimal("0.25")
+    assert weights["vision"] == Decimal("0.15")
+    assert sum(weights.values()) == Decimal("1.00")
+
+
+def test_visual_anomaly_detected_weight_20_no_critical_floor_entry() -> None:
+    assert RULESET_2026_09_01.weights[SignalCode.VISUAL_ANOMALY_DETECTED] == 20
+    assert SignalCode.VISUAL_ANOMALY_DETECTED not in RULESET_2026_09_01.critical_floor
+
+
 def test_ruleset_inconclusive_threshold_is_decimal() -> None:
     assert RULESET_2026_09_01.inconclusive_coverage_threshold == Decimal("0.35")
 
