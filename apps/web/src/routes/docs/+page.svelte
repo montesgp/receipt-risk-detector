@@ -27,7 +27,7 @@
   ] as const;
   const OUT_OF_SCOPE_KEYS = ['auth', 'orgs', 'history', 'bankConnections', 'autoReconciliation', 'mlModels'] as const;
   const FLOW_STEPS = ['client', 'api', 'analyzers', 'engine', 'response'] as const;
-  const STACK_ROWS = ['web', 'api', 'ocr', 'provenance', 'testing'] as const;
+  const STACK_ROWS = ['web', 'api', 'ocr', 'provenance', 'vision', 'testing'] as const;
 
   const NAV_SECTIONS = ['product', 'scope', 'architecture', 'api', 'stack'] as const;
 
