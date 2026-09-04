@@ -41,6 +41,7 @@ MVP 1 excludes authentication, organizations, persistent history, bank connectio
 | Image processing | Pillow, OpenCV |
 | OCR | PaddleOCR first; Tesseract as benchmark/fallback candidate |
 | Provenance | ExifTool and C2PA-compatible tooling |
+| Vision | PyTorch / MobileNetV3-Small, local weights, no external calls |
 | Testing | pytest, Vitest, Playwright |
 | Packaging | `uv`, Docker, Docker Compose |
 | Persistence | None in MVP 1 |
@@ -56,9 +57,11 @@ flowchart LR
     D --> E["Metadata and C2PA"]
     D --> F["OCR"]
     D --> G["Financial rules"]
+    D --> K["Visual inspection (PyTorch)"]
     E --> I["Risk engine"]
     F --> I
     G --> I
+    K --> I
     I --> J["FraudAssessment JSON"]
 ```
 

@@ -31,10 +31,14 @@ Example:
   "analyzers": {
     "ocr": "paddleocr-adapter/0.1.0",
     "metadata": "exiftool-adapter/0.1.0",
-    "provenance": "c2pa-adapter/0.1.0"
+    "provenance": "c2pa-adapter/0.1.0",
+    "vision": "mobilenetv3-embedding/1.0.0"
   }
 }
 ```
+
+`/ready`'s `analyzers` map has the same four-entry shape (`ocr`, `metadata`,
+`provenance`, `vision`).
 
 ### `POST /v1/receipts/analyze`
 
@@ -144,7 +148,25 @@ analyzer status:
   partial
   failed
   timed_out
+
+signal category:
+  metadata
+  provenance
+  financial_consistency
+  data_quality
+  visual
 ```
+
+### Signal codes (selected)
+
+| Code | Category | Typical severity | Meaning |
+| --- | --- | --- | --- |
+| `VALID_AI_GENERATED_CLAIM` | `provenance` | critical | A valid C2PA manifest declares algorithmic generation. |
+| `PROVENANCE_VALIDATION_FAILED` | `provenance` | medium | A C2PA manifest is present but fails validation. |
+| `INVALID_CBU_CHECK_DIGIT` / `INVALID_CUIT_CHECK_DIGIT` | `financial_consistency` | high | An extracted identifier fails its check-digit validation. |
+| `CORE_FIELD_EXTRACTION_FAILED` | `data_quality` | medium | OCR could not reliably extract one or more core fields. |
+| `ANALYZER_UNAVAILABLE` | `data_quality` | info | An analyzer did not run or did not complete (never a response status; see §5). |
+| `VISUAL_ANOMALY_DETECTED` | `visual` | low or medium | The receipt's MobileNetV3 embedding is a cosine-distance outlier relative to the bundled reference set of legitimate receipt renders. This is a distributional-outlier finding only — it never claims the image is AI-generated (that wording is exclusive to `VALID_AI_GENERATED_CLAIM`) and never forces `classification` on its own. |
 
 ## 5. Error format
 
