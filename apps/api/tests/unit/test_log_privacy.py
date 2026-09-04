@@ -76,6 +76,7 @@ def test_no_raw_bytes_or_unmasked_cbu_cuit_amount_in_logs_across_success_and_fai
         ocr=_OcrWithRawFinancialFields(),
         metadata=_RaisingPort(),
         provenance=_CompletedPort(),
+        vision=_CompletedPort(),
         ingestion=ingestion,
         ruleset=RULESET_2026_09_01,
     )

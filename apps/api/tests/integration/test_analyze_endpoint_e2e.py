@@ -66,8 +66,10 @@ class _FixtureNeutralPort:
     name = "stub"
     version = "1.0.0"
 
+    _NAMES = {"metadata": "exiftool", "provenance": "c2pa", "vision": "mobilenetv3-embedding"}
+
     def __init__(self, role: str, fixture: Fixture) -> None:
-        self.name = "exiftool" if role == "metadata" else "c2pa"
+        self.name = self._NAMES.get(role, "stub")
         self._status = fixture.expected_analyzer_statuses.get(role, "completed")
 
     async def inspect(self, image) -> AnalyzerResult:
@@ -82,6 +84,7 @@ def _app_for_fixture(fixture: Fixture, tmp_path: Path) -> FastAPI:
         ocr=_FixtureOcrPort(fixture),
         metadata=_FixtureNeutralPort("metadata", fixture),
         provenance=_FixtureNeutralPort("provenance", fixture),
+        vision=_FixtureNeutralPort("vision", fixture),
         ingestion=ingestion,
         ruleset=RULESET_2026_09_01,
     )
@@ -128,6 +131,7 @@ def test_corrupted_truncated_fixture_rejected_via_real_endpoint(tmp_path: Path) 
         ocr=_FixtureOcrPort(fixture),
         metadata=_FixtureNeutralPort("metadata", fixture),
         provenance=_FixtureNeutralPort("provenance", fixture),
+        vision=_FixtureNeutralPort("vision", fixture),
         ingestion=ingestion,
         ruleset=RULESET_2026_09_01,
     )

@@ -40,6 +40,7 @@ def _app(tmp_path: Path) -> FastAPI:
         ocr=_CompletedPort(),
         metadata=_CompletedPort(),
         provenance=_CompletedPort(),
+        vision=_CompletedPort(),
         ingestion=ingestion,
         ruleset=RULESET_2026_09_01,
     )

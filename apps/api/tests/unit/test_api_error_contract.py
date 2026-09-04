@@ -48,6 +48,7 @@ def _app(tmp_path: Path, *, decoder=None, use_case=None) -> FastAPI:
             ocr=_NoopPort(),
             metadata=_NoopPort(),
             provenance=_NoopPort(),
+            vision=_NoopPort(),
             ingestion=ingestion,
             ruleset=RULESET_2026_09_01,
         )

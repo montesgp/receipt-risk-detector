@@ -27,6 +27,7 @@ from receipt_risk.adapters.image.pillow_decoder import PillowImageDecoder
 from receipt_risk.adapters.metadata.exiftool import ExifToolMetadataAdapter
 from receipt_risk.adapters.ocr.paddle_onnx import PaddleOnnxOcrAdapter
 from receipt_risk.adapters.provenance.c2pa_reader import C2paProvenanceAdapter
+from receipt_risk.adapters.vision.mobilenet_embedder import MobileNetV3VisionAdapter
 from receipt_risk.application.analyze_receipt import ENGINE_VERSION, AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
@@ -54,12 +55,14 @@ _temp_dir = Path(tempfile.gettempdir()) / "receipt-risk-uploads"
 _ocr = PaddleOnnxOcrAdapter()
 _metadata = ExifToolMetadataAdapter()
 _provenance = C2paProvenanceAdapter()
+_vision = MobileNetV3VisionAdapter()
 _ingestion = IngestionService(temp_dir=_temp_dir, decoder=PillowImageDecoder())
 
 _use_case = AnalyzeReceiptUseCase(
     ocr=_ocr,
     metadata=_metadata,
     provenance=_provenance,
+    vision=_vision,
     ingestion=_ingestion,
     ruleset=RULESET_2026_09_01,
 )
@@ -84,6 +87,7 @@ def ready() -> ReadyResponse:
             "ocr": f"{_ocr.name}/{_ocr.version}",
             "metadata": f"{_metadata.name}/{_metadata.version}",
             "provenance": f"{_provenance.name}/{_provenance.version}",
+            "vision": f"{_vision.name}/{_vision.version}",
         },
     )
 
@@ -98,5 +102,6 @@ def version() -> VersionResponse:
             "ocr": f"{_ocr.name}/{_ocr.version}",
             "metadata": f"{_metadata.name}/{_metadata.version}",
             "provenance": f"{_provenance.name}/{_provenance.version}",
+            "vision": f"{_vision.name}/{_vision.version}",
         },
     )

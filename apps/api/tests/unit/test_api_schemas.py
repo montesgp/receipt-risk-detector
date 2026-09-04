@@ -80,6 +80,48 @@ def test_response_never_contains_forbidden_verdict_vocabulary() -> None:
         assert forbidden not in dumped
 
 
+def _assessment_with_visual_anomaly():
+    results = [
+        AnalyzerResult(analyzer="mobilenetv3-embedding", version="1.0.0", status="completed"),
+        AnalyzerResult(analyzer="paddleocr-onnx", version="1.0.0", status="completed"),
+        AnalyzerResult(analyzer="exiftool", version="1.0.0", status="completed"),
+        AnalyzerResult(analyzer="c2pa", version="1.0.0", status="completed"),
+    ]
+    signal = ValidationSignal(
+        code=SignalCode.VISUAL_ANOMALY_DETECTED,
+        category=SignalCategory.VISUAL,
+        severity=Severity.MEDIUM,
+        confidence=Decimal("0.70"),
+        description=(
+            "This receipt's visual appearance is an outlier relative to the "
+            "bundled set of known-legitimate receipt renders."
+        ),
+        evidence={"cosine_distance": "0.52", "threshold": "0.45"},
+    )
+    return assemble(
+        analysis_id="sha256:abc123",
+        results=results,
+        signals=[signal],
+        ruleset=RULESET_2026_09_01,
+        engine_version="0.1.0",
+        duration_ms=2310,
+    )
+
+
+def test_analyze_response_signal_schema_includes_visual_anomaly_and_category() -> None:
+    response = assessment_to_response(_assessment_with_visual_anomaly())
+    payload = response.model_dump()
+    assert payload["signals"][0]["code"] == "VISUAL_ANOMALY_DETECTED"
+    assert payload["signals"][0]["category"] == "visual"
+
+
+def test_response_never_contains_ai_generated_wording_for_visual_anomaly_detected() -> None:
+    response = assessment_to_response(_assessment_with_visual_anomaly())
+    dumped = response.model_dump_json().lower()
+    assert "ai-generated" not in dumped
+    assert "ai generated" not in dumped
+
+
 def test_ingestion_error_maps_to_documented_problem_details() -> None:
     error = IngestionError(IngestionErrorCode.FILE_TOO_LARGE, "too big")
     problem = problem_details_for_ingestion_error(error, instance="/v1/receipts/analyze")

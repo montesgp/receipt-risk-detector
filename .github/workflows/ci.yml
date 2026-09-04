@@ -56,9 +56,22 @@ jobs:
       - name: Fetch OCR models
         run: uv run python scripts/fetch_ocr_models.py --dest ~/.cache/receipt-risk/ocr-models --verify
 
+      - name: Cache vision model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/receipt-risk/vision-model
+          # Independent cache key from OCR's -- an OCR pin bump must never
+          # invalidate the vision cache, and vice versa (design.md "Weight
+          # distribution").
+          key: vision-model-${{ hashFiles('apps/api/scripts/fetch_vision_model.py') }}
+
+      - name: Fetch vision model
+        run: uv run python scripts/fetch_vision_model.py --dest ~/.cache/receipt-risk/vision-model --verify
+
       - name: Test
         env:
           RECEIPT_RISK_OCR_MODEL_DIR: ~/.cache/receipt-risk/ocr-models
+          RECEIPT_RISK_VISION_MODEL_DIR: ~/.cache/receipt-risk/vision-model
         run: uv run pytest
 
   web:
