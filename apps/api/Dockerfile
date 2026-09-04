@@ -18,6 +18,16 @@ COPY apps/api/scripts/fetch_ocr_models.py ./
 RUN pip install --no-cache-dir "requests==2.32.3" \
  && python fetch_ocr_models.py --dest /opt/ocr-models --verify
 
+# ---- vision model pre-baking (independent cache key from OCR's stage,
+# so an OCR pin bump does not invalidate the vision cache and vice versa;
+# design.md "Weight distribution") ----
+FROM python:3.12-slim AS vision-model
+RUN pip install --no-cache-dir uv
+WORKDIR /build
+COPY apps/api/scripts/fetch_vision_model.py ./
+RUN pip install --no-cache-dir "requests==2.32.3" \
+ && python fetch_vision_model.py --dest /opt/vision-model --verify
+
 # ---- runtime ----
 FROM python:3.12-slim
 
@@ -46,7 +56,11 @@ RUN uv sync --frozen --no-dev --extra server
 # slice 3: baked models; the OCR adapter must never download at request or
 # startup time (see the "zero outbound network connections" threat-matrix test).
 COPY --from=ocr-models /opt/ocr-models /opt/ocr-models
+# slice: baked vision weights; the vision adapter must never download at
+# request or startup time either (mirrors the OCR fail-closed contract).
+COPY --from=vision-model /opt/vision-model /opt/vision-model
 ENV RECEIPT_RISK_OCR_MODEL_DIR=/opt/ocr-models \
+    RECEIPT_RISK_VISION_MODEL_DIR=/opt/vision-model \
     HF_HUB_OFFLINE=1 \
     OMP_NUM_THREADS=2
 

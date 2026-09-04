@@ -18,6 +18,7 @@ class SignalCategory(StrEnum):
     PROVENANCE = "provenance"
     FINANCIAL_CONSISTENCY = "financial_consistency"
     DATA_QUALITY = "data_quality"
+    VISUAL = "visual"
 
 
 class Severity(StrEnum):
@@ -45,6 +46,8 @@ class SignalCode(StrEnum):
     CORE_FIELD_EXTRACTION_FAILED = "CORE_FIELD_EXTRACTION_FAILED"  # category DATA_QUALITY
     # slice 4
     ANALYZER_UNAVAILABLE = "ANALYZER_UNAVAILABLE"  # category DATA_QUALITY, info severity, weight 0
+    # visual-anomaly-detection change
+    VISUAL_ANOMALY_DETECTED = "VISUAL_ANOMALY_DETECTED"  # category VISUAL, LOW/MEDIUM, no floor
 
 
 class ExtractionFailureReason(StrEnum):

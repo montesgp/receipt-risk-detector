@@ -30,7 +30,7 @@ from receipt_risk.adapters.image.pillow_decoder import PillowImageDecoder
 from receipt_risk.application.analyze_receipt import AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 
 
 class _FixtureOcrPort:
@@ -66,8 +66,10 @@ class _FixtureNeutralPort:
     name = "stub"
     version = "1.0.0"
 
+    _NAMES = {"metadata": "exiftool", "provenance": "c2pa", "vision": "mobilenetv3-embedding"}
+
     def __init__(self, role: str, fixture: Fixture) -> None:
-        self.name = "exiftool" if role == "metadata" else "c2pa"
+        self.name = self._NAMES.get(role, "stub")
         self._status = fixture.expected_analyzer_statuses.get(role, "completed")
 
     async def inspect(self, image) -> AnalyzerResult:
@@ -82,8 +84,9 @@ def _app_for_fixture(fixture: Fixture, tmp_path: Path) -> FastAPI:
         ocr=_FixtureOcrPort(fixture),
         metadata=_FixtureNeutralPort("metadata", fixture),
         provenance=_FixtureNeutralPort("provenance", fixture),
+        vision=_FixtureNeutralPort("vision", fixture),
         ingestion=ingestion,
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
     )
     app.dependency_overrides[get_use_case] = lambda: use_case
     return app
@@ -99,7 +102,7 @@ def test_clean_valid_transfer_fixture_returns_low_risk_via_real_endpoint(tmp_pat
 
     assert response.status_code == 200
     body = response.json()
-    assert body["ruleset_version"] == RULESET_2026_09_01.version
+    assert body["ruleset_version"] == RULESET_2026_09_04.version
     assert body["classification"] == "LOW_RISK"
     assert body["risk_score"] == 0
     assert body["analysis_id"].startswith("sha256:")
@@ -128,8 +131,9 @@ def test_corrupted_truncated_fixture_rejected_via_real_endpoint(tmp_path: Path) 
         ocr=_FixtureOcrPort(fixture),
         metadata=_FixtureNeutralPort("metadata", fixture),
         provenance=_FixtureNeutralPort("provenance", fixture),
+        vision=_FixtureNeutralPort("vision", fixture),
         ingestion=ingestion,
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
     )
     app.dependency_overrides[get_use_case] = lambda: use_case
     client = TestClient(app)

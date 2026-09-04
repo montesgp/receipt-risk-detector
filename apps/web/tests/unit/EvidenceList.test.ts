@@ -80,4 +80,24 @@ describe('EvidenceList', () => {
     expect(screen.queryAllByRole('listitem').length).toBe(0);
     expect(screen.getByText(es['evidence.empty'])).toBeTruthy();
   });
+
+  it('renders a VISUAL_ANOMALY_DETECTED finding as an outlier, never as an AI-generated claim', () => {
+    renderList([
+      signal({
+        code: 'VISUAL_ANOMALY_DETECTED',
+        category: 'visual',
+        severity: 'medium',
+        confidence: 0.7,
+        description:
+          "This receipt's visual appearance is an outlier relative to the bundled set of known-legitimate receipt renders.",
+        evidence: { cosine_distance: '0.52', threshold: '0.45' },
+        score_contribution: 14
+      })
+    ]);
+
+    const text = document.body.textContent ?? '';
+    expect(text).toMatch(/outlier/i);
+    expect(text).not.toMatch(/AI-generated/i);
+    expect(text).not.toMatch(/\bfake\b/i);
+  });
 });

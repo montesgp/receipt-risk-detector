@@ -17,10 +17,26 @@ dependencies = [
     # §2) -- FastAPI's UploadFile parsing requires this at runtime, not
     # only in tests.
     "python-multipart>=0.0.12",
+    # adapters/vision/mobilenet_embedder.py. CPU-only wheels resolved via
+    # [tool.uv.sources] below -- the default PyPI wheels bundle CUDA
+    # runtime libraries (~800MB+), which is both an unnecessary Railway
+    # image-size cost and irrelevant on a CPU-only deployment target
+    # (design.md's "cold-start and image size are High risks on Railway").
+    "torch>=2.4",
+    "torchvision>=0.19",
 ]
 
 [project.optional-dependencies]
 server = ["uvicorn[standard]>=0.32"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [dependency-groups]
 dev = [
@@ -67,11 +83,14 @@ select = ["E", "F", "I", "UP", "B", "TID", "S602", "S604", "S605", "S607"]
 "c2pa".msg = "C2PA is an adapter-only dependency."
 "onnxruntime".msg = "ONNX Runtime is an adapter-only dependency."
 "rapidocr_onnxruntime".msg = "The OCR engine is an adapter-only dependency."
+"torch".msg = "PyTorch is an adapter-only dependency (adapters/vision/**)."
+"torchvision".msg = "torchvision is an adapter-only dependency (adapters/vision/**)."
 
 [tool.ruff.lint.per-file-ignores]
 "src/receipt_risk/adapters/**" = ["TID251"]
 "src/receipt_risk/bootstrap/**" = ["TID251"]
 "tests/**" = ["TID251"]
+"scripts/**" = ["TID251"]
 # Note: samples/ lives at the repo root (sibling of apps/), outside this
 # project's ruff scan root — it never needs a per-file-ignore here. See
 # /samples/generate.py for the fixture-authoring script.

@@ -7,7 +7,7 @@ from decimal import Decimal
 from receipt_risk.domain.analysis import AnalyzerResult
 from receipt_risk.domain.assessment import assemble
 from receipt_risk.domain.ruleset import Classification, RecommendedAction
-from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
+from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 from receipt_risk.domain.signals import Severity, SignalCategory, SignalCode, ValidationSignal
 
 
@@ -24,11 +24,11 @@ def test_fraud_assessment_includes_ruleset_version_and_engine_version() -> None:
         analysis_id="sha256:deadbeef",
         results=_results(),
         signals=[],
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         engine_version="0.1.0",
         duration_ms=1234,
     )
-    assert assessment.ruleset_version == "2026-09-01"
+    assert assessment.ruleset_version == "2026-09-04"
     assert assessment.engine_version == "0.1.0"
     assert assessment.analysis_id == "sha256:deadbeef"
     assert assessment.duration_ms == 1234
@@ -48,7 +48,7 @@ def test_recommended_action_maps_high_risk_to_do_not_rely() -> None:
         analysis_id="sha256:x",
         results=_results(),
         signals=[critical],
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         engine_version="0.1.0",
         duration_ms=1,
     )
@@ -66,7 +66,7 @@ def test_recommended_action_maps_inconclusive_to_priority_reconciliation() -> No
         analysis_id="sha256:x",
         results=failed_results,
         signals=[],
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         engine_version="0.1.0",
         duration_ms=1,
     )
@@ -86,7 +86,7 @@ def test_signal_score_contribution_is_filled_by_the_scorer() -> None:
         analysis_id="sha256:x",
         results=_results(),
         signals=[signal],
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         engine_version="0.1.0",
         duration_ms=1,
     )
@@ -98,7 +98,7 @@ def test_limitations_always_present() -> None:
         analysis_id="sha256:x",
         results=_results(),
         signals=[],
-        ruleset=RULESET_2026_09_01,
+        ruleset=RULESET_2026_09_04,
         engine_version="0.1.0",
         duration_ms=1,
     )
