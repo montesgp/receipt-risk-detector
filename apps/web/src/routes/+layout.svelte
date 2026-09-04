@@ -20,7 +20,7 @@
 
 <header class="border-b border-ui-line bg-ui-surface">
   <div class="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-4">
-    <span class="flex items-center gap-2">
+    <a href="/" class="flex items-center gap-2 no-underline">
       <!-- ui-polish round 2, item 2: same mark as static/favicon.svg, but
            inline so it uses `currentColor` and adapts to the app's explicit
            light/dark toggle (not just OS preference, unlike the favicon
@@ -42,10 +42,15 @@
         <line x1="26.3" y1="26.3" x2="29.5" y2="29.5" />
       </svg>
       <span class="app-header__brand">Receipt Risk Detector</span>
-    </span>
-    <div class="app-header__switchers">
-      <LanguageSwitcher />
-      <ThemeSwitcher />
+    </a>
+    <div class="flex items-center gap-4">
+      <a href="/docs" class="text-sm font-medium text-ui-muted no-underline transition-colors hover:text-ui-fg">
+        {i18n.t('docsPage.title')}
+      </a>
+      <div class="app-header__switchers">
+        <LanguageSwitcher />
+        <ThemeSwitcher />
+      </div>
     </div>
   </div>
 </header>

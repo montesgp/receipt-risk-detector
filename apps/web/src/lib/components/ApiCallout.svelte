@@ -21,6 +21,9 @@
   <p id="api-callout-heading" class="m-0 font-semibold">{i18n.t('apiCallout.heading')}</p>
   <p class="m-0 max-w-reading text-sm text-ui-muted">{i18n.t('apiCallout.body')}</p>
   <div class="flex flex-wrap gap-3">
+    <a href="/docs" class="btn-secondary">
+      {i18n.t('apiCallout.productDocsLink')}
+    </a>
     <a href={`${PUBLIC_API_BASE_URL}/docs`} target="_blank" rel="noopener noreferrer" class="btn-secondary">
       {i18n.t('apiCallout.interactiveDocsLink')}
     </a>
