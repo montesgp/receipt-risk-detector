@@ -109,6 +109,115 @@
       "notes": "First 2 KB of a valid JPEG; must be rejected at ingestion before any analyzer runs."
     },
     {
+      "id": "alt_vocabulary_inline",
+      "path": "images/alt_vocabulary_inline.png",
+      "sha256": "a3bb334a30f82c5c4513d0990a7fdd28d2e3d90f785a50131ffe16afb0d79955",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "8000",
+        "date_time": "2026-08-01T14:43:00",
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "operation_id": "483927183"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: disjoint label vocabulary, inline 'label: value' lines, AR-locale amount, digit-for-letter-typo'd month name -- proves extraction never depends on a fixed label set."
+    },
+    {
+      "id": "no_label_layout",
+      "path": "images/no_label_layout.png",
+      "sha256": "2293d8c34527f3ebaf6f175d2962efff8767008a9f3ed40501ebce66ccaedf3a",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "date_time": "2026-09-01T14:43:00-03:00",
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: values only, zero labels, plus a decoy 9-digit operation id and a phone number that must never be mistaken for a core field."
+    },
+    {
+      "id": "two_party_labeled",
+      "path": "images/two_party_labeled.png",
+      "sha256": "3b09b7c2f09cf49d6da55ed9096345b47e5316732a89b29d6cb09aa3130cc349",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "origin_cbu": "0720001400004444444448",
+        "origin_cuit": "27098765439"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: origin block ('Cuenta origen' / 'Titular') then destination block ('Destino' / 'Beneficiario'), both CBU/CUIT pairs checksum-valid -- proves keyword-proximity selection, not checksum validity, picks the destination pair."
+    },
+    {
+      "id": "two_party_no_labels",
+      "path": "images/two_party_no_labels.png",
+      "sha256": "7fffc240228e1f970638687d9a0ce64a0b4666dbf812b2debad5d840f00c41b8",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "origin_cbu": "0720001400004444444448",
+        "origin_cuit": "27098765439"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: same two checksum-valid pairs as two_party_labeled, with no keyword text anywhere -- proves the positional fallback (second-appearing pair = destination)."
+    },
+    {
       "id": "reference_bank2_clean",
       "path": "images/reference/reference_bank2_clean.png",
       "sha256": "6f2eff31011018d4d3a64f8bea9da315f77a89bba12394d186008fb39bc84234",
