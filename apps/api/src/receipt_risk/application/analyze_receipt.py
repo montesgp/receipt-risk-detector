@@ -23,7 +23,7 @@ from receipt_risk.application.clock import Clock, SystemClock
 from receipt_risk.application.financial_validation import validate_financials
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.application.models import SafeImageRef
-from receipt_risk.application.ports import MetadataPort, OcrPort, ProvenancePort
+from receipt_risk.application.ports import MetadataPort, OcrPort, ProvenancePort, VisionPort
 from receipt_risk.domain.analysis import AnalyzerResult
 from receipt_risk.domain.assessment import FraudAssessment, assemble
 from receipt_risk.domain.ruleset import ScoringRuleset
@@ -46,6 +46,7 @@ class TimeBudget:
     ocr_s: float = 6.0  # includes the single OCR preprocessing retry
     metadata_s: float = 2.0
     provenance_s: float = 2.0
+    vision_s: float = 3.0
     max_concurrent_analyzers: int = 2
 
 
@@ -88,6 +89,7 @@ class AnalyzeReceiptUseCase:
         ocr: OcrPort,
         metadata: MetadataPort,
         provenance: ProvenancePort,
+        vision: VisionPort,
         ingestion: IngestionService,
         ruleset: ScoringRuleset,
         budget: TimeBudget | None = None,
@@ -96,6 +98,7 @@ class AnalyzeReceiptUseCase:
         self._ocr = ocr
         self._metadata = metadata
         self._provenance = provenance
+        self._vision = vision
         self._ingestion = ingestion
         self._ruleset = ruleset
         self._budget = budget if budget is not None else TimeBudget()
@@ -144,8 +147,12 @@ class AnalyzeReceiptUseCase:
             task_group.start_soon(_run, "ocr", self._ocr, self._budget.ocr_s)
             task_group.start_soon(_run, "metadata", self._metadata, self._budget.metadata_s)
             task_group.start_soon(_run, "provenance", self._provenance, self._budget.provenance_s)
+            task_group.start_soon(_run, "vision", self._vision, self._budget.vision_s)
 
-        return [results["ocr"], results["metadata"], results["provenance"]]
+        # Vision listed first per spec's "Vision listed first in signal
+        # ordering" scenario -- this is a presentation ordering only, all
+        # four analyzers still ran concurrently in the one task group above.
+        return [results["vision"], results["ocr"], results["metadata"], results["provenance"]]
 
     async def _guarded(
         self, port: object, role: str, budget_s: float, safe: SafeImageRef

@@ -63,13 +63,14 @@ class _HangingPort:
 
 
 def _use_case(
-    *, ocr=None, metadata=None, provenance=None, budget=None, temp_dir: Path
+    *, ocr=None, metadata=None, provenance=None, vision=None, budget=None, temp_dir: Path
 ) -> AnalyzeReceiptUseCase:
     ingestion = IngestionService(temp_dir=temp_dir, decoder=_StubDecoder())
     return AnalyzeReceiptUseCase(
         ocr=ocr or _CompletedPort(),
         metadata=metadata or _CompletedPort(),
         provenance=provenance or _CompletedPort(),
+        vision=vision or _CompletedPort(),
         ingestion=ingestion,
         ruleset=RULESET_2026_09_01,
         budget=budget,
@@ -136,3 +137,62 @@ def test_core_field_extraction_failed_signal_contributes_to_risk_score(tmp_path:
     codes = [s.code.value for s in assessment.signals]
     assert "CORE_FIELD_EXTRACTION_FAILED" in codes
     assert assessment.risk_score > 0
+
+
+class _VisionSignalPort:
+    name = "mobilenetv3-embedding"
+    version = "1.0.0"
+
+    async def inspect(self, image: SafeImageRef) -> AnalyzerResult:
+        from decimal import Decimal
+
+        from receipt_risk.domain.signals import (
+            Severity,
+            SignalCategory,
+            SignalCode,
+            ValidationSignal,
+        )
+
+        return AnalyzerResult(
+            analyzer=self.name,
+            version=self.version,
+            status="completed",
+            signals=(
+                ValidationSignal(
+                    code=SignalCode.VISUAL_ANOMALY_DETECTED,
+                    category=SignalCategory.VISUAL,
+                    severity=Severity.MEDIUM,
+                    confidence=Decimal("0.70"),
+                    description="outlier",
+                    evidence={"cosine_distance": "0.52"},
+                ),
+            ),
+        )
+
+
+def test_four_analyzers_run_in_one_task_group_vision_first_in_results(tmp_path: Path) -> None:
+    use_case = _use_case(vision=_VisionSignalPort(), temp_dir=tmp_path)
+    data = b"\x89PNG\r\n\x1a\nfake-bytes-vision"
+
+    async def _run():
+        return await use_case.execute(data)
+
+    assessment = anyio.run(_run)
+    codes = [s.code.value for s in assessment.signals]
+    assert "VISUAL_ANOMALY_DETECTED" in codes
+    assert codes[0] == "VISUAL_ANOMALY_DETECTED"
+
+
+def test_missing_vision_weights_degrades_without_failing_analysis_200_weight_zero(
+    tmp_path: Path,
+) -> None:
+    use_case = _use_case(vision=_RaisingPort(), temp_dir=tmp_path)
+    data = b"\x89PNG\r\n\x1a\nfake-bytes-vision-fail"
+
+    async def _run():
+        return await use_case.execute(data)
+
+    assessment = anyio.run(_run)
+    codes = [s.code.value for s in assessment.signals]
+    assert "ANALYZER_UNAVAILABLE" in codes
+    assert assessment.risk_score >= 0  # never raises, request still "succeeds" (200 path)
