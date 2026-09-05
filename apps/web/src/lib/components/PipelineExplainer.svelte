@@ -27,7 +27,7 @@
   <h2 id="pipeline-heading" class="m-0 mb-4 text-lg font-semibold">
     {i18n.t('upload.pipeline.heading')}
   </h2>
-  <ol class="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+  <ol class="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
     {#each STEPS as step, index (step)}
       <li class="flex gap-3 rounded-ui border border-ui-line bg-ui-surface p-4">
         <span
