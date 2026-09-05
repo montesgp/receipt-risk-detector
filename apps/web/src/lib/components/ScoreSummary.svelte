@@ -24,7 +24,8 @@
     classification,
     riskScore,
     confidenceScore,
-    recommendedAction
+    recommendedAction,
+    noTextDetected = false
   }: {
     classification: string;
     riskScore: number;
@@ -34,6 +35,15 @@
      */
     confidenceScore: number;
     recommendedAction: string;
+    /**
+     * True when a `CORE_FIELD_EXTRACTION_FAILED` signal with
+     * `evidence.reason === 'no_text_detected'` fired (derived by the
+     * `ResultView` container from `result.signals` — scoring-confidence-
+     * calibration change). Selects the hedged "we could not identify
+     * transfer data" copy instead of the generic inconclusive note; never
+     * asserts an absolute verdict either way.
+     */
+    noTextDetected?: boolean;
   } = $props();
 
   const i18n = getI18nContext();
@@ -57,6 +67,9 @@
     const key = actionKey(recommendedAction);
     return key ? i18n.t(key) : undefined;
   });
+  const inconclusiveKey = $derived(
+    noTextDetected ? 'result.inconclusiveNoTextNote' : 'result.inconclusiveNote'
+  );
 </script>
 
 <section
@@ -94,7 +107,7 @@
     <div class="flex min-w-0 flex-col gap-2">
       {#if isInconclusive}
         <p class="m-0 text-ui-muted">
-          {i18n.t('result.inconclusiveNote', { confidence: confidencePercent })}
+          {i18n.t(inconclusiveKey, { confidence: confidencePercent })}
         </p>
       {:else}
         <p class="m-0 text-[2.5rem] font-bold leading-none tabular-nums">{riskScore} / 100</p>

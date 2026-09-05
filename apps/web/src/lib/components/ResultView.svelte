@@ -35,6 +35,18 @@
 
   const i18n = getI18nContext();
 
+  // scoring-confidence-calibration: `evidence.reason` is a documented soft
+  // contract between backend and web (not a real SignalCode field) — a
+  // no-text-detected OCR failure selects the hedged "we could not identify
+  // transfer data" copy in `ScoreSummary` instead of the generic
+  // inconclusive note.
+  const noTextDetected = $derived(
+    result.signals.some(
+      (signal) =>
+        signal.code === 'CORE_FIELD_EXTRACTION_FAILED' && signal.evidence?.reason === 'no_text_detected'
+    )
+  );
+
   // Slice 4 focus management: `+page.svelte` mounts a fresh `ResultView`
   // per successful analysis, replacing the drop zone/processing UI. Without
   // this, keyboard/screen-reader focus stays on whatever element it was on
@@ -58,6 +70,7 @@
     riskScore={result.risk_score}
     confidenceScore={result.confidence_score}
     recommendedAction={result.recommended_action}
+    {noTextDetected}
   />
 
   <div class="max-w-reading text-sm text-ui-muted">

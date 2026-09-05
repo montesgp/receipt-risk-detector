@@ -25,6 +25,13 @@ describe('i18n key parity', () => {
     }
   });
 
+  it('has the new result.inconclusiveNoTextNote key with matching shape in both locales', () => {
+    expect(typeof es['result.inconclusiveNoTextNote']).toBe('string');
+    expect(typeof en['result.inconclusiveNoTextNote']).toBe('string');
+    expect(es['result.inconclusiveNoTextNote']).toMatch(/\{confidence\}/);
+    expect(en['result.inconclusiveNoTextNote']).toMatch(/\{confidence\}/);
+  });
+
   it('every value is a flat string in both locales', () => {
     for (const [key, value] of Object.entries(es)) {
       expect(typeof value, `es.json["${key}"] is not a string`).toBe('string');

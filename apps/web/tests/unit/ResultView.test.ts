@@ -122,4 +122,59 @@ describe('ResultView', () => {
       unmount();
     }
   });
+
+  it('derives noTextDetected and shows the hedged copy when CORE_FIELD_EXTRACTION_FAILED/no_text_detected is signaled', () => {
+    renderResult(
+      buildResponse({
+        classification: 'INCONCLUSIVE',
+        risk_score: 0,
+        confidence_score: 32,
+        recommended_action: 'PRIORITY_MANUAL_RECONCILIATION',
+        signals: [
+          {
+            code: 'CORE_FIELD_EXTRACTION_FAILED',
+            category: 'data_quality',
+            severity: 'medium',
+            confidence: 1,
+            description: 'OCR extraction did not complete for this request.',
+            evidence: { reason: 'no_text_detected' },
+            score_contribution: 0
+          }
+        ]
+      })
+    );
+
+    expect(
+      screen.getByText(es['result.inconclusiveNoTextNote'].replace('{confidence}', '32'))
+    ).toBeTruthy();
+  });
+
+  it('does not show the hedged no-text copy when the signal reason is different', () => {
+    renderResult(
+      buildResponse({
+        classification: 'INCONCLUSIVE',
+        risk_score: 0,
+        confidence_score: 32,
+        recommended_action: 'PRIORITY_MANUAL_RECONCILIATION',
+        signals: [
+          {
+            code: 'CORE_FIELD_EXTRACTION_FAILED',
+            category: 'data_quality',
+            severity: 'medium',
+            confidence: 1,
+            description: 'OCR extraction did not complete for this request.',
+            evidence: { reason: 'low_confidence' },
+            score_contribution: 0
+          }
+        ]
+      })
+    );
+
+    expect(
+      screen.queryByText(es['result.inconclusiveNoTextNote'].replace('{confidence}', '32'))
+    ).toBeNull();
+    expect(
+      screen.getByText(es['result.inconclusiveNote'].replace('{confidence}', '32'))
+    ).toBeTruthy();
+  });
 });
