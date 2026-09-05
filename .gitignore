@@ -50,3 +50,8 @@ Desktop.ini
 # --- Local agent tooling (machine-specific, not part of the product) ---
 /.atl/
 /.claude/scheduled_tasks.lock
+
+# --- Locally-fetched model weights (build-time artifacts, see
+# scripts/fetch_ocr_models.py / fetch_vision_model.py + Dockerfile) ---
+/apps/api/ocr-models/
+/apps/api/vision-model/
