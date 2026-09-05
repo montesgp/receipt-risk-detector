@@ -7,14 +7,11 @@
   "page.analyzeAnother": "Analizar otro comprobante",
 
   "header.brand": "Receipt Risk Detector",
-  "header.language.groupLabel": "Idioma",
-  "header.language.switchToEs": "Cambiar a español",
-  "header.language.switchToEn": "Cambiar a inglés",
   "header.language.nameEs": "Español",
   "header.language.nameEn": "Inglés",
   "header.language.announcement": "Idioma: {language}",
+  "header.language.cycleLabel": "Cambiar idioma (actual: {label})",
 
-  "theme.groupLabel": "Tema",
   "theme.system": "Sistema",
   "theme.light": "Claro",
   "theme.dark": "Oscuro",

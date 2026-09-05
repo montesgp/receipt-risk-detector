@@ -7,14 +7,11 @@
   "page.analyzeAnother": "Analyze another receipt",
 
   "header.brand": "Receipt Risk Detector",
-  "header.language.groupLabel": "Language",
-  "header.language.switchToEs": "Switch to Spanish",
-  "header.language.switchToEn": "Switch to English",
   "header.language.nameEs": "Spanish",
   "header.language.nameEn": "English",
   "header.language.announcement": "Language: {language}",
+  "header.language.cycleLabel": "Change language (current: {label})",
 
-  "theme.groupLabel": "Theme",
   "theme.system": "System",
   "theme.light": "Light",
   "theme.dark": "Dark",

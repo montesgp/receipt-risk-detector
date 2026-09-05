@@ -29,7 +29,7 @@ test.describe('locale switch', () => {
     await expect(page.getByRole('heading', { name: /resultado del análisis/i })).toBeVisible();
     expect(analyzeCallCount).toBe(1);
 
-    await page.getByRole('button', { name: /cambiar a inglés/i }).click();
+    await page.locator('.language-switcher__cycle').click();
 
     await expect(page.getByRole('heading', { name: /analysis result/i })).toBeVisible();
     expect(analyzeCallCount).toBe(1);
@@ -41,11 +41,12 @@ test.describe('locale switch', () => {
     await page.goto('/');
     await expect(page.getByText(/Arrastrá o seleccioná un comprobante/i)).toBeVisible();
 
-    await page.getByRole('button', { name: /cambiar a inglés/i }).click();
-    await expect(page.getByRole('button', { name: /switch to spanish/i })).toBeVisible();
+    const cycleButton = page.locator('.language-switcher__cycle');
+    await expect(cycleButton).toHaveText(/español/i);
+    await cycleButton.click();
+    await expect(cycleButton).toHaveText(/english/i);
 
     await page.reload();
-    await expect(page.getByRole('button', { name: /switch to spanish/i })).toBeVisible();
-
+    await expect(cycleButton).toHaveText(/english/i);
   });
 });

@@ -295,13 +295,13 @@ Implements `ui-localization-and-theming` (FR-012 expanded per proposal D1); see
 | Aspect | Decision |
 | --- | --- |
 | Placement | Header right cluster, immediately right of the language switcher, left of API docs / GitHub links. Not in the main workspace — it must never compete with the upload action (§2.1). |
-| Control | Binary segmented control (Light · Dark) at ≥768 px; a cycling icon button with a visible current-state label below 768 px. Touch target ≥ 44 × 44 px. |
+| Control | A single cycling icon button with a visible current-state label, at every viewport width (ui-polish round 4: dropped the ≥768 px segmented variant — a pair of filled-circle pill controls next to the language switcher read as generic on/off toggles). Touch target ≥ 44 × 44 px. |
 | Default | First paint follows `prefers-color-scheme`; the control reflects the *resolved* theme, so no third "System" option is exposed. |
 | Persistence | `localStorage['rrd.theme']`. Explicit choices persist; `system` re-subscribes to the OS preference and updates live via a `matchMedia` change listener. |
 | First paint | A small blocking inline script in `app.html` sets `data-theme` before body render. Without it the light tokens flash before a dark preference applies. |
 | Transition | Adding `data-theme` toggles a 160 ms transition (inside the 120–220 ms range in §9) on `background-color`, `color` and `border-color` only, applied through a temporary `theme-transition` class removed on `transitionend`. Never transition `box-shadow` or layout properties. |
 | Reduced motion | Under `prefers-reduced-motion: reduce` the class is not applied; the swap is instant. |
-| Accessibility | Native `<button>`/radio semantics with `aria-pressed` or `aria-checked`; focus ring uses `--color-focus`; the change is announced through the existing ARIA live region. |
+| Accessibility | Native `<button>` with an `aria-label` describing the switch action and current state; focus ring uses `--color-focus`; the change is announced through the existing ARIA live region. |
 | Constraint | Risk colors must keep WCAG AA contrast in both themes (§6.3). Green still means low artifact risk, never "authentic". |
 
 Stored value: `rrd.theme ∈ {light, dark}`, applied by setting `data-theme` and
@@ -322,7 +322,7 @@ Implements `ui-localization-and-theming` (FR-012 expanded per proposal D1); see
 
 | Aspect | Decision |
 | --- | --- |
-| Placement | Header right cluster, left of the theme switcher. Two-option control labelled `ES` / `EN`, each with an `aria-label` in its own language. |
+| Placement | Header right cluster, left of the theme switcher. A single cycling button showing the active language's full name (Español/English), with an `aria-label` describing the switch action in the active language (ui-polish round 4: replaced the two-button ES/EN pill, which read as a generic on/off toggle next to the theme switcher's identical pill shape). |
 | Persistence | `localStorage['rrd.locale']`; `?lang=` overrides for one visit and is then persisted, which makes bilingual links shareable. |
 | Message store | `apps/web/src/lib/i18n/messages/{es,en}.json`, flat dot-namespaced keys: `common.*`, `header.*`, `upload.*`, `processing.*`, `result.*`, `evidence.*`, `errors.*`, `legal.*`, `a11y.*`. |
 | Source of truth | `es.json` defines the key set (PRD is Spanish-first). A unit test asserts exact key parity between locales and fails CI on drift. |
