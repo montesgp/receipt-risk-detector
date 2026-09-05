@@ -1097,6 +1097,7 @@ dependencies = [
 
 [package.optional-dependencies]
 server = [
+    { name = "python-dotenv" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -1117,6 +1118,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=11.0" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "python-dateutil", specifier = ">=2.9" },
+    { name = "python-dotenv", marker = "extra == 'server'", specifier = ">=1.0" },
     { name = "python-multipart", specifier = ">=0.0.12" },
     { name = "rapidocr-onnxruntime", specifier = ">=1.4" },
     { name = "torch", specifier = ">=2.4", index = "https://download.pytorch.org/whl/cpu" },

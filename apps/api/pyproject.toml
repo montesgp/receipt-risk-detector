@@ -31,7 +31,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-server = ["uvicorn[standard]>=0.32"]
+# python-dotenv: local-dev convenience only -- bootstrap/app.py loads a
+# .env file (never committed, see .gitignore) so `uv run uvicorn ...`
+# picks up RECEIPT_RISK_* vars without exporting them by hand each time.
+# Silently a no-op in Railway/CI, where real env vars are already set and
+# load_dotenv() never overrides an existing one.
+server = ["uvicorn[standard]>=0.32", "python-dotenv>=1.0"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
