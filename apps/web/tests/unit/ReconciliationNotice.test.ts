@@ -14,13 +14,13 @@ function renderNotice(locale: 'es' | 'en' = 'es') {
 }
 
 describe('ReconciliationNotice', () => {
-  it('renders the DESIGN.md §5 mandatory limitation sentence unconditionally (es)', () => {
+  it('renders the DESIGN.md §5 mandatory limitation sentence (es)', () => {
     renderNotice('es');
 
     expect(screen.getByText(es['legal.disclaimer'])).toBeTruthy();
   });
 
-  it('renders the mandatory limitation sentence unconditionally (en)', () => {
+  it('renders the mandatory limitation sentence (en)', () => {
     renderNotice('en');
 
     expect(screen.getByText(en['legal.disclaimer'])).toBeTruthy();

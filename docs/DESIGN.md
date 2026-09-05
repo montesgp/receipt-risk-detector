@@ -59,8 +59,6 @@ Do not mention or reproduce any external reference product in UI copy or reposit
   provenance → OCR extraction → CBU/CVU and CUIT/CUIL validation → risk and
   confidence scoring), is non-interactive, and carries no live-region
   semantics — it is not `ProcessingStages` (§4.3). PRD FR-013.
-- Privacy line appears adjacent to the upload action; the explainer never
-  displaces the reconciliation-limitation statement (§5).
 - No large marketing section delays the tool.
 
 Suggested Spanish copy:
@@ -331,7 +329,7 @@ Implements `ui-localization-and-theming` (FR-012 expanded per proposal D1); see
 | Fallback | Missing key → Spanish value → the raw key in development builds. Never render an empty string. |
 | Server enums | `classification`, `recommended_action`, `severity` and `signals[].code` are mapped client-side to `result.*` / `evidence.signal.<CODE>` keys. An unknown code falls back to the server `description` field. The API therefore stays locale-free. |
 | Switching cost | Changing locale re-renders the current `FraudAssessment` from client state. It never re-uploads the image or re-calls the API. |
-| Copy rule | Both locales must respect §5: no `real`, `fake`, `authentic` or `verified` outcome, and the reconciliation limitation is present in idle and result states. |
+| Copy rule | Both locales must respect §5: no `real`, `fake`, `authentic` or `verified` outcome, and the reconciliation limitation is present in the result state (ui-polish round 3: shown once, as an alert with an icon, only once a result exists — previously duplicated in idle too). |
 | Number/date format | `Intl.NumberFormat` / `Intl.DateTimeFormat` with the active locale; the amount `currency` stays the server-provided code (`ARS`), never re-derived client-side. |
 
 Resolution order: `?lang=` → `localStorage` → `navigator.languages` → `es` (design.md DD4). Localized

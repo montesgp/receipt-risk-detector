@@ -14,19 +14,24 @@
   verbatim would show English text inside an otherwise Spanish/bilingual
   frontend regardless of the user's chosen locale — the backend has no
   concept of the client's locale and is out of scope for this change. The
-  mandatory disclaimer is instead always the client's own copy (identical
-  Spanish text to `ReconciliationNotice.svelte`, which already renders it
-  unconditionally in idle/result per DD7), so the sentence the user sees is
-  always in a locale the client actually controls. It will move behind
-  `t('legal.disclaimer')` in slice 3b along with every other literal in
-  this component. Spec "No forbidden authenticity language appears" is
-  enforced by every child component only using DESIGN.md §5-approved copy.
+  mandatory disclaimer is instead always the client's own copy, behind
+  `ReconciliationNotice.svelte` (`t('legal.disclaimer')`), so the sentence
+  the user sees is always in a locale the client actually controls. Spec
+  "No forbidden authenticity language appears" is enforced by every child
+  component only using DESIGN.md §5-approved copy.
+
+  ui-polish round 3 (issue #34): `ReconciliationNotice` used to ALSO be
+  mounted unconditionally by +page.svelte in every workspace state, which
+  duplicated this exact sentence on screen once a result rendered. It is
+  now mounted only here, so it appears exactly once, only when a result
+  exists.
 -->
 <script lang="ts">
   import type { AnalyzeResponse } from '$lib/api/types';
   import ScoreSummary from './ScoreSummary.svelte';
   import EvidenceList from './EvidenceList.svelte';
   import ReconciliationChecklist from './ReconciliationChecklist.svelte';
+  import ReconciliationNotice from './ReconciliationNotice.svelte';
   import ExtractedDataTable from './ExtractedDataTable.svelte';
   import TechnicalDetail from './TechnicalDetail.svelte';
   import { getI18nContext } from '$lib/i18n/i18n.svelte';
@@ -73,9 +78,7 @@
     {noTextDetected}
   />
 
-  <div class="max-w-reading text-sm text-ui-muted">
-    <p class="m-0">{i18n.t('legal.disclaimer')}</p>
-  </div>
+  <ReconciliationNotice />
 
   <div class="grid gap-8 lg:grid-cols-2 lg:items-start">
     <div class="flex flex-col gap-8">

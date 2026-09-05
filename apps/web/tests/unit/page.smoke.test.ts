@@ -1,9 +1,10 @@
 /**
  * Smoke-level component test for the full workspace wiring in
  * `+page.svelte`: idle -> selected -> uploading -> result, every documented
- * error variant, and the DD7 invariant that `ReconciliationNotice` renders
- * unconditionally in every state (this test fails if any state renders
- * without it).
+ * error variant, and (ui-polish round 3, issue #34) that the reconciliation
+ * disclaimer renders exactly once, ONLY in the result state -- it used to
+ * also render unconditionally in every other state via a separately-mounted
+ * `ReconciliationNotice`, duplicating the sentence once a result appeared.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
@@ -57,11 +58,11 @@ async function selectFileViaInput(file: File): Promise<void> {
 }
 
 describe('+page.svelte wiring', () => {
-  it('renders the idle drop zone and the disclaimer on first load', () => {
+  it('renders the idle drop zone, without the disclaimer (no result yet)', () => {
     renderPage();
 
     expect(screen.getByText(/Arrastrá o seleccioná un comprobante/i)).toBeTruthy();
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
   });
 
   it('runs the full idle -> selected -> uploading -> result loop against a mocked fetch', async () => {
@@ -86,22 +87,20 @@ describe('+page.svelte wiring', () => {
     );
 
     renderPage();
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
 
     await selectFileViaInput(makeFile());
     expect(screen.getByRole('button', { name: /Analizar/i })).toBeTruthy();
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
 
     screen.getByRole('button', { name: /Analizar/i }).click();
     await tick();
     expect(screen.getByRole('status').textContent).toMatch(/Analizando/i);
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
 
     await waitFor(() => expect(screen.getByText(/Riesgo bajo/i)).toBeTruthy());
-    // Both the always-mounted ReconciliationNotice and ResultView's own
-    // limitations fallback render the identical DESIGN.md §5 sentence when
-    // the server sends no `limitations[]` — at least one match is required.
-    expect(screen.getAllByText(DISCLAIMER_TEXT).length).toBeGreaterThan(0);
+    // Disclaimer now renders exactly once, only in the result state.
+    expect(screen.getAllByText(DISCLAIMER_TEXT).length).toBe(1);
 
     // Slice 4: the result transition is announced through the shared
     // LiveRegion (ProcessingStages already unmounted, so this is now the
@@ -110,7 +109,7 @@ describe('+page.svelte wiring', () => {
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: /Resultado del análisis/i }));
   });
 
-  it('shows a distinct connectivity error, never a result, on a network failure — disclaimer stays present', async () => {
+  it('shows a distinct connectivity error, never a result, on a network failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
 
     renderPage();
@@ -119,10 +118,10 @@ describe('+page.svelte wiring', () => {
 
     await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/no pudimos contactar/i));
     expect(screen.queryByText(/Resultado:/i)).toBeNull();
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
   });
 
-  it('preserves the file and surfaces the Retry-After wait on a 429 — disclaimer stays present', async () => {
+  it('preserves the file and surfaces the Retry-After wait on a 429', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(jsonResponse(429, problem(429, 'RATE_LIMITED'), { 'retry-after': '15' }))
@@ -133,10 +132,10 @@ describe('+page.svelte wiring', () => {
     screen.getByRole('button', { name: /Analizar/i }).click();
 
     await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/15/));
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
   });
 
-  it('clears the file back to idle on a server validation rejection — disclaimer stays present', async () => {
+  it('clears the file back to idle on a server validation rejection', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(jsonResponse(415, problem(415, 'UNSUPPORTED_IMAGE')))
@@ -148,10 +147,10 @@ describe('+page.svelte wiring', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
     expect(screen.getByText(/Arrastrá o seleccioná un comprobante/i)).toBeTruthy();
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
   });
 
-  it('rejects an oversized file client-side (never calling fetch) — disclaimer stays present', async () => {
+  it('rejects an oversized file client-side (never calling fetch)', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
@@ -160,6 +159,6 @@ describe('+page.svelte wiring', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toBeTruthy();
-    expect(screen.getByText(DISCLAIMER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(DISCLAIMER_TEXT)).toBeNull();
   });
 });
