@@ -15,6 +15,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -31,6 +32,14 @@ from receipt_risk.adapters.vision.mobilenet_embedder import MobileNetV3VisionAda
 from receipt_risk.application.analyze_receipt import ENGINE_VERSION, AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
+
+# Local-dev convenience only: loads apps/api/.env (never committed -- see
+# .gitignore) into os.environ before any adapter below reads
+# RECEIPT_RISK_*. Never overrides an already-set env var, so this is a
+# silent no-op in Docker/Railway/CI, where real env vars are exported by
+# the platform. `uv run uvicorn receipt_risk.bootstrap.app:app --reload`
+# then just works without exporting anything by hand.
+load_dotenv()
 
 app = FastAPI(title="Transfer Receipt Risk Engine")
 app.include_router(router)

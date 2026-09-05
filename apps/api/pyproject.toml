@@ -24,10 +24,19 @@ dependencies = [
     # (design.md's "cold-start and image size are High risks on Railway").
     "torch>=2.4",
     "torchvision>=0.19",
+    # adapters/ocr/field_parsers.py's date scanner: dateutil.parser.parse
+    # handles the wide format coverage (numeric/ISO/day-month-name, with or
+    # without seconds/timezone) that a hand-rolled parser would duplicate.
+    "python-dateutil>=2.9",
 ]
 
 [project.optional-dependencies]
-server = ["uvicorn[standard]>=0.32"]
+# python-dotenv: local-dev convenience only -- bootstrap/app.py loads a
+# .env file (never committed, see .gitignore) so `uv run uvicorn ...`
+# picks up RECEIPT_RISK_* vars without exporting them by hand each time.
+# Silently a no-op in Railway/CI, where real env vars are already set and
+# load_dotenv() never overrides an existing one.
+server = ["uvicorn[standard]>=0.32", "python-dotenv>=1.0"]
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
@@ -85,6 +94,7 @@ select = ["E", "F", "I", "UP", "B", "TID", "S602", "S604", "S605", "S607"]
 "rapidocr_onnxruntime".msg = "The OCR engine is an adapter-only dependency."
 "torch".msg = "PyTorch is an adapter-only dependency (adapters/vision/**)."
 "torchvision".msg = "torchvision is an adapter-only dependency (adapters/vision/**)."
+"dateutil".msg = "python-dateutil is an adapter-only dependency (adapters/ocr/**)."
 
 [tool.ruff.lint.per-file-ignores]
 "src/receipt_risk/adapters/**" = ["TID251"]
