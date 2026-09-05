@@ -25,7 +25,7 @@ import re
 import unicodedata
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 
 from dateutil import parser as _dateutil_parser  # noqa: TID251 -- adapters/** is exempt
@@ -60,6 +60,15 @@ _DATE_RANKING_MAX_PAST_DAYS = 3650
 _DATE_RANKING_MAX_FUTURE_DAYS = 3650
 
 _SENTINEL_YEAR = 1900
+
+# Real bank/wallet receipts print local wall-clock time, never a UTC offset
+# (confirmed against the real Mercado Pago sample this parser was built
+# against). dateutil then returns a naive datetime for the near-totality of
+# real receipts. financial_validation.py's is_within_date_bounds always
+# compares against an aware `datetime.now(UTC)`-based reference, so a naive
+# result must never reach it -- attach this product's fixed Argentina
+# offset (UTC-3, no DST) whenever the source text carried none of its own.
+_ARGENTINA_TZ = timezone(timedelta(hours=-3))
 
 
 @dataclass(frozen=True, slots=True)
@@ -461,6 +470,8 @@ def _try_parse_date(text: str, english_text: str) -> datetime | None:
         # than a guess (never fall back to the wall clock: `default` is
         # pinned precisely so this parser is deterministic).
         return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=_ARGENTINA_TZ)
     return parsed
 
 

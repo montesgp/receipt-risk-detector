@@ -120,7 +120,7 @@
       },
       "declared_fields": {
         "amount": "8000",
-        "date_time": "2026-08-01T14:43:00",
+        "date_time": "2026-08-01T14:43:00-03:00",
         "beneficiary_name": "PATRICIO EJEMPLO",
         "destination_cbu": "2850590940090418135201",
         "cuit": "20-17254359-7",

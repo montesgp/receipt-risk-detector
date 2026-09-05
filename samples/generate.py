@@ -106,7 +106,7 @@ ORIGIN_CUIT = "27098765439"
 ORIGIN_BENEFICIARY = "ORIGEN EJEMPLO"
 ALT_AMOUNT = "8.000"
 ALT_DATE_TEXT = "1 de ag0sto de 2026, 14:43 hs"
-ALT_DATE_ISO = "2026-08-01T14:43:00"
+ALT_DATE_ISO = "2026-08-01T14:43:00-03:00"
 DECOY_PHONE = "+54 11 2345-6789"
 
 # alt_vocabulary_inline: disjoint label wording from ROWS above, inline
