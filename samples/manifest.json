@@ -166,7 +166,7 @@
     {
       "id": "two_party_labeled",
       "path": "images/two_party_labeled.png",
-      "sha256": "3b09b7c2f09cf49d6da55ed9096345b47e5316732a89b29d6cb09aa3130cc349",
+      "sha256": "0ea6623025ca04a4048fdea8925d03245a32cb57f1a4204036e32ed5c45aa87e",
       "provenance": {
         "origin": "synthetic",
         "authored_by": "samples/generate.py",
@@ -193,7 +193,7 @@
     {
       "id": "two_party_no_labels",
       "path": "images/two_party_no_labels.png",
-      "sha256": "7fffc240228e1f970638687d9a0ce64a0b4666dbf812b2debad5d840f00c41b8",
+      "sha256": "cc8e6e0303c8cfe7a6e7edd2c01475b5984f9f33d2e76260a5eb28f9845bffe1",
       "provenance": {
         "origin": "synthetic",
         "authored_by": "samples/generate.py",

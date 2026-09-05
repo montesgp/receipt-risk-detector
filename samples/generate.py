@@ -135,10 +135,16 @@ ROWS_NO_LABEL: tuple[str, ...] = (
     DECOY_PHONE,
 )
 
-# two_party_labeled / two_party_no_labels: origin block then destination
-# block, both CBU/CUIT pairs checksum-valid (so keyword-proximity, not
-# checksum validity, is what the labeled test proves).
+# two_party_labeled / two_party_no_labels: a complete receipt (amount +
+# date, like every real transfer receipt) with an origin block then a
+# destination block, both CBU/CUIT pairs checksum-valid (so
+# keyword-proximity, not checksum validity, is what the labeled test
+# proves). Amount/date are included so overall core-field coverage clears
+# paddle_onnx.py's COVERAGE_THRESHOLD against the real OCR engine, not
+# just the two disambiguation-relevant fields.
 ROWS_TWO_PARTY: tuple[tuple[str, str], ...] = (
+    ("Monto", f"$ {AMOUNT}"),
+    ("Fecha y hora", DATE_TIME),
     ("Cuenta origen", ORIGIN_CBU),
     ("Titular", ORIGIN_BENEFICIARY),
     ("CUIT origen", ORIGIN_CUIT),
@@ -147,6 +153,8 @@ ROWS_TWO_PARTY: tuple[tuple[str, str], ...] = (
     ("CUIT destino", CUIT),
 )
 ROWS_TWO_PARTY_NO_LABELS: tuple[str, ...] = (
+    f"$ {AMOUNT}",
+    DATE_TIME,
     ORIGIN_CBU,
     ORIGIN_BENEFICIARY,
     ORIGIN_CUIT,
