@@ -20,7 +20,7 @@ const RECEIPT_FIXTURE = path.join(__dirname, 'fixtures', 'receipt.png');
 const ANALYZE_URL = '**/v1/receipts/analyze';
 
 test.describe('upload to result', () => {
-  test('idle state shows the pipeline explainer below the drop zone without displacing the disclaimer', async ({
+  test('idle state shows the pipeline explainer below the drop zone (no result yet, so no disclaimer)', async ({
     page
   }) => {
     await page.goto('/');
@@ -32,11 +32,11 @@ test.describe('upload to result', () => {
     await expect(explainerHeading).toBeVisible();
     await expect(page.locator('li')).toHaveCount(7);
 
-    // The idle-state reconciliation-limitation disclaimer must still be
-    // visible; the explainer must not displace it.
+    // ui-polish round 3 (issue #34): the reconciliation disclaimer no longer
+    // renders in the idle state at all -- only once a result exists.
     await expect(
-      page.getByText(/Confirmá la acreditación en la cuenta beneficiaria/i).first()
-    ).toBeVisible();
+      page.getByText(/Confirmá la acreditación en la cuenta beneficiaria/i)
+    ).toHaveCount(0);
   });
 
   test('successful upload renders the full result screen', async ({ page }) => {
@@ -59,14 +59,12 @@ test.describe('upload to result', () => {
     await expect(page.getByText('74 / 100')).toBeVisible();
     await expect(page.locator('li.evidence-item')).toHaveCount(1);
     await expect(page.getByText(/^\*+5678$/)).toBeVisible();
-    // The client-owned disclaimer must render; the raw server limitations[]
-    // text (deliberately different in the fixture) must never appear.
-    // Both the always-mounted ReconciliationNotice and ResultView's own
-    // disclaimer render the identical DESIGN.md §5 sentence; at least one
-    // visible match is required.
+    // The client-owned disclaimer must render exactly once (ui-polish round
+    // 3, issue #34); the raw server limitations[] text (deliberately
+    // different in the fixture) must never appear.
     await expect(
-      page.getByText(/Confirmá la acreditación en la cuenta beneficiaria/i).first()
-    ).toBeVisible();
+      page.getByText(/Confirmá la acreditación en la cuenta beneficiaria/i)
+    ).toHaveCount(1);
     await expect(page.getByText(/raw server limitation text/i)).toHaveCount(0);
   });
 

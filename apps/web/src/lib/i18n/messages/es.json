@@ -175,6 +175,11 @@
   "result.technical.analyzerColumn": "Analizador",
   "result.technical.statusColumn": "Estado",
   "result.technical.durationColumn": "Duración",
+  "result.technical.helpLabel": "Qué evalúa {analyzer}",
+  "result.technical.help.paddleocr-onnx": "Extrae el texto del comprobante (monto, fecha, CBU/CVU, CUIT) mediante reconocimiento óptico de caracteres, ejecutado 100% en el servidor sin servicios externos.",
+  "result.technical.help.exiftool": "Inspecciona los metadatos embebidos en el archivo (software de edición, fecha de captura) en busca de señales de manipulación. Ausencia de metadatos no implica autenticidad.",
+  "result.technical.help.c2pa": "Verifica si el archivo lleva una credencial C2PA firmada que declare su origen — por ejemplo, que fue generado o compuesto algorítmicamente.",
+  "result.technical.help.mobilenetv3-embedding": "Compara la apariencia visual del archivo contra un conjunto de comprobantes legítimos conocidos, usando una red neuronal (PyTorch), para detectar outliers visuales.",
 
   "evidence.empty": "No se registraron señales de riesgo para este comprobante.",
   "evidence.severity.info": "Informativa",
