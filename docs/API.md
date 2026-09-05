@@ -55,7 +55,7 @@ Fields:
 | --- | --- | --- | --- |
 | `file` | binary | Yes | JPEG, PNG or WebP; maximum 10 MB initially |
 
-MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart works with browsers and n8n without increasing payload size unnecessarily.
+MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart works with browsers and any external automation client (workflow tools, bots, generic HTTP clients) without increasing payload size unnecessarily.
 
 ## 3. Response model
 
@@ -251,23 +251,24 @@ guarantee. See `docs/ARCHITECTURE.md` §11 for the architectural framing and
 `docs/adr/0003-rate-limit-token-bucket.md` for the algorithm decision. Shared-store limiting is
 deferred to the authentication phase (`docs/ROADMAP.md` Phase 4).
 
-## 6. n8n flow
+## 6. External automation clients
+
+Any server-side automation — a workflow-automation tool, a WhatsApp/Telegram bot, a generic backend — is an intended consumer of this API, on equal footing with the web client. None of it requires browser state or credentials (§5).
 
 ```mermaid
 flowchart LR
-    A["WhatsApp or Telegram trigger"] --> B["Download binary image"]
-    B --> C["HTTP Request node"]
+    A["Message or event trigger"] --> B["Download binary image"]
+    B --> C["HTTP client"]
     C -->|"POST multipart file"| D["/v1/receipts/analyze"]
     D --> E["Switch on classification"]
     E --> F["Send concise assessment"]
 ```
 
-HTTP Request node requirements:
+Request requirements, for any client:
 
 - Method: `POST`.
 - Body content type: `multipart/form-data`.
 - Parameter name: `file`.
-- Parameter type: n8n binary file.
 - Response: JSON.
 - Client timeout: greater than the documented API analysis timeout.
 

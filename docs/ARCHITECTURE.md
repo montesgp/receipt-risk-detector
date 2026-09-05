@@ -14,7 +14,7 @@ There is no database, queue or distributed workflow in MVP 1. This minimizes ope
 ```mermaid
 flowchart LR
     U["Beneficiary operator"] --> W["SvelteKit web"]
-    N["n8n / WhatsApp / Telegram"] --> A["FastAPI public API"]
+    N["External automation / bots"] --> A["FastAPI public API"]
     X["Generic HTTP client"] --> A
     W --> A
     A --> R["FraudAssessment"]
@@ -35,8 +35,8 @@ boundary as the Mermaid view above, redrawn as a source-editable diagram per D3.
 ### 2.1 Use-case diagram
 
 Editable source: [`docs/diagrams/uml-use-case.drawio`](diagrams/uml-use-case.drawio). UML use-case
-diagram covering the three PRD actors — beneficiary operator, external automation (n8n/bots/generic
-HTTP clients), and contributor/integrator — against the `analyze receipt` use case and its
+diagram covering the three PRD actors — beneficiary operator, external automation (workflow tools,
+bots, generic HTTP clients), and contributor/integrator — against the `analyze receipt` use case and its
 `<<include>>`/`<<extend>>` relationships (preprocess, extract, score, handle partial/failed analyzer).
 See `architecture-documentation` spec, scenario "Use-case diagram covers actors".
 
@@ -46,7 +46,7 @@ See `architecture-documentation` spec, scenario "Use-case diagram covers actors"
 flowchart TB
     subgraph Clients
         W["SvelteKit web client"]
-        B["External bots and n8n"]
+        B["External automation clients"]
     end
 
     subgraph AnalysisService["FastAPI analysis service"]

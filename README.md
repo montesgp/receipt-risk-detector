@@ -28,7 +28,7 @@ MVP 1 accepts a `JPEG`, `PNG` or `WebP` image and performs:
 - Extraction of amount, date, parties, CBU/CVU, CUIT/CUIL and operation identifier.
 - Deterministic Argentine financial-data validation.
 - Explainable fraud-risk scoring.
-- JSON response suitable for the web client, n8n, WhatsApp and Telegram bots.
+- JSON response suitable for the web client, workflow-automation tools, WhatsApp and Telegram bots.
 
 MVP 1 excludes authentication, organizations, persistent history, bank connections, automatic reconciliation and trained fraud-classification models. See [PRD](docs/PRD.md) and [Roadmap](docs/ROADMAP.md).
 
@@ -51,7 +51,7 @@ MVP 1 excludes authentication, organizations, persistent history, bank connectio
 ```mermaid
 flowchart LR
     A["SvelteKit web client"] -->|"multipart/form-data"| B["FastAPI"]
-    H["n8n and external bots"] -->|"multipart/form-data"| B
+    H["External automation clients"] -->|"multipart/form-data"| B
     B --> C["File validation"]
     C --> D["Parallel analyzers"]
     D --> E["Metadata and C2PA"]
