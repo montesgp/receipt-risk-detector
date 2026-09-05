@@ -1,47 +1,29 @@
 <!--
-  DESIGN.md §12 "Theme switcher UX": binary control (Light · Dark),
-  `aria-checked` semantics, focus ring via `--color-focus`, state change
-  announced through an ARIA live region. Spec "Switchers are
-  keyboard-operable with visible focus" / "State change is announced and
-  not color-only".
+  DESIGN.md §12 "Theme switcher UX": single cycling icon button with a
+  visible current-state label, state change announced through an ARIA live
+  region. Spec "Switchers are keyboard-operable with visible focus" / "State
+  change is announced and not color-only".
 
   The controller is read from context (design.md: "lib/theme ... provided
   through Svelte context"), set once by the layout via `setThemeContext`.
-  Announcements go through the shared `LiveRegion.svelte` (slice 4) — slice 2
-  used a local `role="status"` workaround because that component did not
-  exist yet.
-
-  Slice 4 fix (verify follow-up from slice 2): DESIGN.md §12's "Control" row
-  requires a segmented control at >=768px and a cycling icon button with a
-  visible current-state label below 768px, both with a >=44x44px touch
-  target. Both variants are always in the DOM and toggled purely by CSS
-  media query — no JS `matchMedia`/resize listener needed, so it works
-  before hydration and needs no extra state. A hidden variant is inert to
-  assistive tech (removed from the accessibility tree by `display: none`),
-  so there is exactly one reachable control at any viewport width.
+  Announcements go through the shared `LiveRegion.svelte`.
 
   ui-design-refresh slice 3 fix: `controller.mode` stays 'system' until the
-  user makes an explicit choice (ThemeController is untouched), so a binary
-  control's checked/current state derives from `controller.resolved` (always
+  user makes an explicit choice (ThemeController is untouched), so the
+  button's current-state label derives from `controller.resolved` (always
   'light' | 'dark') instead of `mode` — otherwise a dark-first-paint via OS
-  preference would incorrectly render "Light" as checked. `theme.system`
-  stays in both message files for `ThemeMode`/i18n key-parity but is never
-  rendered as a selectable option.
+  preference would incorrectly show "Light". `theme.system` stays in both
+  message files for `ThemeMode`/i18n key-parity but is never rendered.
 
-  ui-polish round 2, item 5: restyled to a compact icon-only control (label
-  kept as visually-hidden text, so the accessible name/`aria-checked`
-  semantics and the existing test suite are untouched) and migrated the
-  scoped `<style>` block to Tailwind utilities, matching the rest of the
-  app since the Tailwind adoption slice. `.theme-switcher__segmented` /
-  `.theme-switcher__cycle` class names are kept as test selector hooks
-  only — all visual styling now lives in the Tailwind classes alongside
-  them. The >=44px touch target is preserved via `h-11 w-11` (44px).
+  ui-polish round 2/3: swapped platform emoji for monochrome sun/moon
+  line-icons (Lucide/Feather-style paths), stroked with `currentColor`.
 
-  ui-polish round 3: swapped the platform emoji (☀/🌙, which render
-  inconsistently across OS/browser emoji fonts and read as childish next to
-  the rest of the monochrome brand) for the same sun/moon line-icon pair
-  used by most dark-mode toggles (Lucide/Feather-style paths), stroked with
-  `currentColor` to match the navbar mark's line weight.
+  ui-polish round 4 (issue TBD): dropped the >=768px segmented
+  radiogroup variant entirely -- it read as a generic on/off toggle next to
+  the language switcher's identical pill shape. A single cycling button
+  (previously the <768px-only variant) is now used at every width, matching
+  LanguageSwitcher's own single-button redesign. `.theme-switcher__cycle` is
+  kept as a test-selector hook only.
 -->
 <script lang="ts">
   import { getThemeContext } from '$lib/theme/theme.svelte';
@@ -69,14 +51,6 @@
     announcement = i18n.t('theme.announcement', { label });
   }
 
-  function handleKeydown(event: KeyboardEvent, index: number): void {
-    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-    event.preventDefault();
-    const delta = event.key === 'ArrowRight' ? 1 : -1;
-    const nextIndex = (index + delta + OPTIONS.length) % OPTIONS.length;
-    select(OPTIONS[nextIndex].mode);
-  }
-
   function cycle(): void {
     select(active === 'light' ? 'dark' : 'light');
   }
@@ -102,43 +76,13 @@
   </svg>
 {/snippet}
 
-<div class="inline-flex items-center">
-  <div
-    class="theme-switcher__segmented hidden items-center gap-0.5 rounded-full border border-ui-line p-0.5 md:inline-flex"
-    role="radiogroup"
-    aria-label={i18n.t('theme.groupLabel')}
-  >
-    {#each OPTIONS as option, index (option.mode)}
-      <button
-        type="button"
-        role="radio"
-        aria-checked={active === option.mode}
-        tabindex={active === option.mode ? 0 : -1}
-        class="flex h-11 w-11 items-center justify-center rounded-full transition-colors"
-        class:bg-ui-action={active === option.mode}
-        class:text-ui-action-fg={active === option.mode}
-        class:bg-transparent={active !== option.mode}
-        class:text-ui-muted={active !== option.mode}
-        onclick={() => select(option.mode)}
-        onkeydown={(event) => handleKeydown(event, index)}
-      >
-        {@render (option.mode === 'light' ? sunIcon : moonIcon)()}
-        <span class="sr-only">{i18n.t(option.labelKey)}</span>
-      </button>
-    {/each}
-  </div>
-
-  <button
-    type="button"
-    class="theme-switcher__cycle flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-ui-line bg-ui-surface px-3 text-sm text-ui-muted transition-colors hover:text-ui-fg md:hidden"
-    aria-label={i18n.t('theme.cycleLabel', { label: currentLabel })}
-    onclick={cycle}
-  >
-    {@render (currentOption.mode === 'light' ? sunIcon : moonIcon)()}
-    <!-- DESIGN.md §12: "a cycling icon button with a visible current-state
-         label" — state must be conveyed as visible text, not only via
-         aria-label. Kept minimal (small text, no extra chrome). -->
-    <span>{currentLabel}</span>
-  </button>
-</div>
+<button
+  type="button"
+  class="theme-switcher__cycle flex h-11 items-center gap-2 rounded-ui border border-ui-line bg-ui-surface px-3 text-sm text-ui-muted transition-colors hover:border-ui-muted hover:text-ui-fg"
+  aria-label={i18n.t('theme.cycleLabel', { label: currentLabel })}
+  onclick={cycle}
+>
+  {@render (currentOption.mode === 'light' ? sunIcon : moonIcon)()}
+  <span>{currentLabel}</span>
+</button>
 <LiveRegion message={announcement} />
