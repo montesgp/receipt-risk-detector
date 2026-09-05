@@ -31,7 +31,7 @@ from receipt_risk.adapters.provenance.c2pa_reader import C2paProvenanceAdapter
 from receipt_risk.adapters.vision.mobilenet_embedder import MobileNetV3VisionAdapter
 from receipt_risk.application.analyze_receipt import ENGINE_VERSION, AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
-from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
+from receipt_risk.domain.rulesets.v2026_09_05 import RULESET_2026_09_05
 
 # Local-dev convenience only: loads apps/api/.env (never committed -- see
 # .gitignore) into os.environ before any adapter below reads
@@ -73,7 +73,7 @@ _use_case = AnalyzeReceiptUseCase(
     provenance=_provenance,
     vision=_vision,
     ingestion=_ingestion,
-    ruleset=RULESET_2026_09_04,
+    ruleset=RULESET_2026_09_05,
 )
 
 app.dependency_overrides[get_use_case] = lambda: _use_case
@@ -106,7 +106,7 @@ def version() -> VersionResponse:
     """Per docs/API.md §2 example."""
     return VersionResponse(
         engine_version=ENGINE_VERSION,
-        ruleset_version=RULESET_2026_09_04.version,
+        ruleset_version=RULESET_2026_09_05.version,
         analyzers={
             "ocr": f"{_ocr.name}/{_ocr.version}",
             "metadata": f"{_metadata.name}/{_metadata.version}",

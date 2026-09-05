@@ -4,16 +4,32 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from receipt_risk.domain.analysis import AnalyzerResult
+from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
 from receipt_risk.domain.assessment import assemble
 from receipt_risk.domain.ruleset import Classification, RecommendedAction
 from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 from receipt_risk.domain.signals import Severity, SignalCategory, SignalCode, ValidationSignal
 
 
+def _core_fields() -> tuple[ExtractedField, ...]:
+    # A successful OCR run with all core fields extracted -- the OCR-zero
+    # floor (scoring-confidence-calibration change) forces INCONCLUSIVE only
+    # when OCR extracts zero core fields, so a "clean successful analysis"
+    # fixture must carry at least one to stay distinguishable from that case.
+    return tuple(
+        ExtractedField(name=name, raw_text="x", normalized="x", confidence=Decimal("0.90"))
+        for name in ("amount", "destination_cbu", "cuit", "date_time")
+    )
+
+
 def _results() -> list[AnalyzerResult]:
     return [
-        AnalyzerResult(analyzer="paddleocr-onnx", version="1.0.0", status="completed"),
+        AnalyzerResult(
+            analyzer="paddleocr-onnx",
+            version="1.0.0",
+            status="completed",
+            extracted_fields=_core_fields(),
+        ),
         AnalyzerResult(analyzer="exiftool", version="1.0.0", status="completed"),
         AnalyzerResult(analyzer="c2pa", version="1.0.0", status="completed"),
     ]

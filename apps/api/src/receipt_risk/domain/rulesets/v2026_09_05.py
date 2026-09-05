@@ -1,18 +1,14 @@
-"""Ruleset version `2026-09-04` — adds the vision analyzer role.
+"""Ruleset version `2026-09-05` — adds the combination-floor policy.
 
-Supersedes `v2026_09_01` as the MVP1 default (visual-anomaly-detection
-change): adds `SignalCode.VISUAL_ANOMALY_DETECTED` and rebalances
-`_ANALYZER_EVIDENCE_WEIGHTS` for the new `vision` role. `v2026_09_01`
-is kept unmodified and still registered in `rulesets/__init__.py` so any
-request logged with `ruleset_version="2026-09-01"` stays reproducible
-(CONTRIBUTING.md: scoring changes bump `ruleset_version` rather than
-mutate a shipped one in place).
+Supersedes `v2026_09_04` as the MVP1 default (scoring-confidence-calibration
+change): copy-forward of every `v2026_09_04` value, plus a non-empty
+`combination_floors` entry. `v2026_09_04` is kept unmodified and still
+registered in `rulesets/__init__.py` so any request logged with
+`ruleset_version="2026-09-04"` stays reproducible (CONTRIBUTING.md: scoring
+changes bump `ruleset_version` rather than mutate a shipped one in place).
 
-Weights, multipliers and the evidence-coverage threshold are reasoned
-defaults, not benchmarked values (proposal.md: "reasonable defaults, not
-fake precision"; design.md Open Questions). They are pinned here, not in
-`domain/scoring.py`, so a future ruleset version can change them without
-touching the scoring engine.
+Weights, multipliers and the evidence-coverage threshold are unchanged from
+`v2026_09_04` — this version's only policy delta is `combination_floors`.
 """
 
 from __future__ import annotations
@@ -51,16 +47,20 @@ _CRITICAL_FLOOR: dict[SignalCode, int] = {
     SignalCode.VALID_AI_GENERATED_CLAIM: 85,
 }
 
+# Unreadable core fields AND an implausible date is strongly consistent with
+# a fabricated render, but also reachable by a bad scan of an old receipt --
+# so this floors into SUSPICIOUS (PRIORITY_MANUAL_RECONCILIATION), never
+# HIGH_RISK (DO_NOT_RELY_ON_RECEIPT), which stays reserved for cryptographic
+# evidence (VALID_AI_GENERATED_CLAIM: 85). 55 sits clear of both band edges
+# (49 / 75). A reasoned default, not a benchmarked value (design.md).
+_COMBINATION_FLOORS: dict[frozenset[SignalCode], int] = {
+    frozenset({SignalCode.CORE_FIELD_EXTRACTION_FAILED, SignalCode.DATE_OUT_OF_BOUNDS}): 55,
+}
+
 # Keyed by analyzer *role* (ocr/metadata/provenance/vision), not by adapter
 # name (`paddleocr-onnx`/`exiftool`/`c2pa`/`mobilenetv3-embedding`) — see
 # `domain/scoring.py`'s `_ADAPTER_ROLE` mapping for the adapter-name -> role
-# translation.
-#
-# The pre-vision triple (ocr 0.50 / metadata 0.20 / provenance 0.30) is
-# scaled by 0.85 and rounded to 2dp so the four roles sum to exactly 1.00
-# once vision's 0.15 is added (design.md "Evidence-weight rebalance"):
-# ocr rounds up (0.425 -> 0.43) and provenance rounds down (0.255 -> 0.25)
-# because ocr is the only role with fractional `_completeness`.
+# translation. Unchanged from v2026_09_04.
 _ANALYZER_EVIDENCE_WEIGHTS: dict[str, Decimal] = {
     "ocr": Decimal("0.43"),
     "metadata": Decimal("0.17"),
@@ -82,12 +82,12 @@ _BANDS: tuple[tuple[int, Classification], ...] = (
     (100, Classification.HIGH_RISK),
 )
 
-RULESET_2026_09_04 = ScoringRuleset(
-    version="2026-09-04",
+RULESET_2026_09_05 = ScoringRuleset(
+    version="2026-09-05",
     weights=_WEIGHTS,
     severity_multiplier=_SEVERITY_MULTIPLIER,
     critical_floor=_CRITICAL_FLOOR,
-    combination_floors={},
+    combination_floors=_COMBINATION_FLOORS,
     analyzer_evidence_weights=_ANALYZER_EVIDENCE_WEIGHTS,
     status_quality=_STATUS_QUALITY,
     inconclusive_coverage_threshold=Decimal("0.35"),

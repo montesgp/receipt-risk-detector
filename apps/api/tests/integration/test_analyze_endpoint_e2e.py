@@ -27,10 +27,10 @@ from conftest import fixture as load_fixture
 from receipt_risk.adapters.api.dependencies import get_use_case
 from receipt_risk.adapters.api.router import router
 from receipt_risk.adapters.image.pillow_decoder import PillowImageDecoder
-from receipt_risk.application.analyze_receipt import AnalyzeReceiptUseCase
+from receipt_risk.application.analyze_receipt import ENGINE_VERSION, AnalyzeReceiptUseCase
 from receipt_risk.application.ingestion import IngestionService
 from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
-from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
+from receipt_risk.domain.rulesets.v2026_09_05 import RULESET_2026_09_05
 
 
 class _FixtureOcrPort:
@@ -86,7 +86,7 @@ def _app_for_fixture(fixture: Fixture, tmp_path: Path) -> FastAPI:
         provenance=_FixtureNeutralPort("provenance", fixture),
         vision=_FixtureNeutralPort("vision", fixture),
         ingestion=ingestion,
-        ruleset=RULESET_2026_09_04,
+        ruleset=RULESET_2026_09_05,
     )
     app.dependency_overrides[get_use_case] = lambda: use_case
     return app
@@ -102,7 +102,8 @@ def test_clean_valid_transfer_fixture_returns_low_risk_via_real_endpoint(tmp_pat
 
     assert response.status_code == 200
     body = response.json()
-    assert body["ruleset_version"] == RULESET_2026_09_04.version
+    assert body["ruleset_version"] == RULESET_2026_09_05.version
+    assert body["engine_version"] == ENGINE_VERSION
     assert body["classification"] == "LOW_RISK"
     assert body["risk_score"] == 0
     assert body["analysis_id"].startswith("sha256:")
@@ -133,7 +134,7 @@ def test_corrupted_truncated_fixture_rejected_via_real_endpoint(tmp_path: Path) 
         provenance=_FixtureNeutralPort("provenance", fixture),
         vision=_FixtureNeutralPort("vision", fixture),
         ingestion=ingestion,
-        ruleset=RULESET_2026_09_04,
+        ruleset=RULESET_2026_09_05,
     )
     app.dependency_overrides[get_use_case] = lambda: use_case
     client = TestClient(app)

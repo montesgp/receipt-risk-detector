@@ -58,7 +58,7 @@ def test_post_analyze_returns_full_assessment_with_ruleset_and_engine_version(
     assert response.status_code == 200
     body = response.json()
     assert body["ruleset_version"] == "2026-09-04"
-    assert body["engine_version"] == "0.1.0"
+    assert body["engine_version"] == "0.2.0"
     assert "risk_score" in body
     assert "confidence_score" in body
     assert "classification" in body

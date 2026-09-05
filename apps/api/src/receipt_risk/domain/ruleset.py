@@ -45,6 +45,10 @@ class ScoringRuleset:
     weights: Mapping[SignalCode, int]
     severity_multiplier: Mapping[Severity, Decimal]
     critical_floor: Mapping[SignalCode, int]
+    combination_floors: Mapping[frozenset[SignalCode], int]
+    """Risk-score floors keyed by a SET of co-occurring codes. Deliberately
+    severity-agnostic (unlike `critical_floor`): the targeted codes never
+    reach CRITICAL, and it is the co-occurrence that carries the meaning."""
     analyzer_evidence_weights: Mapping[str, Decimal]
     status_quality: Mapping[AnalyzerStatus, Decimal]
     inconclusive_coverage_threshold: Decimal
