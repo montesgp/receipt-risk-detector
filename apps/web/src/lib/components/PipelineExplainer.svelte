@@ -23,8 +23,8 @@
   ] as const;
 </script>
 
-<section class="max-w-reading" aria-labelledby="pipeline-heading">
-  <h2 id="pipeline-heading" class="m-0 mb-4 text-lg font-semibold">
+<section aria-labelledby="pipeline-heading">
+  <h2 id="pipeline-heading" class="m-0 mb-4 max-w-reading text-lg font-semibold">
     {i18n.t('upload.pipeline.heading')}
   </h2>
   <ol class="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
