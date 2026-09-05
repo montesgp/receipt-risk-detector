@@ -10,7 +10,7 @@
                 <mxCell id="a-user" value="Beneficiary operator&#xa;[Person]" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" parent="1" vertex="1">
                     <mxGeometry x="80" y="140" width="40" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="a-n8n" value="n8n / WhatsApp / Telegram&#xa;[Automation]" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" parent="1" vertex="1">
+                <mxCell id="a-n8n" value="External automation / WhatsApp / Telegram&#xa;[Automation]" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" parent="1" vertex="1">
                     <mxGeometry x="80" y="330" width="40" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="a-http" value="Generic HTTP client / bot&#xa;[Third-party server]" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" parent="1" vertex="1">

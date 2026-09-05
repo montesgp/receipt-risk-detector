@@ -1,8 +1,9 @@
 """Env-configurable CORS allowlist (public-api-contract spec's "CORS
 allowlist" requirement, D4). No origins are allowed by default: server-side
-clients (n8n, bots, generic HTTP) are entirely unaffected by CORS either
-way, since CORS is a browser-enforced mechanism -- an empty allowlist only
-means no *browser* origin can read the response until one is configured."""
+clients (workflow-automation tools, bots, generic HTTP) are entirely
+unaffected by CORS either way, since CORS is a browser-enforced mechanism --
+an empty allowlist only means no *browser* origin can read the response
+until one is configured."""
 
 from __future__ import annotations
 

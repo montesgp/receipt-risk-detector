@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Versioned JSON API, CORS allowlist, no-auth-in-MVP1, consumable by browser, n8n, bots, and generic HTTP clients without browser-session coupling (PRD FR-009, FR-010, NFR-002; proposal D4).
+Versioned JSON API, CORS allowlist, no-auth-in-MVP1, consumable by browser, workflow-automation tools, bots, and generic HTTP clients without browser-session coupling (PRD FR-009, FR-010, NFR-002; proposal D4).
 
 ## Requirements
 
@@ -23,7 +23,7 @@ The API SHALL expose `GET /health`, `GET /ready`, `GET /version`, `POST /v1/rece
 The API MUST NOT require API keys, OAuth, or any credential to call public endpoints in MVP 1 (PRD §5 non-goal; D4 reaffirmation).
 
 #### Scenario: Unauthenticated third-party call succeeds
-- GIVEN an n8n HTTP Request node with no credentials configured
+- GIVEN a generic HTTP client (e.g. a workflow-automation tool) with no credentials configured
 - WHEN it submits a binary multipart image to `/v1/receipts/analyze`
 - THEN the request is processed and returns structured JSON (FR-010)
 
@@ -51,4 +51,4 @@ All errors MUST return a stable problem-details format with a documented status 
 ## Key Learnings
 
 1. D4 defines "API independence" as CORS allowlist + versioned contract + rate limiting + no browser-session coupling, not as authentication.
-2. Server-side automation (n8n, bots, backends) is an explicitly intended consumer class, not an edge case.
+2. Server-side automation (workflow-automation tools, bots, backends) is an explicitly intended consumer class, not an edge case.

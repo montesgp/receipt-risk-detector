@@ -56,8 +56,9 @@ app.include_router(router)
 # first, CORS last -> CORS wraps the rate limiter, so an allowlisted origin
 # gets Access-Control-Allow-Origin even on a 429 (docs/API.md §5's
 # documented contract: "the rate limiter runs inside the CORS middleware,
-# not in front of it"). Server-side clients (n8n, bots) are unaffected by
-# CORS either way -- it is a browser-only enforcement mechanism. An empty
+# not in front of it"). Server-side clients (workflow-automation tools,
+# bots) are unaffected by CORS either way -- it is a browser-only
+# enforcement mechanism. An empty
 # allowlist (the default; see cors_config.py) means no browser origin can
 # read the response until RECEIPT_RISK_CORS_ALLOWED_ORIGINS is configured.
 app.add_middleware(RateLimitMiddleware)
