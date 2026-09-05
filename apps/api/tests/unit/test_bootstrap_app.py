@@ -29,3 +29,11 @@ def test_version_endpoint_includes_vision_analyzer_entry() -> None:
     assert "engine_version" in body
     assert "ruleset_version" in body
     assert set(body["analyzers"]) == {"ocr", "metadata", "provenance", "vision"}
+
+
+def test_version_endpoint_reports_active_ruleset_2026_09_05() -> None:
+    client = TestClient(app)
+    response = client.get("/version")
+
+    assert response.status_code == 200
+    assert response.json()["ruleset_version"] == "2026-09-05"

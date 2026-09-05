@@ -147,6 +147,7 @@
   "result.extractedHeading": "Datos extraídos",
   "result.confidenceLabel": "Confianza del análisis: {confidence}%",
   "result.inconclusiveNote": "No detectamos evidencia suficiente. La confianza del análisis ({confidence}%) es baja; priorizá la conciliación manual.",
+  "result.inconclusiveNoTextNote": "No pudimos identificar los datos de una transferencia en este archivo. La confianza del análisis ({confidence}%) es baja; priorizá la conciliación manual.",
   "result.classification.LOW_RISK": "Riesgo bajo",
   "result.classification.REVIEW_RECOMMENDED": "Revisión recomendada",
   "result.classification.SUSPICIOUS": "Sospechoso",

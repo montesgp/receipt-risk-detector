@@ -19,6 +19,7 @@ function renderSummary(
     riskScore: number;
     confidenceScore: number;
     recommendedAction: string;
+    noTextDetected?: boolean;
   },
   locale: 'es' | 'en' = 'es'
 ) {
@@ -111,5 +112,48 @@ describe('ScoreSummary', () => {
     const summary = container.querySelector('.score-summary');
     expect(summary?.className).not.toMatch(/score-summary--(low|review|high)/);
     expect(screen.getAllByText(/confidence/i).length).toBeGreaterThan(0);
+  });
+
+  function interpolate(template: string, confidence: number): string {
+    return template.replace('{confidence}', String(confidence));
+  }
+
+  it('renders the hedged no-text-detected note when INCONCLUSIVE and noTextDetected is true', () => {
+    renderSummary({
+      classification: 'INCONCLUSIVE',
+      riskScore: 0,
+      confidenceScore: 32,
+      recommendedAction: 'PRIORITY_MANUAL_RECONCILIATION',
+      noTextDetected: true
+    });
+
+    expect(screen.getByText(interpolate(es['result.inconclusiveNoTextNote'], 32))).toBeTruthy();
+    expect(screen.queryByText(interpolate(es['result.inconclusiveNote'], 32))).toBeNull();
+  });
+
+  it('renders the generic inconclusive note when INCONCLUSIVE and noTextDetected is false', () => {
+    renderSummary({
+      classification: 'INCONCLUSIVE',
+      riskScore: 0,
+      confidenceScore: 32,
+      recommendedAction: 'PRIORITY_MANUAL_RECONCILIATION',
+      noTextDetected: false
+    });
+
+    expect(screen.getByText(interpolate(es['result.inconclusiveNote'], 32))).toBeTruthy();
+    expect(screen.queryByText(interpolate(es['result.inconclusiveNoTextNote'], 32))).toBeNull();
+  });
+
+  it('renders neither inconclusive note when classification is not INCONCLUSIVE', () => {
+    renderSummary({
+      classification: 'LOW_RISK',
+      riskScore: 12,
+      confidenceScore: 91,
+      recommendedAction: 'STANDARD_MANUAL_RECONCILIATION',
+      noTextDetected: true
+    });
+
+    expect(screen.queryByText(interpolate(es['result.inconclusiveNote'], 91))).toBeNull();
+    expect(screen.queryByText(interpolate(es['result.inconclusiveNoTextNote'], 91))).toBeNull();
   });
 });

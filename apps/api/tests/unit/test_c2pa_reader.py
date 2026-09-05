@@ -10,7 +10,10 @@ real-`Reader` integration test is skip-marked separately.
 
 from __future__ import annotations
 
-from receipt_risk.adapters.provenance.c2pa_reader import _derive_signals
+import anyio
+
+from receipt_risk.adapters.provenance.c2pa_reader import C2paProvenanceAdapter, _derive_signals
+from receipt_risk.application.models import SafeImageRef
 from receipt_risk.domain.signals import Severity, SignalCategory, SignalCode
 
 
@@ -75,6 +78,42 @@ def test_c2pa_failed_validation_emits_lower_severity_non_critical_signal() -> No
     assert len(signals) == 1
     assert signals[0].code == SignalCode.PROVENANCE_VALIDATION_FAILED
     assert signals[0].severity != Severity.CRITICAL
+
+
+def test_c2pa_inspect_sets_evidence_observed_true_when_manifest_found(
+    tmp_path, monkeypatch
+) -> None:
+    import receipt_risk.adapters.provenance.c2pa_reader as c2pa_reader_module
+
+    monkeypatch.setattr(
+        c2pa_reader_module, "_read_manifest", lambda path: {"active_manifest": None}
+    )
+
+    image_path = tmp_path / "image.png"
+    image_path.write_bytes(b"not-a-real-image")
+    safe = SafeImageRef(
+        path=image_path, sha256="x" * 64, media_type="image/png", width=1, height=1, byte_size=17
+    )
+
+    result = anyio.run(C2paProvenanceAdapter().inspect, safe)
+
+    assert result.evidence_observed is True
+
+
+def test_c2pa_inspect_sets_evidence_observed_false_when_no_manifest(tmp_path, monkeypatch) -> None:
+    import receipt_risk.adapters.provenance.c2pa_reader as c2pa_reader_module
+
+    monkeypatch.setattr(c2pa_reader_module, "_read_manifest", lambda path: None)
+
+    image_path = tmp_path / "image.png"
+    image_path.write_bytes(b"not-a-real-image")
+    safe = SafeImageRef(
+        path=image_path, sha256="x" * 64, media_type="image/png", width=1, height=1, byte_size=17
+    )
+
+    result = anyio.run(C2paProvenanceAdapter().inspect, safe)
+
+    assert result.evidence_observed is False
 
 
 def test_c2pa_valid_manifest_without_ai_claim_emits_no_signal() -> None:

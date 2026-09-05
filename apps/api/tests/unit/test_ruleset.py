@@ -81,6 +81,26 @@ def test_ruleset_bands_are_ordered_ascending() -> None:
     assert thresholds[-1] == 100
 
 
+def test_ruleset_declares_combination_floors_field_empty_on_historical_versions() -> None:
+    """`ScoringRuleset.combination_floors` is required (frozen dataclass, no
+    default); v2026_09_01/v2026_09_04 declare it explicitly empty so their
+    scores are unaffected by the new policy field."""
+    assert RULESET_2026_09_01.combination_floors == {}
+    assert RULESET_2026_09_04.combination_floors == {}
+
+
+def test_ruleset_2026_09_05_registered_with_combination_floor() -> None:
+    from receipt_risk.domain.rulesets.v2026_09_05 import RULESET_2026_09_05
+
+    assert len(RULESETS) == 3
+    assert RULESET_2026_09_05.version == "2026-09-05"
+    assert RULESETS[RULESET_2026_09_05.version] is RULESET_2026_09_05
+    expected_key = frozenset(
+        {SignalCode.CORE_FIELD_EXTRACTION_FAILED, SignalCode.DATE_OUT_OF_BOUNDS}
+    )
+    assert RULESET_2026_09_05.combination_floors == {expected_key: 55}
+
+
 def test_classification_and_recommended_action_enums_match_docs_api() -> None:
     assert {c.value for c in Classification} == {
         "LOW_RISK",

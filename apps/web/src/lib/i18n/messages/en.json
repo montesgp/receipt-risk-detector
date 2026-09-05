@@ -147,6 +147,7 @@
   "result.extractedHeading": "Extracted data",
   "result.confidenceLabel": "Analysis confidence: {confidence}%",
   "result.inconclusiveNote": "We didn't detect enough evidence. The analysis confidence ({confidence}%) is low; prioritize manual reconciliation.",
+  "result.inconclusiveNoTextNote": "We could not identify transfer data in this file. The analysis confidence ({confidence}%) is low; prioritize manual reconciliation.",
   "result.classification.LOW_RISK": "Low risk",
   "result.classification.REVIEW_RECOMMENDED": "Review recommended",
   "result.classification.SUSPICIOUS": "Suspicious",
