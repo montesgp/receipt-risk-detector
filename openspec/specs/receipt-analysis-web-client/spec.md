@@ -54,6 +54,9 @@ The client MUST show an ARIA-live processing state while the request is in fligh
 ### Requirement: Successful result display
 On a `200` response, the client MUST render the full `AnalyzeResponse` per DESIGN.md §4.4's visual priority.
 
+When `classification` is `INCONCLUSIVE` and a reported signal carries `evidence.reason == "no_text_detected"` (`CORE_FIELD_EXTRACTION_FAILED`), the client MUST select a more specific hedged message instead of the generic INCONCLUSIVE copy, in both `en` and `es`, following the existing classification-conditional copy pattern in `ScoreSummary.svelte`. The message MUST hedge as an inability to identify transfer data ("no pudimos identificar los datos de una transferencia en este archivo" / "we could not identify transfer data in this file") and MUST NOT assert that the file is not a transfer or is fake/inauthentic.
+(Previously: INCONCLUSIVE results always rendered the same generic message regardless of the specific reported signal/reason.)
+
 #### Scenario: Full result renders from the live response
 - GIVEN a `200` `AnalyzeResponse` with `classification`, `risk_score`, `confidence_score`, `signals`, and `extracted_data`
 - WHEN the result state renders
@@ -69,6 +72,12 @@ On a `200` response, the client MUST render the full `AnalyzeResponse` per DESIG
 - GIVEN `classification` is `INCONCLUSIVE`
 - WHEN the result renders
 - THEN confidence and missing-evidence context dominate the summary and no risk-tier color is forced (DESIGN.md §7 "Score summary")
+
+#### Scenario: No-text-detected result shows the hedged specific message
+- GIVEN a `200` `AnalyzeResponse` with `classification == "INCONCLUSIVE"` and a signal whose `evidence.reason == "no_text_detected"`, in either the `es` or `en` locale
+- WHEN the result state renders
+- THEN the summary shows the hedged message that the file does not appear to correspond to a transfer / that transfer data could not be identified in the file, instead of the generic INCONCLUSIVE copy
+- AND the message contains no absolute claim (no "is not a transfer", "fake", "authentic", or equivalent certainty language)
 
 ### Requirement: Validation error states
 The client MUST map documented `ProblemDetails` error codes to actionable, non-technical messages (docs/API.md §5).
