@@ -37,7 +37,12 @@ from receipt_risk.domain.signals import (
 
 log = logging.getLogger(__name__)
 
-ENGINE_VERSION = "0.1.0"
+ENGINE_VERSION = "0.2.0"
+"""Bumped 0.1.0 -> 0.2.0 by the scoring-confidence-calibration change: the
+`_completeness` provenance fix in `domain/scoring.py` is a shared-engine
+formula correction, applied unconditionally and retroactively to every
+ruleset version, so it is tracked by `engine_version` rather than
+`ruleset_version` (which freezes policy, not formulas)."""
 
 
 @dataclass(frozen=True, slots=True)

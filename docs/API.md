@@ -26,8 +26,8 @@ Example:
 
 ```json
 {
-  "engine_version": "0.1.0",
-  "ruleset_version": "2026-09-04",
+  "engine_version": "0.2.0",
+  "ruleset_version": "2026-09-05",
   "analyzers": {
     "ocr": "paddleocr-adapter/0.1.0",
     "metadata": "exiftool-adapter/0.1.0",
@@ -62,8 +62,8 @@ MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart 
 ```json
 {
   "analysis_id": "sha256:4f4a...",
-  "engine_version": "0.1.0",
-  "ruleset_version": "2026-09-04",
+  "engine_version": "0.2.0",
+  "ruleset_version": "2026-09-05",
   "classification": "SUSPICIOUS",
   "risk_score": 74,
   "confidence_score": 86,

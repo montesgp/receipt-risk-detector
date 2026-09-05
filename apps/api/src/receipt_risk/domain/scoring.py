@@ -56,21 +56,52 @@ def signal_contribution(signal: ValidationSignal, ruleset: ScoringRuleset) -> in
     return int(weight * multiplier * signal.confidence)
 
 
-def _risk_score(signals: Sequence[ValidationSignal], ruleset: ScoringRuleset) -> int:
-    total = min(100, sum(signal_contribution(signal, ruleset) for signal in signals))
-    critical_floors = [
+def _verdict_signals(signals: Sequence[ValidationSignal], ruleset: ScoringRuleset) -> list[int]:
+    """Floors from signals strong enough to force a verdict alone: CRITICAL
+    severity with a `ruleset.critical_floor` entry. Shared by `_risk_score`
+    (as a score floor) and `score()` (as the OCR-zero floor override)."""
+    return [
         ruleset.critical_floor[signal.code]
         for signal in signals
         if signal.severity is Severity.CRITICAL and signal.code in ruleset.critical_floor
     ]
-    if critical_floors:
-        total = max(total, max(critical_floors))
+
+
+def _ocr_core_fields_empty(statuses: Sequence[AnalyzerResult]) -> bool:
+    """True when an `ocr`-role result actually ran (`status` in
+    `completed`/`partial`) and yielded zero core fields — an unreadable
+    receipt, never merely an unavailable/crashed analyzer (`failed`/
+    `timed_out`), which stays governed by the pre-existing "a failed
+    analyzer never forces INCONCLUSIVE alone" decision."""
+    for result in statuses:
+        if _ADAPTER_ROLE.get(result.analyzer) != "ocr":
+            continue
+        if result.status not in ("completed", "partial"):
+            return False
+        hits = sum(
+            1
+            for field in result.extracted_fields
+            if field.name in _CORE_FIELD_NAMES and field.normalized is not None
+        )
+        return hits == 0
+    return False
+
+
+def _risk_score(signals: Sequence[ValidationSignal], ruleset: ScoringRuleset) -> int:
+    total = min(100, sum(signal_contribution(signal, ruleset) for signal in signals))
+    floors = _verdict_signals(signals, ruleset)
+    fired = {signal.code for signal in signals}
+    floors += [floor for codes, floor in ruleset.combination_floors.items() if codes <= fired]
+    if floors:
+        total = max(total, max(floors))
     return min(100, total)
 
 
 def _completeness(role: str, result: AnalyzerResult) -> Decimal:
     if role != "ocr":
-        return Decimal("1") if result.status == "completed" else Decimal("0")
+        if result.status != "completed" or result.evidence_observed is False:
+            return Decimal("0")
+        return Decimal("1")
     hits = sum(
         1
         for field in result.extracted_fields
@@ -111,6 +142,8 @@ def score(
     confidence_score = int(Decimal(100) * evidence_coverage)
 
     if evidence_coverage < ruleset.inconclusive_coverage_threshold:
+        classification = Classification.INCONCLUSIVE
+    elif _ocr_core_fields_empty(statuses) and not _verdict_signals(signals, ruleset):
         classification = Classification.INCONCLUSIVE
     else:
         classification = _band_for(risk_score_value, ruleset)

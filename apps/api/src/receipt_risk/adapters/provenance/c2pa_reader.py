@@ -16,6 +16,13 @@ lower-severity signal" for the failed-validation case, so this code was
 added (documented apply-time deviation). A missing/undecodable manifest is
 neutral per spec.md's "Missing metadata is neutral" scenario — it emits
 nothing, never an error.
+
+`AnalyzerResult.evidence_observed` is set to `manifest is not None`: a clean
+run with no manifest found (or an undecodable one) still returns
+`status="completed"`, but nothing was actually evaluated, so
+`evidence_observed=False` tells `domain/scoring.py::_completeness` not to
+credit this role with coverage it never earned (scoring-confidence-
+calibration change).
 """
 
 from __future__ import annotations
@@ -125,4 +132,5 @@ class C2paProvenanceAdapter:
             status="completed",
             signals=_derive_signals(manifest),
             duration_ms=_elapsed_ms(started),
+            evidence_observed=manifest is not None,
         )
