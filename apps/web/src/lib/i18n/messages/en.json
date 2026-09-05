@@ -175,6 +175,11 @@
   "result.technical.analyzerColumn": "Analyzer",
   "result.technical.statusColumn": "Status",
   "result.technical.durationColumn": "Duration",
+  "result.technical.helpLabel": "What {analyzer} checks",
+  "result.technical.help.paddleocr-onnx": "Extracts the receipt's text (amount, date, CBU/CVU, CUIT) via optical character recognition, run entirely server-side with no external services.",
+  "result.technical.help.exiftool": "Inspects metadata embedded in the file (editing software, capture date) for signs of manipulation. Missing metadata does not imply authenticity.",
+  "result.technical.help.c2pa": "Checks whether the file carries a signed C2PA credential declaring its origin — for example, that it was algorithmically generated or composited.",
+  "result.technical.help.mobilenetv3-embedding": "Compares the file's visual appearance against a set of known-legitimate receipts using a neural network (PyTorch), to detect visual outliers.",
 
   "evidence.empty": "No risk signals were recorded for this receipt.",
   "evidence.severity.info": "Informational",
