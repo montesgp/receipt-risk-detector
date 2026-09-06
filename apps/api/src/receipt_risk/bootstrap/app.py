@@ -12,9 +12,14 @@ until slice 4" decision means slices 1-3 never touched this file.
 
 from __future__ import annotations
 
+import logging
 import tempfile
+import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
+import anyio
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -49,7 +54,28 @@ load_dotenv()
 # then just works without exporting anything by hand.
 load_dotenv()
 
-app = FastAPI(title="Transfer Receipt Risk Engine")
+log = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Warm both heavy models before uvicorn opens its listen socket.
+    ASGI holds `lifespan.startup.complete` until this reaches `yield`, so no
+    request can observe a partially warmed process. Never raises: each
+    `warmup()` absorbs its own failure and leaves the per-request
+    `ANALYZER_UNAVAILABLE` contract untouched."""
+    started = time.monotonic()
+    async with anyio.create_task_group() as tg:
+        tg.start_soon(_ocr.warmup)
+        tg.start_soon(_vision.warmup)
+    log.info(
+        "startup_warmup_completed",
+        extra={"duration_ms": int((time.monotonic() - started) * 1000)},
+    )
+    yield
+
+
+app = FastAPI(title="Transfer Receipt Risk Engine", lifespan=_lifespan)
 app.include_router(router)
 # Registration order matters: Starlette applies middleware in REVERSE
 # registration order, so the one added LAST becomes OUTERMOST. Rate limiter

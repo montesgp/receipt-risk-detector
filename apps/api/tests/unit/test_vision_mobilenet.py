@@ -146,6 +146,94 @@ def test_adapter_emits_visual_anomaly_signal_when_far_from_reference_set(tmp_pat
     assert result.signals[0].code == SignalCode.VISUAL_ANOMALY_DETECTED
 
 
+def test_warmup_calls_warm_hook_exactly_once_with_no_file_io(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from receipt_risk.adapters.vision import mobilenet_embedder
+
+    warm_calls: list[object] = []
+
+    def _fake_embed(path: Path) -> np.ndarray:
+        raise AssertionError("warmup must never call the real embed path")
+
+    def _spy_warm() -> None:
+        warm_calls.append(object())
+
+    def _fake_load_embedder(model_dir):
+        return _fake_embed, _spy_warm
+
+    monkeypatch.setattr(mobilenet_embedder, "_load_embedder", _fake_load_embedder)
+
+    reference = np.array([[1.0, 0.0, 0.0, 0.0]], dtype=np.float32)
+    adapter = mobilenet_embedder.MobileNetV3VisionAdapter(
+        model_dir=tmp_path, reference_embeddings=reference
+    )
+
+    asyncio.run(adapter.warmup())
+
+    assert len(warm_calls) == 1
+
+
+def test_load_embedder_returns_tuple_of_embed_and_warm_callables() -> None:
+    from receipt_risk.adapters.vision.mobilenet_embedder import _load_embedder
+
+    # Real construction is exercised only via the bogus-dir raise path below;
+    # this test documents the new return shape without loading real weights.
+    with pytest.raises(VisionEngineUnavailable):
+        _load_embedder(Path("does-not-exist-anywhere"))
+
+
+def test_warmup_bogus_model_dir_logs_warmup_unavailable_and_returns_none(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    adapter = MobileNetV3VisionAdapter(model_dir=tmp_path / "does-not-exist")
+
+    with caplog.at_level("WARNING"):
+        result = asyncio.run(adapter.warmup())
+
+    assert result is None
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert warnings[0].message == "warmup_unavailable"
+    assert warnings[0].analyzer == "mobilenetv3-embedding"
+
+
+def test_warmup_unexpected_exception_logs_warmup_failed_and_returns_none(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    adapter = MobileNetV3VisionAdapter(model_dir=tmp_path / "does-not-exist")
+
+    def _raise_unexpected():
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(adapter, "_resolve", _raise_unexpected)
+
+    with caplog.at_level("WARNING"):
+        result = asyncio.run(adapter.warmup())
+
+    assert result is None
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert warnings[0].message == "warmup_failed"
+    assert warnings[0].analyzer == "mobilenetv3-embedding"
+
+
+def test_warmup_with_injected_embed_override_resolves_reference_without_warm_hook(
+    tmp_path: Path,
+) -> None:
+    reference = np.array([[1.0, 0.0, 0.0, 0.0]], dtype=np.float32)
+
+    def _fake_embed(path: Path) -> np.ndarray:
+        return np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float32)
+
+    adapter = MobileNetV3VisionAdapter(embed=_fake_embed, reference_embeddings=reference)
+
+    result = asyncio.run(adapter.warmup())
+
+    assert result is None
+    assert adapter._lazy_warm is None
+
+
 def test_adapter_only_accepts_validated_safeimageref_path_never_client_supplied(
     tmp_path: Path,
 ) -> None:

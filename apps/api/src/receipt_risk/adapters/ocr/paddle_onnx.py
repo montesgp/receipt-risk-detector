@@ -19,6 +19,7 @@ download is ever attempted.
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 from collections.abc import Callable
@@ -45,6 +46,8 @@ from receipt_risk.domain.signals import (
     SignalCode,
     ValidationSignal,
 )
+
+log = logging.getLogger(__name__)
 
 _MODEL_DIR_ENV_VAR: Final[str] = "RECEIPT_RISK_OCR_MODEL_DIR"
 _DET_MODEL_FILENAME: Final[str] = "det.onnx"
@@ -176,6 +179,24 @@ class PaddleOnnxOcrAdapter:
         if self._lazy_engine is None:
             self._lazy_engine = _load_rapidocr_engine(self._model_dir)
         return self._lazy_engine
+
+    async def warmup(self) -> None:
+        """Eagerly pay ONNX Runtime session-creation cost at startup."""
+        await anyio.to_thread.run_sync(self._warm_sync)
+
+    def _warm_sync(self) -> None:
+        started = time.monotonic()
+        try:
+            self._resolve_engine()
+        except OcrEngineUnavailable:
+            log.warning("warmup_unavailable", extra={"analyzer": self.name})
+            return
+        except Exception:  # noqa: BLE001 -- boot must never fail harder than a request
+            log.warning("warmup_failed", extra={"analyzer": self.name})
+            return
+        log.info(
+            "warmup_completed", extra={"analyzer": self.name, "duration_ms": _elapsed_ms(started)}
+        )
 
     async def extract(self, image: SafeImageRef) -> AnalyzerResult:
         started = time.monotonic()
