@@ -10,6 +10,8 @@ real-`Reader` integration test is skip-marked separately.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 import anyio
 
 from receipt_risk.adapters.provenance.c2pa_reader import C2paProvenanceAdapter, _derive_signals
@@ -137,3 +139,156 @@ def test_c2pa_valid_manifest_without_ai_claim_emits_no_signal() -> None:
     }
 
     assert _derive_signals(manifest) == ()
+
+
+def test_c2pa_claim_v2_nested_action_source_type_emits_critical_signal() -> None:
+    manifest = {
+        "active_manifest": "urn:uuid:gemini-v2",
+        "manifests": {
+            "urn:uuid:gemini-v2": {
+                "claim_version": 2,
+                "validation_status": [],
+                "assertions": [
+                    {
+                        "label": "c2pa.actions.v2",
+                        "data": {
+                            "actions": [
+                                {
+                                    "action": "c2pa.created",
+                                    "digitalSourceType": (
+                                        "http://cv.iptc.org/newscodes/"
+                                        "digitalsourcetype/trainedAlgorithmicMedia"
+                                    ),
+                                    "softwareAgent": {"name": "Google Gemini"},
+                                }
+                            ]
+                        },
+                    }
+                ],
+            }
+        },
+    }
+
+    signals = _derive_signals(manifest)
+
+    assert len(signals) == 1
+    assert signals[0].code == SignalCode.VALID_AI_GENERATED_CLAIM
+    assert signals[0].severity == Severity.CRITICAL
+
+
+def test_c2pa_untrusted_signer_only_emits_critical_untrusted_signer_signal() -> None:
+    manifest = {
+        "active_manifest": "urn:uuid:gemini-untrusted",
+        "manifests": {
+            "urn:uuid:gemini-untrusted": {
+                "claim_version": 2,
+                "validation_state": "Valid",
+                "validation_status": [
+                    {
+                        "code": "signingCredential.untrusted",
+                        "url": "self#jumbf=/c2pa/urn:uuid:gemini-untrusted/c2pa.signature",
+                        "explanation": "signing certificate untrusted",
+                    }
+                ],
+                "assertions": [
+                    {
+                        "label": "c2pa.actions.v2",
+                        "data": {
+                            "actions": [
+                                {
+                                    "action": "c2pa.created",
+                                    "digitalSourceType": (
+                                        "http://cv.iptc.org/newscodes/"
+                                        "digitalsourcetype/trainedAlgorithmicMedia"
+                                    ),
+                                }
+                            ]
+                        },
+                    }
+                ],
+            }
+        },
+    }
+
+    signals = _derive_signals(manifest)
+
+    assert len(signals) == 1
+    assert signals[0].code == SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER
+    assert signals[0].severity == Severity.CRITICAL
+    assert signals[0].category == SignalCategory.PROVENANCE
+    assert signals[0].confidence == Decimal("0.85")
+
+
+def test_c2pa_untrusted_signer_plus_hash_mismatch_emits_strict_failure_signal() -> None:
+    manifest = {
+        "active_manifest": "urn:uuid:gemini-untrusted",
+        "manifests": {
+            "urn:uuid:gemini-untrusted": {
+                "claim_version": 2,
+                "validation_state": "Invalid",
+                "validation_status": [
+                    {"code": "signingCredential.untrusted", "explanation": "untrusted CA"},
+                    {"code": "assertion.dataHash.mismatch", "explanation": "hash mismatch"},
+                ],
+                "assertions": [
+                    {
+                        "label": "c2pa.actions.v2",
+                        "data": {
+                            "actions": [
+                                {
+                                    "action": "c2pa.created",
+                                    "digitalSourceType": (
+                                        "http://cv.iptc.org/newscodes/"
+                                        "digitalsourcetype/trainedAlgorithmicMedia"
+                                    ),
+                                }
+                            ]
+                        },
+                    }
+                ],
+            }
+        },
+    }
+
+    signals = _derive_signals(manifest)
+
+    assert len(signals) == 1
+    assert signals[0].code == SignalCode.PROVENANCE_VALIDATION_FAILED
+
+
+def test_c2pa_expired_signer_only_emits_strict_failure_signal() -> None:
+    manifest = {
+        "active_manifest": "urn:uuid:gemini-expired",
+        "manifests": {
+            "urn:uuid:gemini-expired": {
+                "claim_version": 2,
+                "validation_status": [
+                    {
+                        "code": "signingCredential.expired",
+                        "explanation": "signing certificate expired",
+                    }
+                ],
+                "assertions": [
+                    {
+                        "label": "c2pa.actions.v2",
+                        "data": {
+                            "actions": [
+                                {
+                                    "action": "c2pa.created",
+                                    "digitalSourceType": (
+                                        "http://cv.iptc.org/newscodes/"
+                                        "digitalsourcetype/trainedAlgorithmicMedia"
+                                    ),
+                                }
+                            ]
+                        },
+                    }
+                ],
+            }
+        },
+    }
+
+    signals = _derive_signals(manifest)
+
+    assert len(signals) == 1
+    assert signals[0].code == SignalCode.PROVENANCE_VALIDATION_FAILED
