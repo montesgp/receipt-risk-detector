@@ -459,6 +459,15 @@ def generate() -> dict[str, str]:
     two_party_no_labels.save(two_party_no_labels_path, format="PNG")
     digests["two_party_no_labels"] = _sha256_of(two_party_no_labels_path)
 
+    # test-coverage-classification-bands: alias digests, no new bytes
+    # written. These two ids reuse `clean_valid_transfer`'s exact image --
+    # the images are irrelevant to classification-band selection, only the
+    # `expected_signals` declared in `_build_manifest()` below drive the
+    # band (design.md "manifest entries must also be emitted by
+    # generate.py, not hand-added").
+    digests["synthetic_band_review_recommended"] = digests["clean_valid_transfer"]
+    digests["synthetic_band_high_risk"] = digests["clean_valid_transfer"]
+
     return digests
 
 
@@ -604,7 +613,7 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "provenance": "completed",
                     "vision": "completed",
                 },
-                "expected_classification": "REVIEW_RECOMMENDED",
+                "expected_classification": "SUSPICIOUS",
                 "notes": (
                     "Identical render to the baseline with only the block-2 check digit"
                     " mutated 1 -> 2."
@@ -780,6 +789,102 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "generic-receipt-field-extraction: same two checksum-valid pairs as"
                     " two_party_labeled, with no keyword text anywhere -- proves the"
                     " positional fallback (second-appearing pair = destination)."
+                ),
+            },
+            {
+                "id": "synthetic_band_review_recommended",
+                "path": "images/clean_valid_transfer.png",
+                "sha256": digests["synthetic_band_review_recommended"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "currency": "ARS",
+                    "date_time": DATE_TIME,
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                    "operation_id": OPERATION_ID,
+                },
+                "expected_signals": [
+                    {
+                        "code": "METADATA_EDITOR_SOFTWARE",
+                        "category": "metadata",
+                        "severity": "low",
+                        "confidence": "0.80",
+                    },
+                    {
+                        "code": "PROVENANCE_VALIDATION_FAILED",
+                        "category": "provenance",
+                        "severity": "medium",
+                        "confidence": "1.00",
+                    },
+                    {
+                        "code": "VISUAL_ANOMALY_DETECTED",
+                        "category": "visual",
+                        "severity": "medium",
+                        "confidence": "1.00",
+                    },
+                ],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "REVIEW_RECOMMENDED",
+                "notes": (
+                    "test-coverage-classification-bands: reuses `clean_valid_transfer`'s"
+                    " exact image bytes (same path + sha256) -- the image is irrelevant"
+                    " to band selection here. Score is driven entirely by the injected"
+                    " `expected_signals`: 4 + 15 + 20 = 39, landing in REVIEW_RECOMMENDED"
+                    " (<=49) under RULESET_2026_09_06."
+                ),
+            },
+            {
+                "id": "synthetic_band_high_risk",
+                "path": "images/clean_valid_transfer.png",
+                "sha256": digests["synthetic_band_high_risk"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "currency": "ARS",
+                    "date_time": DATE_TIME,
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                    "operation_id": OPERATION_ID,
+                },
+                "expected_signals": [
+                    {
+                        "code": "AI_GENERATED_CLAIM_UNTRUSTED_SIGNER",
+                        "category": "provenance",
+                        "severity": "critical",
+                        "confidence": "0.85",
+                    },
+                ],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "HIGH_RISK",
+                "notes": (
+                    "test-coverage-classification-bands: reuses `clean_valid_transfer`'s"
+                    " exact image bytes (same path + sha256) -- the image is irrelevant"
+                    " to band selection here. int(50 * 2.0 * 0.85) == 85, which also"
+                    " equals RULESET_2026_09_06's critical_floor for this code, landing"
+                    " in HIGH_RISK."
                 ),
             },
             *_reference_fixture_entries(digests),

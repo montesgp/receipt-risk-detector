@@ -8,6 +8,7 @@ from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
 from receipt_risk.domain.assessment import assemble
 from receipt_risk.domain.ruleset import Classification, RecommendedAction
 from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
+from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
 from receipt_risk.domain.signals import Severity, SignalCategory, SignalCode, ValidationSignal
 
 
@@ -65,6 +66,29 @@ def test_recommended_action_maps_high_risk_to_do_not_rely() -> None:
         results=_results(),
         signals=[critical],
         ruleset=RULESET_2026_09_04,
+        engine_version="0.1.0",
+        duration_ms=1,
+    )
+    assert assessment.classification is Classification.HIGH_RISK
+    assert assessment.recommended_action is RecommendedAction.DO_NOT_RELY_ON_RECEIPT
+
+
+def test_recommended_action_maps_untrusted_signer_high_risk_to_do_not_rely() -> None:
+    """Mirrors `test_recommended_action_maps_high_risk_to_do_not_rely` for
+    the untrusted-signer twin. `RULESET_2026_09_04` has no entry for this
+    code, so this must use `RULESET_2026_09_06` (design.md)."""
+    critical = ValidationSignal(
+        code=SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER,
+        category=SignalCategory.PROVENANCE,
+        severity=Severity.CRITICAL,
+        confidence=Decimal("0.85"),
+        description="x",
+    )
+    assessment = assemble(
+        analysis_id="sha256:x",
+        results=_results(),
+        signals=[critical],
+        ruleset=RULESET_2026_09_06,
         engine_version="0.1.0",
         duration_ms=1,
     )

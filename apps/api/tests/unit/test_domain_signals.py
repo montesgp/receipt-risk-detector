@@ -48,6 +48,24 @@ def test_valid_ai_generated_claim_signal_is_critical_severity() -> None:
     assert signal.category == SignalCategory.PROVENANCE
 
 
+def test_ai_generated_claim_untrusted_signer_signal_is_critical_severity() -> None:
+    """Mirrors `test_valid_ai_generated_claim_signal_is_critical_severity`:
+    the untrusted-signer code is a separate audit trail for the same
+    critical evidence (c2pa-ai-claim-detection change)."""
+    signal = ValidationSignal(
+        code=SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER,
+        category=SignalCategory.PROVENANCE,
+        severity=Severity.CRITICAL,
+        confidence=Decimal("0.85"),
+        description="A cryptographically intact AI-generation claim signed by an unrecognized CA.",
+        evidence={"active_manifest": "urn:uuid:abc"},
+    )
+
+    assert signal.severity == Severity.CRITICAL
+    assert signal.code == SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER
+    assert signal.category == SignalCategory.PROVENANCE
+
+
 def test_slice_3_financial_signal_codes_exist() -> None:
     assert SignalCode.INVALID_CBU_CHECK_DIGIT == "INVALID_CBU_CHECK_DIGIT"
     assert SignalCode.INVALID_CUIT_CHECK_DIGIT == "INVALID_CUIT_CHECK_DIGIT"
