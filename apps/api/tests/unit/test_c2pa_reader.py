@@ -263,7 +263,10 @@ def test_c2pa_expired_signer_only_emits_strict_failure_signal() -> None:
             "urn:uuid:gemini-expired": {
                 "claim_version": 2,
                 "validation_status": [
-                    {"code": "signingCredential.expired", "explanation": "signing certificate expired"}
+                    {
+                        "code": "signingCredential.expired",
+                        "explanation": "signing certificate expired",
+                    }
                 ],
                 "assertions": [
                     {
