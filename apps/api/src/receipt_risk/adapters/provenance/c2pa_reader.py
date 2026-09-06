@@ -71,9 +71,7 @@ _ALGORITHMIC_SOURCE_MARKERS: Final[tuple[str, ...]] = (
 # absent from this set keeps the whole manifest in the stricter
 # PROVENANCE_VALIDATION_FAILED bucket. `signingCredential.expired` is
 # deliberately NOT allowlisted this slice (design.md decision 2).
-_CA_TRUST_ONLY_STATUS_CODES: Final[frozenset[str]] = frozenset(
-    {"signingCredential.untrusted"}
-)
+_CA_TRUST_ONLY_STATUS_CODES: Final[frozenset[str]] = frozenset({"signingCredential.untrusted"})
 
 
 def _read_manifest(path: Path) -> dict[str, Any] | None:
