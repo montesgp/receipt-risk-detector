@@ -9,6 +9,7 @@ duplicated documents drift.
 ## Process pages
 
 - [Local Setup](Local-Setup)
+- [Manual Testing Guide](Manual-Testing-Guide)
 - [Contributing](Contributing)
 - [Environment and Secrets](Environment-and-Secrets)
 - [Release Process](Release-Process)
