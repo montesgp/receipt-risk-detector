@@ -21,13 +21,22 @@ RUN pip install --no-cache-dir "requests==2.32.3" \
 # ---- runtime ----
 FROM python:3.12-slim
 
-# slice 2: ExifTool binary. libglib2.0-0 is required by opencv-python-headless
-# (slice 3); libgl1 is deliberately NOT installed because the headless wheel
-# does not link libGL.
+# slice 2: ExifTool binary. libglib2.0-0 and libxcb1 are required by
+# opencv-python-headless (slice 3) -- confirmed via `ldd` against the
+# installed wheel's cv2.abi3.so: despite being a "headless" build, it still
+# bundles Qt5 libs (libQt5Gui/libQt5Widgets) whose own transitive
+# dependencies pull in libxcb.so.1, which the slim base image lacks.
+# libgl1 provides libGL.so.1 -- opencv-python-headless 5.0.0.93 (see
+# uv.lock) dlopen's it even in the headless build, unlike older 4.x
+# releases where this comment's original "deliberately NOT installed"
+# claim held; confirmed by a Railway crash (ImportError: libGL.so.1:
+# cannot open shared object file) once that pin took effect.
 RUN apt-get update \
  && apt-get install --no-install-recommends -y \
       libimage-exiftool-perl \
       libglib2.0-0 \
+      libxcb1 \
+      libgl1 \
  && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv
