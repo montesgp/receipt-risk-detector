@@ -7,7 +7,7 @@
 | Python | 3.12+ | API runtime |
 | `uv` | latest | Python packaging and task running |
 | Node.js | 20+ | SvelteKit web client |
-| Docker + Compose | latest | Target local developer experience |
+| Docker + Compose | latest | Local developer experience |
 | `gh` CLI | latest | Issues, PRs, one-time label bootstrap |
 
 Full stack table: [README — Stack](https://github.com/montesgp/receipt-risk-detector#stack).
@@ -60,8 +60,9 @@ rather than debugging a CORS rejection as if it were an outage.
     API:  http://localhost:8000
     Docs: http://localhost:8000/docs
 
-This is target-state until the scaffold lands; see
-[README — Local development target](https://github.com/montesgp/receipt-risk-detector#local-development-target).
+This is the working, recommended flow: the API runs containerized via `docker-compose.yml`
+(`exiftool` is already baked into the image), and the web client runs natively with Vite. See
+[README — Local development](https://github.com/montesgp/receipt-risk-detector#local-development).
 
 ## Data rule
 

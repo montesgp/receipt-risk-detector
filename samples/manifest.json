@@ -62,7 +62,7 @@
         "provenance": "completed",
         "vision": "completed"
       },
-      "expected_classification": "REVIEW_RECOMMENDED",
+      "expected_classification": "SUSPICIOUS",
       "notes": "Identical render to the baseline with only the block-2 check digit mutated 1 -> 2."
     },
     {

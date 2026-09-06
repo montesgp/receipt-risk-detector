@@ -82,7 +82,8 @@ Example response:
 ```json
 {
   "analysis_id": "sha256:4f...",
-  "engine_version": "0.1.0",
+  "engine_version": "0.3.0",
+  "ruleset_version": "2026-09-06",
   "classification": "SUSPICIOUS",
   "risk_score": 74,
   "confidence_score": 86,
