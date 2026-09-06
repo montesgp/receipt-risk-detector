@@ -12,6 +12,7 @@ from decimal import Decimal
 from receipt_risk.domain.analysis import AnalyzerResult, ExtractedField
 from receipt_risk.domain.ruleset import Classification
 from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
+from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
 from receipt_risk.domain.scoring import score
 from receipt_risk.domain.signals import Severity, SignalCategory, SignalCode, ValidationSignal
 
@@ -82,6 +83,70 @@ def test_risk_score_capped_at_100_and_raised_to_critical_floor_for_critical_sign
 
     breakdown_floor_only = score([critical], results, RULESET_2026_09_04)
     assert breakdown_floor_only.risk_score >= 85
+
+
+def test_untrusted_signer_scores_to_critical_floor_under_ruleset_2026_09_06() -> None:
+    """Mirrors `test_risk_score_capped_at_100_and_raised_to_critical_floor_
+    for_critical_signal`'s floor-only case for the untrusted-signer twin.
+    `RULESET_2026_09_04` has no weight/floor entry for this code, so this
+    must use `RULESET_2026_09_06` (design.md)."""
+    untrusted_signer = ValidationSignal(
+        code=SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER,
+        category=SignalCategory.PROVENANCE,
+        severity=Severity.CRITICAL,
+        confidence=Decimal("0.85"),
+        description="x",
+    )
+    results = [
+        _ocr_result(extracted_fields=_all_core_fields()),
+        _metadata_result(),
+        _provenance_result(),
+    ]
+    breakdown = score([untrusted_signer], results, RULESET_2026_09_06)
+    # weight 50 * severity_multiplier(critical)=2.0 * confidence 0.85 == 85,
+    # equal to the critical_floor entry -- both routes land on 85.
+    assert breakdown.risk_score == 85
+    assert breakdown.classification is Classification.HIGH_RISK
+
+
+def test_untrusted_signer_has_no_weight_or_floor_under_ruleset_2026_09_04() -> None:
+    """`RULESET_2026_09_04` predates this code: it contributes zero score
+    and forces no floor there (design.md)."""
+    untrusted_signer = ValidationSignal(
+        code=SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER,
+        category=SignalCategory.PROVENANCE,
+        severity=Severity.CRITICAL,
+        confidence=Decimal("0.85"),
+        description="x",
+    )
+    results = [
+        _ocr_result(extracted_fields=_all_core_fields()),
+        _metadata_result(),
+        _provenance_result(),
+    ]
+    breakdown = score([untrusted_signer], results, RULESET_2026_09_04)
+    assert breakdown.risk_score == 0
+
+
+def test_ocr_zero_with_untrusted_signer_stays_high_risk_not_downgraded() -> None:
+    """Mirrors `test_ocr_zero_with_valid_ai_generated_claim_stays_high_risk_
+    not_downgraded` for the untrusted-signer twin: a verdict-grade CRITICAL
+    signal with a `critical_floor` entry overrides the OCR-zero floor."""
+    untrusted_signer = ValidationSignal(
+        code=SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER,
+        category=SignalCategory.PROVENANCE,
+        severity=Severity.CRITICAL,
+        confidence=Decimal("0.85"),
+        description="x",
+    )
+    results = [
+        _ocr_result(extracted_fields=()),
+        _metadata_result(),
+        _provenance_result(evidence_observed=True),
+        _vision_result(),
+    ]
+    breakdown = score([untrusted_signer], results, RULESET_2026_09_06)
+    assert breakdown.classification is Classification.HIGH_RISK
 
 
 def test_confidence_independent_of_risk_ocr_fails_others_succeed_not_inconclusive() -> None:
