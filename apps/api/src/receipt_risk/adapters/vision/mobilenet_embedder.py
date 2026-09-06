@@ -31,6 +31,7 @@ risk score but never force a verdict on its own.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 from collections.abc import Callable
@@ -51,6 +52,8 @@ from receipt_risk.domain.signals import (
     ValidationSignal,
 )
 
+log = logging.getLogger(__name__)
+
 _MODEL_DIR_ENV_VAR: Final[str] = "RECEIPT_RISK_VISION_MODEL_DIR"
 _WEIGHTS_FILENAME: Final[str] = "mobilenet_v3_small.pth"
 
@@ -64,6 +67,7 @@ LOW_CONFIDENCE: Final[Decimal] = Decimal("0.50")
 MEDIUM_CONFIDENCE: Final[Decimal] = Decimal("0.70")
 
 EmbedCallable = Callable[[Path], np.ndarray]  # -> (576,) L2-normalised float32
+WarmCallable = Callable[[], None]
 
 
 class VisionEngineUnavailable(Exception):
@@ -92,7 +96,7 @@ def _load_reference_embeddings() -> np.ndarray:
     return np.asarray(embeddings, dtype=np.float32)
 
 
-def _load_embedder(model_dir: Path | None) -> EmbedCallable:
+def _load_embedder(model_dir: Path | None) -> tuple[EmbedCallable, WarmCallable]:
     """Validate `model_dir` contains the baked weights file, then construct
     a real embedder bound to those weights. Never downloads: the check
     happens strictly before `torch`/`torchvision` import/construction."""
@@ -118,9 +122,7 @@ def _load_embedder(model_dir: Path | None) -> EmbedCallable:
     model.load_state_dict(state_dict)
     model.eval()
 
-    def _embed(path: Path) -> np.ndarray:
-        array = preprocess(path)  # (3, 224, 224) float32, ImageNet-normalised
-        tensor = torch.from_numpy(array).unsqueeze(0)  # (1, 3, 224, 224)
+    def _forward(tensor) -> np.ndarray:  # (1, 3, 224, 224) -> (576,)
         with torch.no_grad():
             features = model.features(tensor)  # (1, C, H', W')
             pooled = torch.nn.functional.adaptive_avg_pool2d(features, 1)
@@ -128,7 +130,18 @@ def _load_embedder(model_dir: Path | None) -> EmbedCallable:
             normalized = torch.nn.functional.normalize(flat, p=2, dim=1)
         return normalized.squeeze(0).cpu().numpy().astype(np.float32)
 
-    return _embed
+    def _embed(path: Path) -> np.ndarray:
+        array = preprocess(path)  # (3, 224, 224) float32, ImageNet-normalised
+        tensor = torch.from_numpy(array).unsqueeze(0)  # (1, 3, 224, 224)
+        return _forward(tensor)
+
+    def _warm() -> None:
+        # No file, no preprocess(), no fixture -- an in-memory tensor is enough to
+        # pay PyTorch's first-call thread-pool / oneDNN kernel-dispatch cost that
+        # torch.load()/.eval() alone does not.
+        _forward(torch.zeros((1, 3, 224, 224), dtype=torch.float32))
+
+    return _embed, _warm
 
 
 def _max_cosine_similarity(embedding: np.ndarray, reference: np.ndarray) -> float:
@@ -190,6 +203,7 @@ class MobileNetV3VisionAdapter:
         self._embed_override = embed
         self._reference_override = reference_embeddings
         self._lazy_embed: EmbedCallable | None = None
+        self._lazy_warm: WarmCallable | None = None
         self._lazy_reference: np.ndarray | None = None
 
     def _resolve(self) -> tuple[EmbedCallable, np.ndarray]:
@@ -202,7 +216,7 @@ class MobileNetV3VisionAdapter:
             return self._embed_override, reference
 
         if self._lazy_embed is None:
-            self._lazy_embed = _load_embedder(self._model_dir)
+            self._lazy_embed, self._lazy_warm = _load_embedder(self._model_dir)
         if self._lazy_reference is None:
             self._lazy_reference = (
                 self._reference_override
@@ -210,6 +224,26 @@ class MobileNetV3VisionAdapter:
                 else _load_reference_embeddings()
             )
         return self._lazy_embed, self._lazy_reference
+
+    async def warmup(self) -> None:
+        """Eagerly load the embedder and pay PyTorch's first-call cost."""
+        await anyio.to_thread.run_sync(self._warm_sync)
+
+    def _warm_sync(self) -> None:
+        started = time.monotonic()
+        try:
+            self._resolve()
+            if self._lazy_warm is not None:
+                self._lazy_warm()
+        except VisionEngineUnavailable:
+            log.warning("warmup_unavailable", extra={"analyzer": self.name})
+            return
+        except Exception:  # noqa: BLE001 -- boot must never fail harder than a request
+            log.warning("warmup_failed", extra={"analyzer": self.name})
+            return
+        log.info(
+            "warmup_completed", extra={"analyzer": self.name, "duration_ms": _elapsed_ms(started)}
+        )
 
     async def inspect(self, image: SafeImageRef) -> AnalyzerResult:
         started = time.monotonic()
