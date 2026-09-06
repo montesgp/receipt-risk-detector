@@ -1,0 +1,12 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # Allows the web dev server (run natively on the host with
+      # `npm run dev`, not containerized here) to call this API from the
+      # browser. See apps/api/src/receipt_risk/bootstrap/app.py.
+      RECEIPT_RISK_CORS_ALLOWED_ORIGINS: "http://localhost:5173"
