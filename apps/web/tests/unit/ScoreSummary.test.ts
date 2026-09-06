@@ -144,6 +144,39 @@ describe('ScoreSummary', () => {
     expect(screen.queryByText(interpolate(es['result.inconclusiveNoTextNote'], 32))).toBeNull();
   });
 
+  it('always draws a complete ring, never a partial/empty arc (0/100 renders full, not empty)', () => {
+    const { container } = renderSummary({
+      classification: 'LOW_RISK',
+      riskScore: 0,
+      confidenceScore: 91,
+      recommendedAction: 'STANDARD_MANUAL_RECONCILIATION'
+    });
+
+    const circle = container.querySelector('svg circle');
+    expect(circle).toBeTruthy();
+    expect(circle?.getAttribute('stroke-dasharray')).toBeNull();
+    expect(circle?.getAttribute('stroke-dashoffset')).toBeNull();
+  });
+
+  it('interpolates the ring color continuously green -> yellow -> red via color-mix()', () => {
+    const cases: Array<[number, string]> = [
+      [0, 'color-mix(in srgb, var(--color-ui-risk-review) 0%, var(--color-ui-risk-low))'],
+      [50, 'color-mix(in srgb, var(--color-ui-risk-review) 100%, var(--color-ui-risk-low))'],
+      [100, 'color-mix(in srgb, var(--color-ui-risk-high) 100%, var(--color-ui-risk-review))']
+    ];
+
+    for (const [riskScore, expectedStroke] of cases) {
+      const { container, unmount } = renderSummary({
+        classification: 'LOW_RISK',
+        riskScore,
+        confidenceScore: 91,
+        recommendedAction: 'STANDARD_MANUAL_RECONCILIATION'
+      });
+      expect(container.querySelector('svg circle')?.getAttribute('stroke')).toBe(expectedStroke);
+      unmount();
+    }
+  });
+
   it('renders neither inconclusive note when classification is not INCONCLUSIVE', () => {
     renderSummary({
       classification: 'LOW_RISK',
