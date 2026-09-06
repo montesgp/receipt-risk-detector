@@ -42,8 +42,14 @@ def test_prior_ruleset_version_stays_registered_and_unmodified() -> None:
 
 
 def test_ruleset_declares_weights_for_every_defined_signal_code() -> None:
+    # RULESET_2026_09_06 is the current active/latest ruleset (c2pa-ai-claim-
+    # detection change) -- the only one guaranteed to have a weight entry
+    # for every SignalCode defined so far, since historical rulesets are
+    # frozen at the moment they were superseded.
+    from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
+
     for code in SignalCode:
-        assert code in RULESET_2026_09_04.weights, f"missing weight for {code}"
+        assert code in RULESET_2026_09_06.weights, f"missing weight for {code}"
 
 
 def test_ruleset_declares_severity_multiplier_for_every_severity() -> None:
@@ -92,13 +98,30 @@ def test_ruleset_declares_combination_floors_field_empty_on_historical_versions(
 def test_ruleset_2026_09_05_registered_with_combination_floor() -> None:
     from receipt_risk.domain.rulesets.v2026_09_05 import RULESET_2026_09_05
 
-    assert len(RULESETS) == 3
     assert RULESET_2026_09_05.version == "2026-09-05"
     assert RULESETS[RULESET_2026_09_05.version] is RULESET_2026_09_05
     expected_key = frozenset(
         {SignalCode.CORE_FIELD_EXTRACTION_FAILED, SignalCode.DATE_OUT_OF_BOUNDS}
     )
     assert RULESET_2026_09_05.combination_floors == {expected_key: 55}
+
+
+def test_ruleset_2026_09_06_registered_with_untrusted_signer_weight() -> None:
+    """`v2026_09_06` (c2pa-ai-claim-detection change): frozen-forward
+    copy of `v2026_09_05` plus the new untrusted-signer AI-claim code."""
+    from receipt_risk.domain.rulesets.v2026_09_05 import RULESET_2026_09_05
+    from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
+
+    assert len(RULESETS) == 4
+    assert RULESET_2026_09_06.version == "2026-09-06"
+    assert RULESETS[RULESET_2026_09_06.version] is RULESET_2026_09_06
+    assert RULESET_2026_09_06.weights[SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER] == 50
+    assert RULESET_2026_09_06.critical_floor[SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER] == 85
+
+    # frozen-forward guard: v2026_09_05 is unchanged
+    assert RULESET_2026_09_05.version == "2026-09-05"
+    assert SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER not in RULESET_2026_09_05.weights
+    assert SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER not in RULESET_2026_09_05.critical_floor
 
 
 def test_classification_and_recommended_action_enums_match_docs_api() -> None:

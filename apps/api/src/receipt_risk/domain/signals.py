@@ -48,6 +48,12 @@ class SignalCode(StrEnum):
     ANALYZER_UNAVAILABLE = "ANALYZER_UNAVAILABLE"  # category DATA_QUALITY, info severity, weight 0
     # visual-anomaly-detection change
     VISUAL_ANOMALY_DETECTED = "VISUAL_ANOMALY_DETECTED"  # category VISUAL, LOW/MEDIUM, no floor
+    # c2pa-ai-claim-detection change
+    # category PROVENANCE, CRITICAL, confidence 0.85, critical_floor 85 --
+    # an intact AI-generation claim signed by an unrecognized CA. Separate
+    # from VALID_AI_GENERATED_CLAIM for audit/explainability only; the
+    # verdict it forces is identical.
+    AI_GENERATED_CLAIM_UNTRUSTED_SIGNER = "AI_GENERATED_CLAIM_UNTRUSTED_SIGNER"
 
 
 class ExtractionFailureReason(StrEnum):
