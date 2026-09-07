@@ -25,6 +25,7 @@ from receipt_risk.adapters.ocr.paddle_onnx import (  # noqa: E402
     PaddleOnnxOcrAdapter,
     _load_rapidocr_engine,
     _model_dir_from_env,
+    _onnx_thread_kwargs,
 )
 from receipt_risk.application.models import SafeImageRef  # noqa: E402
 from receipt_risk.domain.analysis import AnalyzerResult  # noqa: E402
@@ -156,6 +157,48 @@ def test_model_dir_from_env_expands_tilde_to_home_directory(
     assert resolved is not None
     assert "~" not in str(resolved)
     assert resolved.is_absolute()
+
+
+def test_onnx_thread_kwargs_empty_when_omp_num_threads_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OMP_NUM_THREADS", raising=False)
+
+    assert _onnx_thread_kwargs() == {}
+
+
+def test_onnx_thread_kwargs_passes_through_omp_num_threads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Dockerfile sets OMP_NUM_THREADS=2 as a resource-tuning knob for CPU-bound
+    # ML libs, but rapidocr_onnxruntime/onnxruntime never reads that env var on
+    # its own (confirmed against its source) -- each of its 3 sessions
+    # (det/cls/rec) defaults intra_op_num_threads/inter_op_num_threads to -1,
+    # which onnxruntime resolves via hardware_concurrency(). In a cgroup-limited
+    # container that reports the host's full core count, this oversubscribes
+    # real CPU share once OCR's 3 sessions run alongside the vision analyzer
+    # (confirmed on Railway: a request completing in ~3s locally took ~28.5s
+    # there). RapidOCR's own `intra_op_num_threads`/`inter_op_num_threads`
+    # kwargs are its documented way to bound this per session.
+    monkeypatch.setenv("OMP_NUM_THREADS", "2")
+
+    assert _onnx_thread_kwargs() == {"intra_op_num_threads": 2, "inter_op_num_threads": 2}
+
+
+def test_onnx_thread_kwargs_empty_when_omp_num_threads_not_numeric(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OMP_NUM_THREADS", "not-a-number")
+
+    assert _onnx_thread_kwargs() == {}
+
+
+def test_onnx_thread_kwargs_empty_when_omp_num_threads_below_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OMP_NUM_THREADS", "0")
+
+    assert _onnx_thread_kwargs() == {}
 
 
 def test_ocr_adapter_bogus_model_dir_returns_analyzer_unavailable_no_download(

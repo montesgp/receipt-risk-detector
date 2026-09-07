@@ -46,13 +46,47 @@ from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
 # then just works without exporting anything by hand.
 load_dotenv()
 
-# Local-dev convenience only: loads apps/api/.env (never committed -- see
-# .gitignore) into os.environ before any adapter below reads
-# RECEIPT_RISK_*. Never overrides an already-set env var, so this is a
-# silent no-op in Docker/Railway/CI, where real env vars are exported by
-# the platform. `uv run uvicorn receipt_risk.bootstrap.app:app --reload`
-# then just works without exporting anything by hand.
-load_dotenv()
+
+class _ExtraFieldsFormatter(logging.Formatter):
+    """Appends any `extra={...}` fields as `key=value` pairs after the
+    message. Without this, calls like `log.info("x", extra={"duration_ms":
+    1})` scattered across the analyze pipeline (see analyze_receipt.py,
+    the adapters' warmup()) silently drop that data under `basicConfig`'s
+    default format -- `extra` only populates the LogRecord's attributes,
+    it does not appear in output unless the format string names each key,
+    which isn't practical across call sites with different key sets."""
+
+    _STANDARD_ATTRS = frozenset(logging.LogRecord("", 0, "", 0, "", (), None).__dict__)
+
+    _NOISE = frozenset({"message", "asctime"})  # set by super().format() as a side effect
+
+    def format(self, record: logging.LogRecord) -> str:
+        base = super().format(record)
+        custom = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key not in self._STANDARD_ATTRS and key not in self._NOISE
+        }
+        if not custom:
+            return base
+        pairs = " ".join(f"{key}={value}" for key, value in custom.items())
+        return f"{base} | {pairs}"
+
+
+# No prior `logging.basicConfig` call existed anywhere in this codebase:
+# every `log.info`/`log.warning` in the analyze pipeline and the adapters'
+# warmup() was silently swallowed in Railway/Docker (root logger had no
+# handler, so only Python's WARNING-level "handler of last resort" ever
+# printed anything, and even then with no `extra` fields visible). Configured
+# here, once, at the actual process entrypoint -- `receipt_risk.*` loggers
+# propagate to root and pick this handler up regardless of import order.
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[logging.StreamHandler()],
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+for _handler in logging.getLogger().handlers:
+    _handler.setFormatter(_ExtraFieldsFormatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
 
 log = logging.getLogger(__name__)
 

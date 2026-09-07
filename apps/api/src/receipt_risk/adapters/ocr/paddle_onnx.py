@@ -67,6 +67,38 @@ class OcrEngineUnavailable(Exception):
     call is ever made to satisfy a missing model."""
 
 
+def _onnx_thread_kwargs() -> dict[str, int]:
+    """Bound RapidOCR's 3 underlying ONNX Runtime sessions (det/cls/rec) to
+    `OMP_NUM_THREADS` threads apiece, instead of onnxruntime's own default
+    of `-1` (unset -- each session independently calls
+    `std::thread::hardware_concurrency()`).
+
+    In a cgroup-limited container that reports the *host's* full core
+    count rather than the container's actual CPU quota (confirmed on
+    Railway: a request that completes OCR in ~3s locally took ~28.5s
+    there), 3 uncapped sessions plus the vision analyzer running
+    concurrently (`TimeBudget.max_concurrent_analyzers`) massively
+    oversubscribe the real CPU share, and the resulting context-switch
+    thrashing is worse than linear -- not just "a slower box". The
+    Dockerfile already sets `OMP_NUM_THREADS` for exactly this class of
+    problem; RapidOCR/onnxruntime does not read that env var on its own
+    (confirmed: absent from rapidocr_onnxruntime's own source), so this
+    passes it through explicitly via RapidOCR's documented
+    `intra_op_num_threads`/`inter_op_num_threads` kwargs (see its
+    config.yaml and utils/infer_engine.py). A missing or non-numeric env
+    var leaves onnxruntime's own default behavior untouched."""
+    raw = os.environ.get("OMP_NUM_THREADS")
+    if raw is None:
+        return {}
+    try:
+        threads = int(raw)
+    except ValueError:
+        return {}
+    if threads < 1:
+        return {}
+    return {"intra_op_num_threads": threads, "inter_op_num_threads": threads}
+
+
 def _model_dir_from_env() -> Path | None:
     value = os.environ.get(_MODEL_DIR_ENV_VAR)
     # .expanduser() matters here: GitHub Actions' `env:` mapping passes values
@@ -96,7 +128,10 @@ def _load_rapidocr_engine(model_dir: Path | None) -> EngineCallable:
     from rapidocr_onnxruntime import RapidOCR  # noqa: TID251 -- adapter-only import
 
     engine = RapidOCR(
-        det_model_path=str(det_path), cls_model_path=str(cls_path), rec_model_path=str(rec_path)
+        det_model_path=str(det_path),
+        cls_model_path=str(cls_path),
+        rec_model_path=str(rec_path),
+        **_onnx_thread_kwargs(),
     )
 
     def _run(pixels: np.ndarray) -> list:

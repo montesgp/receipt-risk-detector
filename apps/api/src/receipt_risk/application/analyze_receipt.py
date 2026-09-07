@@ -123,6 +123,13 @@ class AnalyzeReceiptUseCase:
                 with anyio.fail_after(self._budget.whole_request_s):
                     results = await self._run_analyzers(safe)
             except TimeoutError as exc:
+                log.warning(
+                    "whole_request_timed_out",
+                    extra={
+                        "duration_ms": self._clock.monotonic_ms() - started,
+                        "budget_ms": int(self._budget.whole_request_s * 1000),
+                    },
+                )
                 raise AnalysisTimeoutError("Whole-request analysis budget exhausted.") from exc
 
             ocr_result = next((r for r in results if r.analyzer == self._ocr.name), None)
@@ -131,6 +138,7 @@ class AnalyzeReceiptUseCase:
                 signals.extend(validate_financials(ocr_result.extracted_fields))
 
             duration_ms = self._clock.monotonic_ms() - started
+            log.info("request_completed", extra={"duration_ms": duration_ms})
             return assemble(
                 analysis_id=f"sha256:{safe.sha256}",
                 results=results,
@@ -171,10 +179,28 @@ class AnalyzeReceiptUseCase:
         try:
             with anyio.fail_after(budget_s):
                 if role == "ocr":
-                    return await port.extract(safe)  # type: ignore[attr-defined]
-                return await port.inspect(safe)  # type: ignore[attr-defined]
+                    result = await port.extract(safe)  # type: ignore[attr-defined]
+                else:
+                    result = await port.inspect(safe)  # type: ignore[attr-defined]
+            log.info(
+                "analyzer_completed",
+                extra={
+                    "analyzer": role,
+                    "duration_ms": self._clock.monotonic_ms() - started,
+                    "budget_ms": int(budget_s * 1000),
+                },
+            )
+            return result
         except TimeoutError:
             duration_ms = self._clock.monotonic_ms() - started
+            log.warning(
+                "analyzer_timed_out",
+                extra={
+                    "analyzer": role,
+                    "duration_ms": duration_ms,
+                    "budget_ms": int(budget_s * 1000),
+                },
+            )
             signals = (
                 (_ocr_failure_signal(ExtractionFailureReason.TIMEOUT),)
                 if role == "ocr"
@@ -190,7 +216,9 @@ class AnalyzeReceiptUseCase:
             )
         except Exception:  # noqa: BLE001 -- never leaks a tool exception upward
             duration_ms = self._clock.monotonic_ms() - started
-            log.warning("analyzer_failed", extra={"analyzer": role})  # no payload, no raw text
+            log.warning(  # no payload, no raw text
+                "analyzer_failed", extra={"analyzer": role, "duration_ms": duration_ms}
+            )
             signals = (
                 (_ocr_failure_signal(ExtractionFailureReason.NO_TEXT_DETECTED),)
                 if role == "ocr"
