@@ -6,7 +6,6 @@
   import FilePreview from '$lib/components/FilePreview.svelte';
   import ProcessingStages from '$lib/components/ProcessingStages.svelte';
   import ErrorPanel from '$lib/components/ErrorPanel.svelte';
-  import ReconciliationNotice from '$lib/components/ReconciliationNotice.svelte';
   import ResultView from '$lib/components/ResultView.svelte';
   import LiveRegion from '$lib/components/LiveRegion.svelte';
   import { getI18nContext } from '$lib/i18n/i18n.svelte';
@@ -46,10 +45,6 @@
        above the drop zone, so a technical reader sees it before assuming
        this is "the product". -->
   <ApiCallout />
-
-  <!-- DD7: always mounted, both in idle and result contexts, never behind a
-       state branch. -->
-  <ReconciliationNotice />
 
   {#if liveMessage}
     <LiveRegion message={liveMessage} />

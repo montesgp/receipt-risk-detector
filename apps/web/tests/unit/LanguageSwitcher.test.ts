@@ -1,11 +1,14 @@
 // Spec "Switchers are keyboard-operable with visible focus" and "State
-// change is announced and not color-only": ES/EN two-option control,
-// `aria-pressed`, a per-language `aria-label`, keyboard-operable, and the
-// new state announced via an ARIA live region.
+// change is announced and not color-only": single cycling button showing
+// the active language's full name, an `aria-label` describing the switch
+// action, keyboard-operable, and the new state announced via an ARIA live
+// region.
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import LanguageSwitcher from '../../src/lib/components/LanguageSwitcher.svelte';
 import { I18N_CONTEXT_KEY, I18n } from '../../src/lib/i18n/i18n.svelte';
+import es from '../../src/lib/i18n/messages/es.json';
+import en from '../../src/lib/i18n/messages/en.json';
 
 afterEach(() => cleanup());
 
@@ -16,39 +19,44 @@ function renderSwitcher(initialLocale: 'es' | 'en' = 'es') {
 }
 
 describe('LanguageSwitcher', () => {
-  it('exposes two options with aria-pressed reflecting the active locale', () => {
+  it('shows the active language full name as visible text (es)', () => {
     renderSwitcher('es');
 
-    const es = screen.getByRole('button', { name: /español/i });
-    const en = screen.getByRole('button', { name: /english|inglés/i });
-
-    expect(es.getAttribute('aria-pressed')).toBe('true');
-    expect(en.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByRole('button').textContent).toMatch(new RegExp(es['header.language.nameEs'], 'i'));
   });
 
-  it('has a per-language aria-label', () => {
+  it('shows the active language full name as visible text (en)', () => {
+    renderSwitcher('en');
+
+    expect(screen.getByRole('button').textContent).toMatch(new RegExp(en['header.language.nameEn'], 'i'));
+  });
+
+  it('has an aria-label describing the switch action and current language', () => {
     renderSwitcher('es');
 
-    expect(screen.getByRole('button', { name: 'Cambiar a español' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Cambiar a inglés' })).toBeTruthy();
+    const button = screen.getByRole('button');
+    expect(button.getAttribute('aria-label')).toMatch(/Español/);
   });
 
-  it('switches locale on click without any network call, and reflects it via aria-pressed', async () => {
+  it('switches locale on click without any network call, cycling es -> en -> es', async () => {
     const i18n = renderSwitcher('es');
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Cambiar a inglés' }));
-
+    const button = screen.getByRole('button');
+    await fireEvent.click(button);
     expect(i18n.locale).toBe('en');
-    expect(screen.getByRole('button', { name: /english/i }).getAttribute('aria-pressed')).toBe('true');
+    expect(button.textContent).toMatch(/english/i);
+
+    await fireEvent.click(button);
+    expect(i18n.locale).toBe('es');
+    expect(button.textContent).toMatch(/español/i);
   });
 
   it('is keyboard-operable', async () => {
     const i18n = renderSwitcher('es');
 
-    const enButton = screen.getByRole('button', { name: 'Cambiar a inglés' });
-    enButton.focus();
-    await fireEvent.keyDown(enButton, { key: 'Enter' });
-    await fireEvent.click(enButton);
+    const button = screen.getByRole('button');
+    button.focus();
+    await fireEvent.click(button);
 
     expect(i18n.locale).toBe('en');
   });
@@ -56,40 +64,35 @@ describe('LanguageSwitcher', () => {
   it('announces the new state through an ARIA live region, not color alone', async () => {
     renderSwitcher('es');
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Cambiar a inglés' }));
+    await fireEvent.click(screen.getByRole('button'));
 
     const status = screen.getByRole('status');
     expect(status.textContent).toMatch(/language|idioma/i);
   });
 
-  it('announces the resolved language NAME, not the switch-to button label (es -> en)', async () => {
+  it('announces the resolved language NAME (es -> en)', async () => {
     renderSwitcher('es');
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Cambiar a inglés' }));
+    await fireEvent.click(screen.getByRole('button'));
 
     const status = screen.getByRole('status');
-    // Announcement renders in the NEW active locale (English, since we just
-    // switched to it), naming the language itself — never the button's
-    // "switch to" label copy.
     expect(status.textContent).toBe('Language: English');
-    expect(status.textContent).not.toMatch(/Switch to/i);
   });
 
-  it('announces the resolved language NAME in Spanish (en -> es)', async () => {
+  it('announces the resolved language NAME (en -> es)', async () => {
     renderSwitcher('en');
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Switch to Spanish' }));
+    await fireEvent.click(screen.getByRole('button'));
 
     const status = screen.getByRole('status');
     expect(status.textContent).toBe('Idioma: Español');
-    expect(status.textContent).not.toMatch(/Cambiar a/i);
   });
 
   it('persists the choice to localStorage', async () => {
     window.localStorage.clear();
     renderSwitcher('es');
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Cambiar a inglés' }));
+    await fireEvent.click(screen.getByRole('button'));
 
     expect(window.localStorage.getItem('rrd.locale')).toBe('en');
   });

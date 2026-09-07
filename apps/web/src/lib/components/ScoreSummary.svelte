@@ -12,19 +12,27 @@
   text right next to it. The `12 / 100` text node stays a standalone
   element with unchanged text, so the existing `getByText('N / 100')`
   assertions keep passing.
+
+  Always draws a COMPLETE ring (never partially empty, per user feedback:
+  a 0/100 score used to render as an empty gray circle, reading as
+  "no data" rather than "great news, no risk"). The ring's color instead
+  interpolates continuously green -> yellow -> red across the 0-100 range
+  via CSS `color-mix()` against the existing `--color-ui-risk-*` custom
+  properties (`app.css`), so it stays theme-aware (light/dark) without a
+  duplicated hex table in this component. This is a decorative recolor
+  only — the outer card's `score-summary--{low,review,high}` tier classes
+  (still driven by `classification`) are unchanged.
 -->
 <script lang="ts">
   import { getI18nContext } from '$lib/i18n/i18n.svelte';
   import { actionKey, classificationKey } from '$lib/i18n/enum-map';
 
-  // r=42 circle: circumference = 2 * PI * 42 ≈ 264.
-  const RING_CIRCUMFERENCE = 264;
-
   let {
     classification,
     riskScore,
     confidenceScore,
-    recommendedAction
+    recommendedAction,
+    noTextDetected = false
   }: {
     classification: string;
     riskScore: number;
@@ -34,6 +42,15 @@
      */
     confidenceScore: number;
     recommendedAction: string;
+    /**
+     * True when a `CORE_FIELD_EXTRACTION_FAILED` signal with
+     * `evidence.reason === 'no_text_detected'` fired (derived by the
+     * `ResultView` container from `result.signals` — scoring-confidence-
+     * calibration change). Selects the hedged "we could not identify
+     * transfer data" copy instead of the generic inconclusive note; never
+     * asserts an absolute verdict either way.
+     */
+    noTextDetected?: boolean;
   } = $props();
 
   const i18n = getI18nContext();
@@ -48,6 +65,21 @@
 
   const tier = $derived(RISK_TIER[classification]);
   const isInconclusive = $derived(classification === 'INCONCLUSIVE');
+  /**
+   * Continuous green -> yellow -> red interpolation via `color-mix()`,
+   * two linear segments (0-50: low->review, 50-100: review->high) so the
+   * midpoint of each half is a clean blend rather than an abrupt jump.
+   * Reads the same theme-aware custom properties the rest of the app
+   * uses (`app.css`), so it never needs its own light/dark hex table.
+   */
+  const ringColor = $derived.by(() => {
+    const score = Math.max(0, Math.min(100, riskScore));
+    const [from, to, percent] =
+      score <= 50
+        ? (['--color-ui-risk-low', '--color-ui-risk-review', (score / 50) * 100] as const)
+        : (['--color-ui-risk-review', '--color-ui-risk-high', ((score - 50) / 50) * 100] as const);
+    return `color-mix(in srgb, var(${to}) ${Math.round(percent)}%, var(${from}))`;
+  });
   const confidencePercent = $derived(Math.round(confidenceScore));
   const classificationLabel = $derived.by(() => {
     const key = classificationKey(classification);
@@ -57,6 +89,9 @@
     const key = actionKey(recommendedAction);
     return key ? i18n.t(key) : undefined;
   });
+  const inconclusiveKey = $derived(
+    noTextDetected ? 'result.inconclusiveNoTextNote' : 'result.inconclusiveNote'
+  );
 </script>
 
 <section
@@ -72,21 +107,14 @@
 
   <div class="flex flex-wrap items-center gap-6">
     {#if !isInconclusive}
-      <svg viewBox="0 0 100 100" class="h-24 w-24 shrink-0 -rotate-90" aria-hidden="true">
-        <circle cx="50" cy="50" r="42" fill="none" stroke-width="9" class="stroke-ui-line" />
+      <svg viewBox="0 0 100 100" class="h-24 w-24 shrink-0" aria-hidden="true">
         <circle
           cx="50"
           cy="50"
           r="42"
           fill="none"
           stroke-width="9"
-          stroke-linecap="round"
-          stroke="currentColor"
-          stroke-dasharray={RING_CIRCUMFERENCE}
-          stroke-dashoffset={RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * riskScore) / 100}
-          class:text-ui-risk-low={tier === 'low'}
-          class:text-ui-risk-review={tier === 'review'}
-          class:text-ui-risk-high={tier === 'high'}
+          stroke={ringColor}
         />
       </svg>
     {/if}
@@ -94,7 +122,7 @@
     <div class="flex min-w-0 flex-col gap-2">
       {#if isInconclusive}
         <p class="m-0 text-ui-muted">
-          {i18n.t('result.inconclusiveNote', { confidence: confidencePercent })}
+          {i18n.t(inconclusiveKey, { confidence: confidencePercent })}
         </p>
       {:else}
         <p class="m-0 text-[2.5rem] font-bold leading-none tabular-nums">{riskScore} / 100</p>

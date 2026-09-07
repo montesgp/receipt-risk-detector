@@ -29,7 +29,8 @@
       "expected_analyzer_statuses": {
         "ocr": "completed",
         "metadata": "completed",
-        "provenance": "completed"
+        "provenance": "completed",
+        "vision": "completed"
       },
       "expected_classification": "LOW_RISK",
       "notes": "Baseline: all core fields legible, valid check digits, no provenance claim."
@@ -58,9 +59,10 @@
       "expected_analyzer_statuses": {
         "ocr": "completed",
         "metadata": "completed",
-        "provenance": "completed"
+        "provenance": "completed",
+        "vision": "completed"
       },
-      "expected_classification": "REVIEW_RECOMMENDED",
+      "expected_classification": "SUSPICIOUS",
       "notes": "Identical render to the baseline with only the block-2 check digit mutated 1 -> 2."
     },
     {
@@ -82,7 +84,8 @@
       "expected_analyzer_statuses": {
         "ocr": "completed",
         "metadata": "completed",
-        "provenance": "completed"
+        "provenance": "completed",
+        "vision": "completed"
       },
       "expected_classification": "LOW_RISK",
       "notes": "Rotated, contrast-reduced, blurred, low-quality JPEG re-encode of the baseline; exercises the OCR adapter's single preprocessing retry (slice 3)."
@@ -104,6 +107,343 @@
         "code": "UNSUPPORTED_IMAGE"
       },
       "notes": "First 2 KB of a valid JPEG; must be rejected at ingestion before any analyzer runs."
+    },
+    {
+      "id": "alt_vocabulary_inline",
+      "path": "images/alt_vocabulary_inline.png",
+      "sha256": "a3bb334a30f82c5c4513d0990a7fdd28d2e3d90f785a50131ffe16afb0d79955",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "8000",
+        "date_time": "2026-08-01T14:43:00-03:00",
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "operation_id": "483927183"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: disjoint label vocabulary, inline 'label: value' lines, AR-locale amount, digit-for-letter-typo'd month name -- proves extraction never depends on a fixed label set."
+    },
+    {
+      "id": "no_label_layout",
+      "path": "images/no_label_layout.png",
+      "sha256": "2293d8c34527f3ebaf6f175d2962efff8767008a9f3ed40501ebce66ccaedf3a",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "date_time": "2026-09-01T14:43:00-03:00",
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: values only, zero labels, plus a decoy 9-digit operation id and a phone number that must never be mistaken for a core field."
+    },
+    {
+      "id": "two_party_labeled",
+      "path": "images/two_party_labeled.png",
+      "sha256": "0ea6623025ca04a4048fdea8925d03245a32cb57f1a4204036e32ed5c45aa87e",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "origin_cbu": "0720001400004444444448",
+        "origin_cuit": "27098765439"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: origin block ('Cuenta origen' / 'Titular') then destination block ('Destino' / 'Beneficiario'), both CBU/CUIT pairs checksum-valid -- proves keyword-proximity selection, not checksum validity, picks the destination pair."
+    },
+    {
+      "id": "two_party_no_labels",
+      "path": "images/two_party_no_labels.png",
+      "sha256": "cc8e6e0303c8cfe7a6e7edd2c01475b5984f9f33d2e76260a5eb28f9845bffe1",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "origin_cbu": "0720001400004444444448",
+        "origin_cuit": "27098765439"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "LOW_RISK",
+      "notes": "generic-receipt-field-extraction: same two checksum-valid pairs as two_party_labeled, with no keyword text anywhere -- proves the positional fallback (second-appearing pair = destination)."
+    },
+    {
+      "id": "synthetic_band_review_recommended",
+      "path": "images/clean_valid_transfer.png",
+      "sha256": "217791e4631fc1b04fda1d827a10a4e432507d71e78c7e03ce802155d2d890f6",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "currency": "ARS",
+        "date_time": "2026-09-01T14:43:00-03:00",
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "operation_id": "483927183"
+      },
+      "expected_signals": [
+        {
+          "code": "METADATA_EDITOR_SOFTWARE",
+          "category": "metadata",
+          "severity": "low",
+          "confidence": "0.80"
+        },
+        {
+          "code": "PROVENANCE_VALIDATION_FAILED",
+          "category": "provenance",
+          "severity": "medium",
+          "confidence": "1.00"
+        },
+        {
+          "code": "VISUAL_ANOMALY_DETECTED",
+          "category": "visual",
+          "severity": "medium",
+          "confidence": "1.00"
+        }
+      ],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "REVIEW_RECOMMENDED",
+      "notes": "test-coverage-classification-bands: reuses `clean_valid_transfer`'s exact image bytes (same path + sha256) -- the image is irrelevant to band selection here. Score is driven entirely by the injected `expected_signals`: 4 + 15 + 20 = 39, landing in REVIEW_RECOMMENDED (<=49) under RULESET_2026_09_06."
+    },
+    {
+      "id": "synthetic_band_high_risk",
+      "path": "images/clean_valid_transfer.png",
+      "sha256": "217791e4631fc1b04fda1d827a10a4e432507d71e78c7e03ce802155d2d890f6",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "currency": "ARS",
+        "date_time": "2026-09-01T14:43:00-03:00",
+        "beneficiary_name": "PATRICIO EJEMPLO",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7",
+        "operation_id": "483927183"
+      },
+      "expected_signals": [
+        {
+          "code": "AI_GENERATED_CLAIM_UNTRUSTED_SIGNER",
+          "category": "provenance",
+          "severity": "critical",
+          "confidence": "0.85"
+        }
+      ],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "expected_classification": "HIGH_RISK",
+      "notes": "test-coverage-classification-bands: reuses `clean_valid_transfer`'s exact image bytes (same path + sha256) -- the image is irrelevant to band selection here. int(50 * 2.0 * 0.85) == 85, which also equals RULESET_2026_09_06's critical_floor for this code, landing in HIGH_RISK."
+    },
+    {
+      "id": "reference_bank2_clean",
+      "path": "images/reference/reference_bank2_clean.png",
+      "sha256": "6f2eff31011018d4d3a64f8bea9da315f77a89bba12394d186008fb39bc84234",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'bank2' template, clean render."
+    },
+    {
+      "id": "reference_bank2_degraded",
+      "path": "images/reference/reference_bank2_degraded.jpg",
+      "sha256": "1239689e3c074bdf767a42ef1db0ae26589a3d88818ba45f166b50f8d4786ab4",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'bank2' template, degraded variant."
+    },
+    {
+      "id": "reference_compact_clean",
+      "path": "images/reference/reference_compact_clean.png",
+      "sha256": "ac787c8bb26b268613a596f4aea0bb975dce98ef866a711a98e7b1252d33e436",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'compact' template, clean render."
+    },
+    {
+      "id": "reference_compact_degraded",
+      "path": "images/reference/reference_compact_degraded.jpg",
+      "sha256": "8b9a4dd466a6be42fffba6fd135c85a7ba14ebaefb06ffd6052871d3ec2065fd",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'compact' template, degraded variant."
+    },
+    {
+      "id": "reference_dark_header_clean",
+      "path": "images/reference/reference_dark_header_clean.png",
+      "sha256": "16305691f57473eeaa3aaf9d0b5a67c397fe4ffa1dd0bb2ab1c50bc2a40d8970",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'dark_header' template, clean render."
+    },
+    {
+      "id": "reference_dark_header_degraded",
+      "path": "images/reference/reference_dark_header_degraded.jpg",
+      "sha256": "3726a1cb417406437030d4a4ab01777a3aa33adcf7b2cfd583a2567ea2537df6",
+      "provenance": {
+        "origin": "synthetic",
+        "authored_by": "samples/generate.py",
+        "contains_real_data": false,
+        "bank_template": "fabricated"
+      },
+      "declared_fields": {
+        "amount": "125000.00",
+        "destination_cbu": "2850590940090418135201",
+        "cuit": "20-17254359-7"
+      },
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: 'dark_header' template, degraded variant."
     }
   ]
 }

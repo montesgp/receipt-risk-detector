@@ -28,7 +28,7 @@ Conflating these questions creates dangerous false certainty. The product must p
 3. **Determinism.** Identical normalized evidence and ruleset versions produce the same score.
 4. **Privacy by default.** Do not persist receipts in MVP 1.
 5. **Local-first analysis.** No paid LLM tokens in the required processing path.
-6. **API-first interoperability.** The browser, n8n and bots use the same public API.
+6. **API-first interoperability.** The browser, workflow-automation tools and bots use the same public API.
 7. **Manual reconciliation remains explicit.** Low risk never means confirmed payment.
 
 ## 4. Goals
@@ -66,7 +66,7 @@ A merchant, employee or organization member who receives the image and wants gui
 
 ### 6.2 External automation
 
-An n8n workflow, WhatsApp bot, Telegram bot or generic HTTP client that submits an image and consumes structured JSON.
+A workflow-automation tool, WhatsApp bot, Telegram bot or generic HTTP client that submits an image and consumes structured JSON.
 
 ### 6.3 Contributor/integrator
 
@@ -218,7 +218,7 @@ The analysis endpoint is synchronous for MVP 1. It shall work without cookies, b
 
 ### FR-010 — External automation compatibility
 
-The API shall support a standard n8n HTTP Request node using binary `multipart/form-data` input and structured JSON output.
+The API shall support any standard HTTP client (workflow-automation tools, bots, generic backends) using binary `multipart/form-data` input and structured JSON output.
 
 No webhook callback or polling flow is required in MVP 1.
 
@@ -323,7 +323,7 @@ ValidationSignal
 
 - A contributor can run web and API locally using documented commands.
 - A user can submit a supported image and understand the output without documentation.
-- n8n can submit a binary image and route on `classification` or `risk_score`.
+- An external automation client can submit a binary image and route on `classification` or `risk_score`.
 - Every score contribution is traceable to a rule and signal.
 - The system passes cleanup and no-sensitive-logging tests.
 - A versioned evaluation fixture set reports extraction coverage and known failure modes.

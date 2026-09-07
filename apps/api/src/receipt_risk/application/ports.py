@@ -61,3 +61,16 @@ class OcrPort(Protocol):
     version: str
 
     async def extract(self, image: SafeImageRef) -> AnalyzerResult: ...
+
+
+@runtime_checkable
+class VisionPort(Protocol):
+    """Pixel-space visual outlier inspection (visual-anomaly-detection
+    change). `inspect` never raises: missing weights, an undecodable image,
+    or a missing reference artifact all fold into `AnalyzerResult(status=
+    "failed", error_code="ANALYZER_UNAVAILABLE")`."""
+
+    name: str
+    version: str
+
+    async def inspect(self, image: SafeImageRef) -> AnalyzerResult: ...

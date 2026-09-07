@@ -22,24 +22,28 @@ function renderExplainer(locale: 'es' | 'en' = 'es') {
 }
 
 describe('PipelineExplainer', () => {
-  it('renders six steps in Spanish', () => {
+  it('renders seven steps in Spanish, including the PyTorch visual step', () => {
     renderExplainer('es');
 
     const items = document.querySelectorAll('li');
-    expect(items).toHaveLength(6);
+    expect(items).toHaveLength(7);
     expect(document.body.textContent).toContain(es['upload.pipeline.heading']);
     expect(document.body.textContent).toContain(es['upload.pipeline.step.upload.title']);
     expect(document.body.textContent).toContain(es['upload.pipeline.step.scoring.detail']);
+    expect(document.body.textContent).toContain(es['upload.pipeline.step.vision.detail']);
   });
 
-  it('renders six steps in English', () => {
+  it('renders seven steps in English, including the PyTorch visual step', () => {
     renderExplainer('en');
 
     const items = document.querySelectorAll('li');
-    expect(items).toHaveLength(6);
+    expect(items).toHaveLength(7);
     expect(document.body.textContent).toContain(en['upload.pipeline.heading']);
     expect(document.body.textContent).toContain(en['upload.pipeline.step.upload.title']);
     expect(document.body.textContent).toContain(en['upload.pipeline.step.scoring.detail']);
+    expect(document.body.textContent).toContain(
+      'PyTorch-based visual feature extraction integrated into the document inspection pipeline'
+    );
   });
 
   it('carries no aria-live/role="status" live-region semantics (distinct from ProcessingStages)', () => {

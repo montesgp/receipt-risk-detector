@@ -33,3 +33,7 @@ class AnalyzerResult:
     extracted_fields: tuple[ExtractedField, ...] = ()
     duration_ms: int = 0
     error_code: str | None = None
+    evidence_observed: bool | None = None
+    """Did this analyzer actually have something to evaluate? `None` = not
+    reported (fall back to `status`). Only `provenance` reports it today: a
+    clean C2PA run with no manifest observed nothing."""

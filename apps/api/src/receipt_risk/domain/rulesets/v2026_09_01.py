@@ -68,6 +68,7 @@ RULESET_2026_09_01 = ScoringRuleset(
     weights=_WEIGHTS,
     severity_multiplier=_SEVERITY_MULTIPLIER,
     critical_floor=_CRITICAL_FLOOR,
+    combination_floors={},
     analyzer_evidence_weights=_ANALYZER_EVIDENCE_WEIGHTS,
     status_quality=_STATUS_QUALITY,
     inconclusive_coverage_threshold=Decimal("0.35"),

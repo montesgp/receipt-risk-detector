@@ -16,6 +16,7 @@ from receipt_risk.application.ports import (
     MetadataPort,
     OcrPort,
     ProvenancePort,
+    VisionPort,
 )
 from receipt_risk.domain.analysis import AnalyzerResult
 
@@ -66,3 +67,15 @@ class _FakeOcrAnalyzer:
 
 def test_ocr_port_protocol_shape() -> None:
     assert isinstance(_FakeOcrAnalyzer(), OcrPort)
+
+
+class _FakeVisionAnalyzer:
+    name = "fake-vision"
+    version = "0.0.1"
+
+    async def inspect(self, image: SafeImageRef) -> AnalyzerResult:
+        return AnalyzerResult(analyzer=self.name, version=self.version, status="completed")
+
+
+def test_vision_port_protocol_shape() -> None:
+    assert isinstance(_FakeVisionAnalyzer(), VisionPort)

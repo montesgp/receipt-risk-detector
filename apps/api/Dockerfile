@@ -18,16 +18,34 @@ COPY apps/api/scripts/fetch_ocr_models.py ./
 RUN pip install --no-cache-dir "requests==2.32.3" \
  && python fetch_ocr_models.py --dest /opt/ocr-models --verify
 
+# ---- vision model pre-baking (independent cache key from OCR's stage,
+# so an OCR pin bump does not invalidate the vision cache and vice versa;
+# design.md "Weight distribution") ----
+FROM python:3.12-slim AS vision-model
+RUN pip install --no-cache-dir uv
+WORKDIR /build
+COPY apps/api/scripts/fetch_vision_model.py ./
+RUN pip install --no-cache-dir "requests==2.32.3" \
+ && python fetch_vision_model.py --dest /opt/vision-model --verify
+
 # ---- runtime ----
 FROM python:3.12-slim
 
-# slice 2: ExifTool binary. libglib2.0-0 is required by opencv-python-headless
-# (slice 3); libgl1 is deliberately NOT installed because the headless wheel
-# does not link libGL.
+# slice 2: ExifTool binary. libglib2.0-0 and libxcb1 are required by
+# opencv-python-headless (slice 3) -- confirmed via `ldd` against the
+# installed wheel's cv2.abi3.so: despite being a "headless" build, it still
+# bundles Qt5 libs (libQt5Gui/libQt5Widgets) whose own transitive
+# dependencies pull in libxcb.so.1, which the slim base image lacks.
+# libgl1 provides libGL.so.1 -- opencv-python-headless 5.0.0.93 (see
+# uv.lock) dlopen's it even in the headless build, unlike older 4.x
+# releases; confirmed by a Railway staging crash (ImportError: libGL.so.1:
+# cannot open shared object file) once that pin took effect.
 RUN apt-get update \
  && apt-get install --no-install-recommends -y \
       libimage-exiftool-perl \
       libglib2.0-0 \
+      libxcb1 \
+      libgl1 \
  && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv
@@ -46,7 +64,11 @@ RUN uv sync --frozen --no-dev --extra server
 # slice 3: baked models; the OCR adapter must never download at request or
 # startup time (see the "zero outbound network connections" threat-matrix test).
 COPY --from=ocr-models /opt/ocr-models /opt/ocr-models
+# slice: baked vision weights; the vision adapter must never download at
+# request or startup time either (mirrors the OCR fail-closed contract).
+COPY --from=vision-model /opt/vision-model /opt/vision-model
 ENV RECEIPT_RISK_OCR_MODEL_DIR=/opt/ocr-models \
+    RECEIPT_RISK_VISION_MODEL_DIR=/opt/vision-model \
     HF_HUB_OFFLINE=1 \
     OMP_NUM_THREADS=2
 

@@ -50,6 +50,31 @@ FIRST_ROW_Y = 280
 ROW_HEIGHT = 130
 LABEL_VALUE_GAP = 6
 
+# Reference-set template constants (visual-anomaly-detection change):
+# three additional deterministic templates so the vision adapter's
+# reference-embedding set spans more than one visual "mode" (design.md
+# "Reference set construction"). Every value below is a literal constant
+# -- same no-RNG/no-system-font/no-timestamp invariant as the rest of this
+# module.
+INSTITUTION_NAME_2 = "Cooperativa Financiera del Sur"
+HEADER_BAND_COLOR_2 = (18, 74, 133)
+HEADER_BAND_HEIGHT_2 = 180
+
+COMPACT_CANVAS_SIZE = (800, 1200)
+COMPACT_TITLE_FONT_SIZE = 34
+COMPACT_LABEL_FONT_SIZE = 20
+COMPACT_VALUE_FONT_SIZE = 24
+COMPACT_LEFT_MARGIN = 50
+COMPACT_TITLE_Y = 60
+COMPACT_FIRST_ROW_Y = 170
+COMPACT_ROW_HEIGHT = 80
+
+DARK_HEADER_COLOR = (24, 24, 28)
+DARK_HEADER_TEXT_COLOR = (240, 240, 245)
+DARK_HEADER_HEIGHT = 220
+BOX_ROW_COLOR = (235, 238, 242)
+BOX_ROW_PADDING = 14
+
 # Declared field values shared by the "clean" and "invalid CBU" fixtures.
 # Amounts/CBU/CUIT are the proposal's published known-answer literals —
 # fabricated for testing, not a real transfer.
@@ -68,6 +93,74 @@ ROWS: tuple[tuple[str, str], ...] = (
     ("CBU destino", "{cbu}"),  # filled in per-fixture
     ("CUIT", CUIT),
     ("N° de operación", OPERATION_ID),
+)
+
+# generic-receipt-field-extraction change: new fixture literals. Origin
+# identifiers must be *computed* to satisfy the CBU (two mod-10 blocks) /
+# CUIT (mod-11) check-digit algorithms, never hand-typed digits that merely
+# look plausible -- asserted by
+# tests/fixtures/test_origin_identifiers_checksum_valid.py. Destination
+# identifiers on the two-party fixtures reuse VALID_CBU / CUIT above.
+ORIGIN_CBU = "0720001400004444444448"
+ORIGIN_CUIT = "27098765439"
+ORIGIN_BENEFICIARY = "ORIGEN EJEMPLO"
+ALT_AMOUNT = "8.000"
+ALT_DATE_TEXT = "1 de ag0sto de 2026, 14:43 hs"
+ALT_DATE_ISO = "2026-08-01T14:43:00-03:00"
+DECOY_PHONE = "+54 11 2345-6789"
+
+# alt_vocabulary_inline: disjoint label wording from ROWS above, inline
+# "label: value" (no separate label/value rows), an AR-locale amount, and a
+# digit-for-letter-typo'd month name in the date.
+ROWS_ALT_VOCABULARY: tuple[tuple[str, str], ...] = (
+    ("Importe transferido", f"$ {ALT_AMOUNT}"),
+    ("Realizada el", ALT_DATE_TEXT),
+    ("Para", BENEFICIARY),
+    ("CVU", VALID_CBU),
+    ("CUIT/CUIL", CUIT),
+    ("Comprobante", OPERATION_ID),
+)
+
+# no_label_layout: values only, zero labels, plus decoys (a 9-digit
+# operation id and a phone number) that must never be mistaken for a core
+# field.
+ROWS_NO_LABEL: tuple[str, ...] = (
+    f"$ {AMOUNT}",
+    DATE_TIME,
+    BENEFICIARY,
+    VALID_CBU,
+    CUIT,
+    "Comprobante",
+    OPERATION_ID,
+    DECOY_PHONE,
+)
+
+# two_party_labeled / two_party_no_labels: a complete receipt (amount +
+# date, like every real transfer receipt) with an origin block then a
+# destination block, both CBU/CUIT pairs checksum-valid (so
+# keyword-proximity, not checksum validity, is what the labeled test
+# proves). Amount/date are included so overall core-field coverage clears
+# paddle_onnx.py's COVERAGE_THRESHOLD against the real OCR engine, not
+# just the two disambiguation-relevant fields.
+ROWS_TWO_PARTY: tuple[tuple[str, str], ...] = (
+    ("Monto", f"$ {AMOUNT}"),
+    ("Fecha y hora", DATE_TIME),
+    ("Cuenta origen", ORIGIN_CBU),
+    ("Titular", ORIGIN_BENEFICIARY),
+    ("CUIT origen", ORIGIN_CUIT),
+    ("Destino", VALID_CBU),
+    ("Beneficiario", BENEFICIARY),
+    ("CUIT destino", CUIT),
+)
+ROWS_TWO_PARTY_NO_LABELS: tuple[str, ...] = (
+    f"$ {AMOUNT}",
+    DATE_TIME,
+    ORIGIN_CBU,
+    ORIGIN_BENEFICIARY,
+    ORIGIN_CUIT,
+    VALID_CBU,
+    BENEFICIARY,
+    CUIT,
 )
 
 # Degraded-variant post-processing parameters (design.md "Fixture Design").
@@ -97,6 +190,177 @@ def _render_receipt(cbu: str) -> Image.Image:
         value = value_template.format(cbu=cbu)
         row_y = FIRST_ROW_Y + index * ROW_HEIGHT
         draw.text((LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        draw.text(
+            (LEFT_MARGIN, row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
+def _render_receipt_bank2(cbu: str) -> Image.Image:
+    """Second bank identity: different institution string, a coloured
+    header band, right-aligned value column."""
+    image = Image.new("RGB", CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([(0, 0), (CANVAS_SIZE[0], HEADER_BAND_HEIGHT_2)], fill=HEADER_BAND_COLOR_2)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), VALUE_FONT_SIZE)
+
+    draw.text((LEFT_MARGIN, TITLE_Y - 30), INSTITUTION_NAME_2, font=title_font, fill=BACKGROUND)
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y + 40),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=BACKGROUND,
+    )
+
+    for index, (label, value_template) in enumerate(ROWS):
+        value = value_template.format(cbu=cbu)
+        row_y = FIRST_ROW_Y + index * ROW_HEIGHT
+        draw.text((LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        value_width = draw.textlength(value, font=value_font)
+        draw.text(
+            (CANVAS_SIZE[0] - LEFT_MARGIN - value_width, row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
+def _render_receipt_compact(cbu: str) -> Image.Image:
+    """Compact layout: smaller canvas, tighter rows, different font sizes."""
+    image = Image.new("RGB", COMPACT_CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), COMPACT_TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), COMPACT_LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), COMPACT_VALUE_FONT_SIZE)
+
+    draw.text(
+        (COMPACT_LEFT_MARGIN, COMPACT_TITLE_Y), INSTITUTION_NAME, font=title_font, fill=TEXT_COLOR
+    )
+    draw.text(
+        (COMPACT_LEFT_MARGIN, COMPACT_TITLE_Y + 45),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=TEXT_COLOR,
+    )
+
+    for index, (label, value_template) in enumerate(ROWS):
+        value = value_template.format(cbu=cbu)
+        row_y = COMPACT_FIRST_ROW_Y + index * COMPACT_ROW_HEIGHT
+        draw.text((COMPACT_LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        draw.text(
+            (COMPACT_LEFT_MARGIN, row_y + COMPACT_LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
+def _render_receipt_dark_header(cbu: str) -> Image.Image:
+    """Dark-header, boxed-rows layout: a dark banner and shaded row
+    backgrounds behind each label/value pair."""
+    image = Image.new("RGB", CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+    draw.rectangle([(0, 0), (CANVAS_SIZE[0], DARK_HEADER_HEIGHT)], fill=DARK_HEADER_COLOR)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), VALUE_FONT_SIZE)
+
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y - 10), INSTITUTION_NAME, font=title_font, fill=DARK_HEADER_TEXT_COLOR
+    )
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y + 60),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=DARK_HEADER_TEXT_COLOR,
+    )
+
+    for index, (label, value_template) in enumerate(ROWS):
+        value = value_template.format(cbu=cbu)
+        row_y = FIRST_ROW_Y + index * ROW_HEIGHT
+        box_top = row_y - BOX_ROW_PADDING
+        box_bottom = row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP + VALUE_FONT_SIZE + BOX_ROW_PADDING
+        draw.rectangle(
+            [(LEFT_MARGIN - BOX_ROW_PADDING, box_top), (CANVAS_SIZE[0] - LEFT_MARGIN, box_bottom)],
+            fill=BOX_ROW_COLOR,
+        )
+        draw.text((LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        draw.text(
+            (LEFT_MARGIN, row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
+def _render_labeled_rows(rows: tuple[tuple[str, str], ...]) -> Image.Image:
+    """Same clean layout as `_render_receipt`, but takes an arbitrary
+    label/value row tuple instead of always filling in `{cbu}` -- used by
+    the generic-receipt-field-extraction fixtures below, which need
+    disjoint label vocabulary or a two-party layout."""
+    image = Image.new("RGB", CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), VALUE_FONT_SIZE)
+
+    draw.text((LEFT_MARGIN, TITLE_Y), INSTITUTION_NAME, font=title_font, fill=TEXT_COLOR)
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y + 70),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=TEXT_COLOR,
+    )
+
+    for index, (label, value) in enumerate(rows):
+        row_y = FIRST_ROW_Y + index * ROW_HEIGHT
+        draw.text((LEFT_MARGIN, row_y), label, font=label_font, fill=TEXT_COLOR)
+        draw.text(
+            (LEFT_MARGIN, row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP),
+            value,
+            font=value_font,
+            fill=TEXT_COLOR,
+        )
+
+    return image
+
+
+def _render_values_only(values: tuple[str, ...]) -> Image.Image:
+    """Label-independent layout: no label text at all, just values in
+    reading order -- proves detection never depends on a label."""
+    image = Image.new("RGB", CANVAS_SIZE, color=BACKGROUND)
+    draw = ImageDraw.Draw(image)
+
+    title_font = ImageFont.truetype(str(FONT_PATH), TITLE_FONT_SIZE)
+    label_font = ImageFont.truetype(str(FONT_PATH), LABEL_FONT_SIZE)
+    value_font = ImageFont.truetype(str(FONT_PATH), VALUE_FONT_SIZE)
+
+    draw.text((LEFT_MARGIN, TITLE_Y), INSTITUTION_NAME, font=title_font, fill=TEXT_COLOR)
+    draw.text(
+        (LEFT_MARGIN, TITLE_Y + 70),
+        "Comprobante de transferencia",
+        font=label_font,
+        fill=TEXT_COLOR,
+    )
+
+    for index, value in enumerate(values):
+        row_y = FIRST_ROW_Y + index * ROW_HEIGHT
         draw.text(
             (LEFT_MARGIN, row_y + LABEL_FONT_SIZE + LABEL_VALUE_GAP),
             value,
@@ -149,6 +413,61 @@ def generate() -> dict[str, str]:
     truncated_path.write_bytes(valid_jpeg_bytes[:2048])
     digests["corrupted_truncated"] = _sha256_of(truncated_path)
 
+    # Reference-set templates (visual-anomaly-detection change): each new
+    # template gets a clean render plus its one degraded variant, giving
+    # the vision adapter's reference set coverage across template, layout,
+    # and degradation axes (design.md "Reference set construction").
+    reference_dir = IMAGES_DIR / "reference"
+    reference_dir.mkdir(parents=True, exist_ok=True)
+
+    templates: tuple[tuple[str, Image.Image], ...] = (
+        ("bank2", _render_receipt_bank2(VALID_CBU)),
+        ("compact", _render_receipt_compact(VALID_CBU)),
+        ("dark_header", _render_receipt_dark_header(VALID_CBU)),
+    )
+    for slug, rendered in templates:
+        clean_id = f"reference_{slug}_clean"
+        clean_path = reference_dir / f"{clean_id}.png"
+        rendered.save(clean_path, format="PNG")
+        digests[clean_id] = _sha256_of(clean_path)
+
+        degraded_id = f"reference_{slug}_degraded"
+        degraded_path = reference_dir / f"{degraded_id}.jpg"
+        _degrade(rendered).convert("RGB").save(degraded_path, format="JPEG", quality=JPEG_QUALITY)
+        digests[degraded_id] = _sha256_of(degraded_path)
+
+    # generic-receipt-field-extraction fixtures: OCR-only, land in
+    # samples/images/ (root), not images/reference/, so the vision
+    # reference-embedding builder does not pick them up.
+    alt_vocabulary = _render_labeled_rows(ROWS_ALT_VOCABULARY)
+    alt_vocabulary_path = IMAGES_DIR / "alt_vocabulary_inline.png"
+    alt_vocabulary.save(alt_vocabulary_path, format="PNG")
+    digests["alt_vocabulary_inline"] = _sha256_of(alt_vocabulary_path)
+
+    no_label = _render_values_only(ROWS_NO_LABEL)
+    no_label_path = IMAGES_DIR / "no_label_layout.png"
+    no_label.save(no_label_path, format="PNG")
+    digests["no_label_layout"] = _sha256_of(no_label_path)
+
+    two_party_labeled = _render_labeled_rows(ROWS_TWO_PARTY)
+    two_party_labeled_path = IMAGES_DIR / "two_party_labeled.png"
+    two_party_labeled.save(two_party_labeled_path, format="PNG")
+    digests["two_party_labeled"] = _sha256_of(two_party_labeled_path)
+
+    two_party_no_labels = _render_values_only(ROWS_TWO_PARTY_NO_LABELS)
+    two_party_no_labels_path = IMAGES_DIR / "two_party_no_labels.png"
+    two_party_no_labels.save(two_party_no_labels_path, format="PNG")
+    digests["two_party_no_labels"] = _sha256_of(two_party_no_labels_path)
+
+    # test-coverage-classification-bands: alias digests, no new bytes
+    # written. These two ids reuse `clean_valid_transfer`'s exact image --
+    # the images are irrelevant to classification-band selection, only the
+    # `expected_signals` declared in `_build_manifest()` below drive the
+    # band (design.md "manifest entries must also be emitted by
+    # generate.py, not hand-added").
+    digests["synthetic_band_review_recommended"] = digests["clean_valid_transfer"]
+    digests["synthetic_band_high_risk"] = digests["clean_valid_transfer"]
+
     return digests
 
 
@@ -158,6 +477,73 @@ def _jpeg_bytes(image: Image.Image) -> bytes:
     buf = io.BytesIO()
     image.convert("RGB").save(buf, format="JPEG", quality=90)
     return buf.getvalue()
+
+
+_REFERENCE_TEMPLATE_SLUGS: tuple[str, ...] = ("bank2", "compact", "dark_header")
+
+
+def _reference_fixture_entries(digests: dict[str, str]) -> list[dict[str, object]]:
+    """Manifest entries for the vision reference-set images (visual-anomaly-
+    detection change). These carry `vision`-only expectations: no financial
+    signals are asserted since these fixtures exist for
+    `build_reference_embeddings.py`, not for financial-validation tests."""
+    entries: list[dict[str, object]] = []
+    for slug in _REFERENCE_TEMPLATE_SLUGS:
+        clean_id = f"reference_{slug}_clean"
+        entries.append(
+            {
+                "id": clean_id,
+                "path": f"images/reference/{clean_id}.png",
+                "sha256": digests[clean_id],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "notes": f"Vision reference-set image: '{slug}' template, clean render.",
+            }
+        )
+        degraded_id = f"reference_{slug}_degraded"
+        entries.append(
+            {
+                "id": degraded_id,
+                "path": f"images/reference/{degraded_id}.jpg",
+                "sha256": digests[degraded_id],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "notes": f"Vision reference-set image: '{slug}' template, degraded variant.",
+            }
+        )
+    return entries
 
 
 def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
@@ -193,6 +579,7 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "ocr": "completed",
                     "metadata": "completed",
                     "provenance": "completed",
+                    "vision": "completed",
                 },
                 "expected_classification": "LOW_RISK",
                 "notes": (
@@ -224,8 +611,9 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "ocr": "completed",
                     "metadata": "completed",
                     "provenance": "completed",
+                    "vision": "completed",
                 },
-                "expected_classification": "REVIEW_RECOMMENDED",
+                "expected_classification": "SUSPICIOUS",
                 "notes": (
                     "Identical render to the baseline with only the block-2 check digit"
                     " mutated 1 -> 2."
@@ -251,6 +639,7 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     "ocr": "completed",
                     "metadata": "completed",
                     "provenance": "completed",
+                    "vision": "completed",
                 },
                 "expected_classification": "LOW_RISK",
                 "notes": (
@@ -276,6 +665,229 @@ def _build_manifest(digests: dict[str, str]) -> dict[str, object]:
                     " analyzer runs."
                 ),
             },
+            {
+                "id": "alt_vocabulary_inline",
+                "path": "images/alt_vocabulary_inline.png",
+                "sha256": digests["alt_vocabulary_inline"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": ALT_AMOUNT.replace(".", ""),
+                    "date_time": ALT_DATE_ISO,
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                    "operation_id": OPERATION_ID,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "LOW_RISK",
+                "notes": (
+                    "generic-receipt-field-extraction: disjoint label vocabulary, inline"
+                    " 'label: value' lines, AR-locale amount, digit-for-letter-typo'd"
+                    " month name -- proves extraction never depends on a fixed label set."
+                ),
+            },
+            {
+                "id": "no_label_layout",
+                "path": "images/no_label_layout.png",
+                "sha256": digests["no_label_layout"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "date_time": DATE_TIME,
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "LOW_RISK",
+                "notes": (
+                    "generic-receipt-field-extraction: values only, zero labels, plus a"
+                    " decoy 9-digit operation id and a phone number that must never be"
+                    " mistaken for a core field."
+                ),
+            },
+            {
+                "id": "two_party_labeled",
+                "path": "images/two_party_labeled.png",
+                "sha256": digests["two_party_labeled"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                    "origin_cbu": ORIGIN_CBU,
+                    "origin_cuit": ORIGIN_CUIT,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "LOW_RISK",
+                "notes": (
+                    "generic-receipt-field-extraction: origin block ('Cuenta origen' /"
+                    " 'Titular') then destination block ('Destino' / 'Beneficiario'),"
+                    " both CBU/CUIT pairs checksum-valid -- proves keyword-proximity"
+                    " selection, not checksum validity, picks the destination pair."
+                ),
+            },
+            {
+                "id": "two_party_no_labels",
+                "path": "images/two_party_no_labels.png",
+                "sha256": digests["two_party_no_labels"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                    "origin_cbu": ORIGIN_CBU,
+                    "origin_cuit": ORIGIN_CUIT,
+                },
+                "expected_signals": [],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "LOW_RISK",
+                "notes": (
+                    "generic-receipt-field-extraction: same two checksum-valid pairs as"
+                    " two_party_labeled, with no keyword text anywhere -- proves the"
+                    " positional fallback (second-appearing pair = destination)."
+                ),
+            },
+            {
+                "id": "synthetic_band_review_recommended",
+                "path": "images/clean_valid_transfer.png",
+                "sha256": digests["synthetic_band_review_recommended"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "currency": "ARS",
+                    "date_time": DATE_TIME,
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                    "operation_id": OPERATION_ID,
+                },
+                "expected_signals": [
+                    {
+                        "code": "METADATA_EDITOR_SOFTWARE",
+                        "category": "metadata",
+                        "severity": "low",
+                        "confidence": "0.80",
+                    },
+                    {
+                        "code": "PROVENANCE_VALIDATION_FAILED",
+                        "category": "provenance",
+                        "severity": "medium",
+                        "confidence": "1.00",
+                    },
+                    {
+                        "code": "VISUAL_ANOMALY_DETECTED",
+                        "category": "visual",
+                        "severity": "medium",
+                        "confidence": "1.00",
+                    },
+                ],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "REVIEW_RECOMMENDED",
+                "notes": (
+                    "test-coverage-classification-bands: reuses `clean_valid_transfer`'s"
+                    " exact image bytes (same path + sha256) -- the image is irrelevant"
+                    " to band selection here. Score is driven entirely by the injected"
+                    " `expected_signals`: 4 + 15 + 20 = 39, landing in REVIEW_RECOMMENDED"
+                    " (<=49) under RULESET_2026_09_06."
+                ),
+            },
+            {
+                "id": "synthetic_band_high_risk",
+                "path": "images/clean_valid_transfer.png",
+                "sha256": digests["synthetic_band_high_risk"],
+                "provenance": {
+                    "origin": "synthetic",
+                    "authored_by": "samples/generate.py",
+                    "contains_real_data": False,
+                    "bank_template": "fabricated",
+                },
+                "declared_fields": {
+                    "amount": AMOUNT,
+                    "currency": "ARS",
+                    "date_time": DATE_TIME,
+                    "beneficiary_name": BENEFICIARY,
+                    "destination_cbu": VALID_CBU,
+                    "cuit": CUIT,
+                    "operation_id": OPERATION_ID,
+                },
+                "expected_signals": [
+                    {
+                        "code": "AI_GENERATED_CLAIM_UNTRUSTED_SIGNER",
+                        "category": "provenance",
+                        "severity": "critical",
+                        "confidence": "0.85",
+                    },
+                ],
+                "expected_analyzer_statuses": {
+                    "ocr": "completed",
+                    "metadata": "completed",
+                    "provenance": "completed",
+                    "vision": "completed",
+                },
+                "expected_classification": "HIGH_RISK",
+                "notes": (
+                    "test-coverage-classification-bands: reuses `clean_valid_transfer`'s"
+                    " exact image bytes (same path + sha256) -- the image is irrelevant"
+                    " to band selection here. int(50 * 2.0 * 0.85) == 85, which also"
+                    " equals RULESET_2026_09_06's critical_floor for this code, landing"
+                    " in HIGH_RISK."
+                ),
+            },
+            *_reference_fixture_entries(digests),
         ],
     }
 

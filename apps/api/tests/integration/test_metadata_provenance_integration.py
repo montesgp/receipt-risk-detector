@@ -59,3 +59,4 @@ def test_c2pa_reader_inspects_real_fixture_without_manifest_neutrally() -> None:
 
     assert result.status == "completed"
     assert result.signals == ()  # synthetic fixture carries no C2PA manifest
+    assert result.evidence_observed is False  # no manifest was actually evaluated

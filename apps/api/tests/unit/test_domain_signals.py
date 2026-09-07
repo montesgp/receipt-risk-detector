@@ -48,6 +48,24 @@ def test_valid_ai_generated_claim_signal_is_critical_severity() -> None:
     assert signal.category == SignalCategory.PROVENANCE
 
 
+def test_ai_generated_claim_untrusted_signer_signal_is_critical_severity() -> None:
+    """Mirrors `test_valid_ai_generated_claim_signal_is_critical_severity`:
+    the untrusted-signer code is a separate audit trail for the same
+    critical evidence (c2pa-ai-claim-detection change)."""
+    signal = ValidationSignal(
+        code=SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER,
+        category=SignalCategory.PROVENANCE,
+        severity=Severity.CRITICAL,
+        confidence=Decimal("0.85"),
+        description="A cryptographically intact AI-generation claim signed by an unrecognized CA.",
+        evidence={"active_manifest": "urn:uuid:abc"},
+    )
+
+    assert signal.severity == Severity.CRITICAL
+    assert signal.code == SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER
+    assert signal.category == SignalCategory.PROVENANCE
+
+
 def test_slice_3_financial_signal_codes_exist() -> None:
     assert SignalCode.INVALID_CBU_CHECK_DIGIT == "INVALID_CBU_CHECK_DIGIT"
     assert SignalCode.INVALID_CUIT_CHECK_DIGIT == "INVALID_CUIT_CHECK_DIGIT"
@@ -60,3 +78,20 @@ def test_extraction_failure_reason_enum_values() -> None:
     assert ExtractionFailureReason.LOW_CONFIDENCE == "low_confidence"
     assert ExtractionFailureReason.NO_TEXT_DETECTED == "no_text_detected"
     assert ExtractionFailureReason.TIMEOUT == "timeout"
+
+
+def test_visual_category_and_visual_anomaly_code_exist() -> None:
+    assert SignalCategory.VISUAL == "visual"
+    assert SignalCode.VISUAL_ANOMALY_DETECTED == "VISUAL_ANOMALY_DETECTED"
+
+    signal = ValidationSignal(
+        code=SignalCode.VISUAL_ANOMALY_DETECTED,
+        category=SignalCategory.VISUAL,
+        severity=Severity.MEDIUM,
+        confidence=Decimal("0.70"),
+        description="This receipt's visual appearance is an outlier relative to the "
+        "bundled set of known-legitimate receipt renders.",
+        evidence={"cosine_distance": "0.52", "threshold": "0.45"},
+    )
+    assert signal.category == SignalCategory.VISUAL
+    assert signal.code == SignalCode.VISUAL_ANOMALY_DETECTED

@@ -64,4 +64,24 @@ describe('TechnicalDetail', () => {
       renderDetail({ engineVersion: '1.0.0', rulesetVersion: 'v1', analyzerStatuses: [] })
     ).not.toThrow();
   });
+
+  it('shows a help tooltip for a known analyzer, describing what it checks (issue #34)', () => {
+    renderDetail({
+      engineVersion: '1.0.0',
+      rulesetVersion: 'v1',
+      analyzerStatuses: [{ analyzer: 'c2pa', status: 'completed', duration_ms: 5 }]
+    });
+
+    expect(screen.getByText(es['result.technical.help.c2pa'])).toBeTruthy();
+  });
+
+  it('shows no help tooltip for an unknown/future analyzer name', () => {
+    renderDetail({
+      engineVersion: '1.0.0',
+      rulesetVersion: 'v1',
+      analyzerStatuses: [{ analyzer: 'some-future-analyzer', status: 'completed', duration_ms: 5 }]
+    });
+
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
 });

@@ -41,7 +41,7 @@ docs/features/<feature-name>/
 - The score must be deterministic for identical normalized analyzer outputs and ruleset version.
 - Every score contribution must map to an explainable `ValidationSignal`.
 - The web client must display the limitation that only bank reconciliation confirms payment.
-- The API must remain consumable without browser state by n8n and generic HTTP clients.
+- The API must remain consumable without browser state by workflow-automation tools, bots and generic HTTP clients.
 - No database or durable receipt storage in MVP 1.
 - No paid LLM or image-model dependency in the critical path.
 

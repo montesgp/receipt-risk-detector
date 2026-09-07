@@ -16,7 +16,7 @@
                 <mxCell id="c-web" value="SvelteKit web client&#xa;src/lib/{api,components,features,i18n}" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-clients" vertex="1">
                     <mxGeometry x="10" y="40" width="210" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="c-bot" value="n8n / bots / backends&#xa;server-side HTTP consumers" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-clients" vertex="1">
+                <mxCell id="c-bot" value="Workflow tools / bots / backends&#xa;server-side HTTP consumers" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#141414;" parent="g-clients" vertex="1">
                     <mxGeometry x="15" y="120" width="200" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="g-adapters" value="Adapters — receipt_risk.adapters" style="swimlane;whiteSpace=wrap;html=1;startSize=26;fillColor=#f7f7f5;strokeColor=#deded9;" parent="1" vertex="1">

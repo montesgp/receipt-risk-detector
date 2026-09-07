@@ -4,11 +4,10 @@
  * data-theme="dark">` on the *first* paint via an `addInitScript` probe (no
  * flash of the wrong theme, DD3/DESIGN.md §12).
  *
- * Also verifies the two ThemeSwitcher fixes flagged in slice 2's verify
- * pass (DESIGN.md §12 "Control" row): the responsive breakpoint (segmented
- * control at >=768px, cycling icon button below) and the >=44x44px touch
- * target — both need a real browser layout engine, which jsdom (used by
- * the Vitest unit tests) does not provide.
+ * Also verifies the single-button ThemeSwitcher (ui-polish round 4, DESIGN.md
+ * §12 "Control" row) shows a visible current-state label and a >=44x44px
+ * touch target at every viewport width — needs a real browser layout
+ * engine, which jsdom (used by the Vitest unit tests) does not provide.
  */
 import { test, expect } from '@playwright/test';
 
@@ -52,50 +51,34 @@ test.describe('theme persistence', () => {
   });
 });
 
-test.describe('theme switcher responsive control (DESIGN.md §12)', () => {
-  test('shows the segmented control at >=768px with a >=44x44px touch target per option', async ({
-    page
-  }) => {
-    await page.setViewportSize({ width: 1024, height: 768 });
-    await page.goto('/');
+test.describe('theme switcher single-button control (DESIGN.md §12)', () => {
+  for (const viewport of [
+    { width: 1024, height: 768, label: 'desktop' },
+    { width: 375, height: 812, label: 'mobile' }
+  ]) {
+    test(`shows the cycling button with a visible current-state label and a >=44x44px touch target (${viewport.label})`, async ({
+      page
+    }) => {
+      await page.setViewportSize(viewport);
+      await page.goto('/');
 
-    const segmented = page.locator('.theme-switcher__segmented');
-    await expect(segmented).toBeVisible();
-    await expect(page.locator('.theme-switcher__cycle')).toBeHidden();
+      const cycleButton = page.locator('.theme-switcher__cycle');
+      await expect(cycleButton).toBeVisible();
 
-    const radios = page.getByRole('radio');
-    await expect(radios).toHaveCount(2);
-    for (const radio of await radios.all()) {
-      const box = await radio.boundingBox();
+      // The current state (e.g. "Claro"/"Oscuro") is visible text, not only
+      // an aria-label (DESIGN.md §12 "a cycling icon button with a visible
+      // current-state label").
+      await expect(cycleButton).toHaveText(/Claro|Oscuro/i);
+
+      const box = await cycleButton.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
-    }
-  });
 
-  test('shows the cycling icon button below 768px with a visible current-state label and a >=44x44px touch target', async ({
-    page
-  }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('/');
-
-    const cycleButton = page.locator('.theme-switcher__cycle');
-    await expect(cycleButton).toBeVisible();
-    await expect(page.locator('.theme-switcher__segmented')).toBeHidden();
-
-    // The current state (e.g. "Sistema"/"System") is visible text, not only
-    // an aria-label (DESIGN.md §12 "a cycling icon button with a visible
-    // current-state label").
-    await expect(cycleButton).toHaveText(/Claro|Oscuro/i);
-
-    const box = await cycleButton.boundingBox();
-    expect(box).not.toBeNull();
-    expect(box!.width).toBeGreaterThanOrEqual(44);
-    expect(box!.height).toBeGreaterThanOrEqual(44);
-
-    const beforeLabel = await cycleButton.textContent();
-    await cycleButton.click();
-    const afterLabel = await cycleButton.textContent();
-    expect(afterLabel).not.toBe(beforeLabel);
-  });
+      const beforeLabel = await cycleButton.textContent();
+      await cycleButton.click();
+      const afterLabel = await cycleButton.textContent();
+      expect(afterLabel).not.toBe(beforeLabel);
+    });
+  }
 });

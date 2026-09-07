@@ -26,15 +26,19 @@ Example:
 
 ```json
 {
-  "engine_version": "0.1.0",
-  "ruleset_version": "2026-09-01",
+  "engine_version": "0.3.0",
+  "ruleset_version": "2026-09-06",
   "analyzers": {
     "ocr": "paddleocr-adapter/0.1.0",
     "metadata": "exiftool-adapter/0.1.0",
-    "provenance": "c2pa-adapter/0.1.0"
+    "provenance": "c2pa-adapter/0.1.0",
+    "vision": "mobilenetv3-embedding/1.0.0"
   }
 }
 ```
+
+`/ready`'s `analyzers` map has the same four-entry shape (`ocr`, `metadata`,
+`provenance`, `vision`).
 
 ### `POST /v1/receipts/analyze`
 
@@ -51,15 +55,15 @@ Fields:
 | --- | --- | --- | --- |
 | `file` | binary | Yes | JPEG, PNG or WebP; maximum 10 MB initially |
 
-MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart works with browsers and n8n without increasing payload size unnecessarily.
+MVP 1 deliberately excludes base64 JSON and remote image URLs. Binary multipart works with browsers and any external automation client (workflow tools, bots, generic HTTP clients) without increasing payload size unnecessarily.
 
 ## 3. Response model
 
 ```json
 {
   "analysis_id": "sha256:4f4a...",
-  "engine_version": "0.1.0",
-  "ruleset_version": "2026-09-01",
+  "engine_version": "0.3.0",
+  "ruleset_version": "2026-09-06",
   "classification": "SUSPICIOUS",
   "risk_score": 74,
   "confidence_score": 86,
@@ -144,7 +148,85 @@ analyzer status:
   partial
   failed
   timed_out
+
+signal category:
+  metadata
+  provenance
+  financial_consistency
+  data_quality
+  visual
 ```
+
+## 4a. Scoring reference (active ruleset)
+
+These are the current values for the active ruleset only — every response echoes its own
+`ruleset_version`; if it differs from `2026-09-06`, do not assume these numbers still apply (per
+`CONTRIBUTING.md`, a weight/floor change always ships as a new frozen ruleset version, never a
+silent edit to a shipped one).
+
+### Signal codes
+
+| Code | Category | Severity | Weight | Critical floor | Trigger |
+| --- | --- | --- | --- | --- | --- |
+| `METADATA_EDITOR_SOFTWARE` | `metadata` | low | 10 | — | Embedded EXIF metadata names editing software (Photoshop, GIMP, Canva, etc.). |
+| `VALID_AI_GENERATED_CLAIM` | `provenance` | critical | 90 | 85 | A cryptographically valid, fully-trusted C2PA manifest declares algorithmic (AI) generation. |
+| `AI_GENERATED_CLAIM_UNTRUSTED_SIGNER` | `provenance` | critical | 50 | 85 | Same AI-generation claim, but signed by an unrecognized/untrusted CA — the claim itself is cryptographically intact, only the trust anchor is unfamiliar. Forces the same verdict as `VALID_AI_GENERATED_CLAIM`; kept as a separate code only for audit/explainability in `signals[]`. |
+| `PROVENANCE_VALIDATION_FAILED` | `provenance` | medium | 15 | — | A C2PA manifest is present but fails structural/cryptographic validation (genuine tampering or a broken signature). |
+| `INVALID_CBU_CHECK_DIGIT` | `financial_consistency` | high | 40 | — | Extracted CBU/CVU fails its check-digit algorithm. |
+| `INVALID_CUIT_CHECK_DIGIT` | `financial_consistency` | high | 30 | — | Extracted CUIT/CUIL fails its check-digit algorithm. |
+| `AMOUNT_DATE_CONTRADICTION` | `financial_consistency` | medium | 20 | — | Multiple extracted occurrences of the same field (amount or date) disagree with each other. |
+| `DATE_OUT_OF_BOUNDS` | `financial_consistency` | medium | 15 | — | Extracted date falls outside the plausibility window. |
+| `CORE_FIELD_EXTRACTION_FAILED` | `data_quality` | medium | 15 | — | OCR could not reliably extract one or more core fields (amount, CBU/CVU, CUIT, date). |
+| `ANALYZER_UNAVAILABLE` | `data_quality` | info | 0 | — | An analyzer did not run or complete. Not fraud evidence — only lowers `confidence_score`, never `risk_score`. |
+| `VISUAL_ANOMALY_DETECTED` | `visual` | low or medium | 20 | — | The receipt's MobileNetV3 embedding is a cosine-distance outlier vs. the bundled reference set. Pixel-space evidence only — never claims AI generation, never forces a verdict alone. |
+
+### Severity multipliers
+
+| Severity | Multiplier |
+| --- | --- |
+| info | 0.0 |
+| low | 0.5 |
+| medium | 1.0 |
+| high | 1.5 |
+| critical | 2.0 |
+
+`critical_floor` only applies to `critical`-severity signals — it's the only mechanism that lets
+one signal force a verdict on its own, by setting a floor under `risk_score` regardless of what
+else fired.
+
+### Combination floor
+
+`{CORE_FIELD_EXTRACTION_FAILED, DATE_OUT_OF_BOUNDS}` together floor `risk_score` at **55**
+(SUSPICIOUS) even though neither code alone reaches that far — deliberately capped below
+`HIGH_RISK`'s 85 floor, which stays reserved for cryptographic AI-claim evidence.
+
+### Risk bands
+
+| `risk_score` | Classification | `recommended_action` |
+| --- | --- | --- |
+| 0-24 | `LOW_RISK` | `STANDARD_MANUAL_RECONCILIATION` |
+| 25-49 | `REVIEW_RECOMMENDED` | `STANDARD_MANUAL_RECONCILIATION` |
+| 50-74 | `SUSPICIOUS` | `PRIORITY_MANUAL_RECONCILIATION` |
+| 75-100 | `HIGH_RISK` | `DO_NOT_RELY_ON_RECEIPT` |
+| n/a — override, not a band | `INCONCLUSIVE` | `PRIORITY_MANUAL_RECONCILIATION` |
+
+### How the two scores are actually computed
+
+- `risk_score`: for every signal that fired, compute `weight × severity multiplier × confidence`
+  (truncated to an integer) and add them all up, capped at 100. Then two kinds of floors can only
+  push the total UP, never down: any `critical`-severity signal with a `critical_floor` entry
+  forces at least that floor; and the `combination_floor` above forces at least 55 if both its
+  codes fired together.
+- `confidence_score` (0-100): NOT about fraud — it's how much of the analysis the engine could
+  actually complete. Each of the 4 analyzer roles (ocr weight 0.43, metadata 0.17, provenance
+  0.25, vision 0.15) contributes `role_weight × status_quality × completeness`, summed and turned
+  into a percentage. `status_quality` is 1.0 completed / 0.5 partial / 0.0 failed or timed_out.
+  `completeness` for OCR is "how many of the 4 core fields it actually normalized, out of 4"; for
+  the other three roles it's 1 if they completed and produced real evidence, else 0.
+- `INCONCLUSIVE` overrides whatever band `risk_score` would land in, whenever either: overall
+  `confidence_score` falls below 35, OR the OCR analyzer ran (didn't fail/time out) but extracted
+  zero of the 4 core fields and no critical-floor signal fired. A single failed/timed-out analyzer
+  by itself never forces `INCONCLUSIVE`.
 
 ## 5. Error format
 
@@ -229,23 +311,24 @@ guarantee. See `docs/ARCHITECTURE.md` §11 for the architectural framing and
 `docs/adr/0003-rate-limit-token-bucket.md` for the algorithm decision. Shared-store limiting is
 deferred to the authentication phase (`docs/ROADMAP.md` Phase 4).
 
-## 6. n8n flow
+## 6. External automation clients
+
+Any server-side automation — a workflow-automation tool, a WhatsApp/Telegram bot, a generic backend — is an intended consumer of this API, on equal footing with the web client. None of it requires browser state or credentials (§5).
 
 ```mermaid
 flowchart LR
-    A["WhatsApp or Telegram trigger"] --> B["Download binary image"]
-    B --> C["HTTP Request node"]
+    A["Message or event trigger"] --> B["Download binary image"]
+    B --> C["HTTP client"]
     C -->|"POST multipart file"| D["/v1/receipts/analyze"]
     D --> E["Switch on classification"]
     E --> F["Send concise assessment"]
 ```
 
-HTTP Request node requirements:
+Request requirements, for any client:
 
 - Method: `POST`.
 - Body content type: `multipart/form-data`.
 - Parameter name: `file`.
-- Parameter type: n8n binary file.
 - Response: JSON.
 - Client timeout: greater than the documented API analysis timeout.
 

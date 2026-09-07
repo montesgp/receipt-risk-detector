@@ -55,8 +55,8 @@ describe('locale switch integration (LanguageSwitcher + full result screen)', ()
     expect(screen.getByText(es['evidence.severity.high'])).toBeTruthy();
     expect(screen.getByText(es['result.field.amount'])).toBeTruthy();
 
-    const switchToEn = screen.getByRole('button', { name: es['header.language.switchToEn'] });
-    await fireEvent.click(switchToEn);
+    const cycleButton = screen.getByRole('button', { name: new RegExp(es['header.language.nameEs'], 'i') });
+    await fireEvent.click(cycleButton);
 
     // A single click flips ALL THREE components at once, from shared state
     // — no per-component re-fetch, no stale Spanish text left behind.
@@ -68,8 +68,7 @@ describe('locale switch integration (LanguageSwitcher + full result screen)', ()
     expect(screen.queryByText(es['result.field.amount'])).toBeNull();
 
     // Switching back to Spanish restores every component again.
-    const switchToEs = screen.getByRole('button', { name: en['header.language.switchToEs'] });
-    await fireEvent.click(switchToEs);
+    await fireEvent.click(cycleButton);
 
     expect(screen.getByText(es['result.classification.SUSPICIOUS'])).toBeTruthy();
     expect(screen.getByText(es['evidence.severity.high'])).toBeTruthy();

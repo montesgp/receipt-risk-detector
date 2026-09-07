@@ -28,7 +28,7 @@ MVP 1 accepts a `JPEG`, `PNG` or `WebP` image and performs:
 - Extraction of amount, date, parties, CBU/CVU, CUIT/CUIL and operation identifier.
 - Deterministic Argentine financial-data validation.
 - Explainable fraud-risk scoring.
-- JSON response suitable for the web client, n8n, WhatsApp and Telegram bots.
+- JSON response suitable for the web client, workflow-automation tools, WhatsApp and Telegram bots.
 
 MVP 1 excludes authentication, organizations, persistent history, bank connections, automatic reconciliation and trained fraud-classification models. See [PRD](docs/PRD.md) and [Roadmap](docs/ROADMAP.md).
 
@@ -41,6 +41,7 @@ MVP 1 excludes authentication, organizations, persistent history, bank connectio
 | Image processing | Pillow, OpenCV |
 | OCR | PaddleOCR first; Tesseract as benchmark/fallback candidate |
 | Provenance | ExifTool and C2PA-compatible tooling |
+| Vision | PyTorch / MobileNetV3-Small, local weights, no external calls |
 | Testing | pytest, Vitest, Playwright |
 | Packaging | `uv`, Docker, Docker Compose |
 | Persistence | None in MVP 1 |
@@ -50,15 +51,17 @@ MVP 1 excludes authentication, organizations, persistent history, bank connectio
 ```mermaid
 flowchart LR
     A["SvelteKit web client"] -->|"multipart/form-data"| B["FastAPI"]
-    H["n8n and external bots"] -->|"multipart/form-data"| B
+    H["External automation clients"] -->|"multipart/form-data"| B
     B --> C["File validation"]
     C --> D["Parallel analyzers"]
     D --> E["Metadata and C2PA"]
     D --> F["OCR"]
     D --> G["Financial rules"]
+    D --> K["Visual inspection (PyTorch)"]
     E --> I["Risk engine"]
     F --> I
     G --> I
+    K --> I
     I --> J["FraudAssessment JSON"]
 ```
 
@@ -79,7 +82,8 @@ Example response:
 ```json
 {
   "analysis_id": "sha256:4f...",
-  "engine_version": "0.1.0",
+  "engine_version": "0.3.0",
+  "ruleset_version": "2026-09-06",
   "classification": "SUSPICIOUS",
   "risk_score": 74,
   "confidence_score": 86,
@@ -94,12 +98,23 @@ Example response:
 
 Interactive documentation will be available at `/docs`, `/redoc` and `/openapi.json`. The MVP API has no access token, but deployments must enforce file-size limits, timeouts and rate limiting. See [API contract](docs/API.md).
 
-## Local development target
+## Local development
 
-The intended developer experience is:
+The API needs the `exiftool` binary on `PATH` (see `apps/api/src/receipt_risk/adapters/metadata/exiftool.py`);
+on Windows that means either installing it separately or — the recommended path —
+running the API containerized, where it's already baked into the image
+(`apps/api/Dockerfile`). The web client runs natively with Vite; it only
+needs `PUBLIC_API_BASE_URL` to reach the API, containerized or not, so there's
+no need to containerize it too.
 
 ```bash
+# Terminal 1 — API, containerized (exiftool and all system deps already installed)
 docker compose up --build
+
+# Terminal 2 — Web client, native
+cd apps/web
+npm install
+npm run dev
 ```
 
 Expected services:
@@ -110,18 +125,11 @@ API:  http://localhost:8000
 Docs: http://localhost:8000/docs
 ```
 
-`docker compose up --build` is target-state until it is wired end-to-end. Until then, run the API
-and the web client separately:
+Alternatively, run the API natively too (only if `exiftool` is installed and on `PATH`):
 
 ```bash
-# Terminal 1 — API (must allow the web dev server's origin)
 cd apps/api
 RECEIPT_RISK_CORS_ALLOWED_ORIGINS=http://localhost:5173 uv run uvicorn receipt_risk.bootstrap.app:app --reload
-
-# Terminal 2 — Web client
-cd apps/web
-npm install
-npm run dev
 ```
 
 Without `RECEIPT_RISK_CORS_ALLOWED_ORIGINS` set to the web dev server's origin, every request from

@@ -177,6 +177,61 @@ def test_ocr_adapter_extract_with_bogus_model_dir_returns_analyzer_unavailable(
     assert result.error_code == "ANALYZER_UNAVAILABLE"
 
 
+def test_warmup_calls_resolve_engine_exactly_once(tmp_path: Path) -> None:
+    engine = _CountingEngine([_FULL_COVERAGE_RESULT])
+    adapter = PaddleOnnxOcrAdapter(engine=engine, budget_ms=6000)
+
+    call_count = 0
+    original_resolve = adapter._resolve_engine
+
+    def _spy():
+        nonlocal call_count
+        call_count += 1
+        return original_resolve()
+
+    adapter._resolve_engine = _spy
+
+    asyncio.run(adapter.warmup())
+
+    assert call_count == 1
+
+
+def test_warmup_bogus_model_dir_logs_warmup_unavailable_and_returns_none(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    adapter = PaddleOnnxOcrAdapter(model_dir=tmp_path / "does-not-exist")
+
+    with caplog.at_level("WARNING"):
+        result = asyncio.run(adapter.warmup())
+
+    assert result is None
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert warnings[0].message == "warmup_unavailable"
+    assert warnings[0].analyzer == "paddleocr-onnx"
+    assert str(tmp_path) not in warnings[0].message
+
+
+def test_warmup_unexpected_exception_logs_warmup_failed_and_returns_none(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    adapter = PaddleOnnxOcrAdapter(model_dir=tmp_path / "does-not-exist")
+
+    def _raise_unexpected():
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(adapter, "_resolve_engine", _raise_unexpected)
+
+    with caplog.at_level("WARNING"):
+        result = asyncio.run(adapter.warmup())
+
+    assert result is None
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert warnings[0].message == "warmup_failed"
+    assert warnings[0].analyzer == "paddleocr-onnx"
+
+
 def test_ocr_analysis_makes_zero_outbound_network_connections(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

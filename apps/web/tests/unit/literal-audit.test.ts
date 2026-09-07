@@ -56,6 +56,23 @@ function stripScriptAndComments(source: string): string {
 const ACCENT_FREE_SPANISH_WORDS =
   /\b(analizar|comprobante|otro|otra|conciliar|conciliarlo|detectamos|revisar|transferencia|ayudarte)\b/i;
 
+describe('new hedged copy contains no absolute-verdict language', () => {
+  it('result.inconclusiveNoTextNote never asserts a definitive non-transfer verdict', async () => {
+    const es = (await import('../../src/lib/i18n/messages/es.json')).default as Record<
+      string,
+      string
+    >;
+    const en = (await import('../../src/lib/i18n/messages/en.json')).default as Record<
+      string,
+      string
+    >;
+
+    const forbidden = /no es un comprobante|this is not a transfer/i;
+    expect(forbidden.test(es['result.inconclusiveNoTextNote'])).toBe(false);
+    expect(forbidden.test(en['result.inconclusiveNoTextNote'])).toBe(false);
+  });
+});
+
 describe('literal-copy audit: no hardcoded Spanish markup outside i18n catalogs', () => {
   const files = Object.keys(sources).map((path) => path.split('/').pop() as string);
 

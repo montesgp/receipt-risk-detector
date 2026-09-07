@@ -40,7 +40,7 @@
                 <mxCell id="ac-client" value="Third-party HTTP&#xa;client / bot" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
                     <mxGeometry x="120" y="380" width="40" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="ac-n8n" value="Other external like n8n workflow" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
+                <mxCell id="ac-n8n" value="External automation (workflow tool, bot)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" parent="1" vertex="1">
                     <mxGeometry x="120" y="560" width="40" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="u1" style="html=1;endArrow=none;edgeStyle=none;" parent="1" source="ac-user" target="uc-upload" edge="1">
