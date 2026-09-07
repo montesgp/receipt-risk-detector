@@ -59,6 +59,8 @@ Do not mention or reproduce any external reference product in UI copy or reposit
   provenance → OCR extraction → CBU/CVU and CUIT/CUIL validation → risk and
   confidence scoring), is non-interactive, and carries no live-region
   semantics — it is not `ProcessingStages` (§4.3). PRD FR-013.
+- Privacy line appears adjacent to the upload action; the explainer never
+  displaces the reconciliation-limitation statement (§5).
 - No large marketing section delays the tool.
 
 Suggested Spanish copy:
