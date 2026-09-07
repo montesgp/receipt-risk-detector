@@ -178,3 +178,58 @@ def test_editor_software_tag_emits_metadata_editor_software_signal(
     assert result.status == "completed"
     assert len(result.signals) == 1
     assert result.signals[0].code == "METADATA_EDITOR_SOFTWARE"
+
+
+def test_tc260_aigc_label_emits_metadata_ai_generated_claim_signal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Real-world regression: a Qwen-generated fake Mercado Pago receipt
+    (amount tampered 8.000 -> 80.000) scored LOW_RISK (5/100) because this
+    tag was never checked -- only `Software`/`CreatorTool` were. `exiftool
+    -json -n` flattens the XMP-TC260 group, so the tag is a bare `Aigc` key
+    on the parsed object, exactly as reproduced here."""
+    monkeypatch.setattr(exiftool_module, "_EXIFTOOL", "/usr/bin/exiftool")
+    aigc = (
+        '{"Label":"1","ContentProducer":"001191330106MA2CFLDG4R10001",'
+        '"ProduceID":"R-7-k8iwyGTBKJWktIK8qLKA"}'
+    )
+    monkeypatch.setattr(
+        exiftool_module.subprocess,
+        "run",
+        lambda argv, **kwargs: _fake_completed(
+            json.dumps([{"SourceFile": str(argv[-1]), "Aigc": aigc}])
+        ),
+    )
+
+    path = tmp_path / "ai_generated.bin"
+    path.write_bytes(b"\x89PNG")
+    safe = _safe_image_ref(path)
+
+    result = asyncio.run(ExifToolMetadataAdapter().inspect(safe))
+
+    assert result.status == "completed"
+    assert len(result.signals) == 1
+    assert result.signals[0].code == "METADATA_AI_GENERATED_CLAIM"
+    assert result.signals[0].severity == "critical"
+
+
+def test_tc260_aigc_label_zero_is_neutral_not_a_claim(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """TC260's `Aigc.Label` is `"0"` for non-AI content -- must not fire."""
+    monkeypatch.setattr(exiftool_module, "_EXIFTOOL", "/usr/bin/exiftool")
+    monkeypatch.setattr(
+        exiftool_module.subprocess,
+        "run",
+        lambda argv, **kwargs: _fake_completed(
+            json.dumps([{"SourceFile": str(argv[-1]), "Aigc": '{"Label":"0"}'}])
+        ),
+    )
+
+    path = tmp_path / "not_ai.bin"
+    path.write_bytes(b"\x89PNG")
+    safe = _safe_image_ref(path)
+
+    result = asyncio.run(ExifToolMetadataAdapter().inspect(safe))
+
+    assert result.signals == ()

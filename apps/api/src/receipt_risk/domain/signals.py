@@ -54,6 +54,16 @@ class SignalCode(StrEnum):
     # from VALID_AI_GENERATED_CLAIM for audit/explainability only; the
     # verdict it forces is identical.
     AI_GENERATED_CLAIM_UNTRUSTED_SIGNER = "AI_GENERATED_CLAIM_UNTRUSTED_SIGNER"
+    # metadata-aigc-claim-detection change
+    # category METADATA, CRITICAL, confidence 0.90, critical_floor 85 -- an
+    # embedded XMP-TC260 `Aigc` tag with Label "1" (China's mandatory
+    # AI-generated-content labeling standard; written by generators such as
+    # Qwen/Tongyi). Unlike VALID_AI_GENERATED_CLAIM this is unsigned EXIF/XMP
+    # data, not a cryptographically verified C2PA manifest -- easy to strip,
+    # but its mere presence is still a direct self-declaration from the
+    # generating tool, not an inference, so it is priced the same as
+    # AI_GENERATED_CLAIM_UNTRUSTED_SIGNER rather than as a soft heuristic.
+    METADATA_AI_GENERATED_CLAIM = "METADATA_AI_GENERATED_CLAIM"
 
 
 class ExtractionFailureReason(StrEnum):

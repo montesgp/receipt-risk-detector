@@ -42,14 +42,14 @@ def test_prior_ruleset_version_stays_registered_and_unmodified() -> None:
 
 
 def test_ruleset_declares_weights_for_every_defined_signal_code() -> None:
-    # RULESET_2026_09_06 is the current active/latest ruleset (c2pa-ai-claim-
-    # detection change) -- the only one guaranteed to have a weight entry
-    # for every SignalCode defined so far, since historical rulesets are
-    # frozen at the moment they were superseded.
-    from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
+    # RULESET_2026_09_07 is the current active/latest ruleset (metadata-
+    # aigc-claim-detection change) -- the only one guaranteed to have a
+    # weight entry for every SignalCode defined so far, since historical
+    # rulesets are frozen at the moment they were superseded.
+    from receipt_risk.domain.rulesets.v2026_09_07 import RULESET_2026_09_07
 
     for code in SignalCode:
-        assert code in RULESET_2026_09_06.weights, f"missing weight for {code}"
+        assert code in RULESET_2026_09_07.weights, f"missing weight for {code}"
 
 
 def test_ruleset_declares_severity_multiplier_for_every_severity() -> None:
@@ -112,7 +112,7 @@ def test_ruleset_2026_09_06_registered_with_untrusted_signer_weight() -> None:
     from receipt_risk.domain.rulesets.v2026_09_05 import RULESET_2026_09_05
     from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
 
-    assert len(RULESETS) == 4
+    assert len(RULESETS) == 5
     assert RULESET_2026_09_06.version == "2026-09-06"
     assert RULESETS[RULESET_2026_09_06.version] is RULESET_2026_09_06
     assert RULESET_2026_09_06.weights[SignalCode.AI_GENERATED_CLAIM_UNTRUSTED_SIGNER] == 50

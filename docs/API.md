@@ -160,7 +160,7 @@ signal category:
 ## 4a. Scoring reference (active ruleset)
 
 These are the current values for the active ruleset only — every response echoes its own
-`ruleset_version`; if it differs from `2026-09-06`, do not assume these numbers still apply (per
+`ruleset_version`; if it differs from `2026-09-07`, do not assume these numbers still apply (per
 `CONTRIBUTING.md`, a weight/floor change always ships as a new frozen ruleset version, never a
 silent edit to a shipped one).
 
@@ -169,6 +169,7 @@ silent edit to a shipped one).
 | Code | Category | Severity | Weight | Critical floor | Trigger |
 | --- | --- | --- | --- | --- | --- |
 | `METADATA_EDITOR_SOFTWARE` | `metadata` | low | 10 | — | Embedded EXIF metadata names editing software (Photoshop, GIMP, Canva, etc.). |
+| `METADATA_AI_GENERATED_CLAIM` | `metadata` | critical | 50 | 85 | Embedded metadata carries a TC260 AI-generated-content label (`Aigc.Label = "1"`) — China's mandatory AI-content-labeling standard, written by generators such as Qwen/Tongyi. Unsigned EXIF/XMP data (not a cryptographic C2PA manifest), so priced like `AI_GENERATED_CLAIM_UNTRUSTED_SIGNER` rather than `VALID_AI_GENERATED_CLAIM`. |
 | `VALID_AI_GENERATED_CLAIM` | `provenance` | critical | 90 | 85 | A cryptographically valid, fully-trusted C2PA manifest declares algorithmic (AI) generation. |
 | `AI_GENERATED_CLAIM_UNTRUSTED_SIGNER` | `provenance` | critical | 50 | 85 | Same AI-generation claim, but signed by an unrecognized/untrusted CA — the claim itself is cryptographically intact, only the trust anchor is unfamiliar. Forces the same verdict as `VALID_AI_GENERATED_CLAIM`; kept as a separate code only for audit/explainability in `signals[]`. |
 | `PROVENANCE_VALIDATION_FAILED` | `provenance` | medium | 15 | — | A C2PA manifest is present but fails structural/cryptographic validation (genuine tampering or a broken signature). |

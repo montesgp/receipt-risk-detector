@@ -69,24 +69,58 @@ def _run_exiftool(path: Path, timeout_s: float) -> str:
     return completed.stdout
 
 
-def _derive_signals(tags: dict[str, Any]) -> tuple[ValidationSignal, ...]:
+def _editor_software_signal(tags: dict[str, Any]) -> ValidationSignal | None:
     software = str(tags.get("Software") or tags.get("CreatorTool") or "").strip().lower()
     if not software:
-        return ()
+        return None
     if not any(marker in software for marker in _EDITOR_SOFTWARE_MARKERS):
-        return ()
-    return (
-        ValidationSignal(
-            code=SignalCode.METADATA_EDITOR_SOFTWARE,
-            category=SignalCategory.METADATA,
-            severity=Severity.LOW,
-            confidence=Decimal("0.80"),
-            description=(
-                "Embedded metadata names editing software; the receipt's "
-                "original capture may have been modified."
-            ),
-            evidence={"software": software},
+        return None
+    return ValidationSignal(
+        code=SignalCode.METADATA_EDITOR_SOFTWARE,
+        category=SignalCategory.METADATA,
+        severity=Severity.LOW,
+        confidence=Decimal("0.80"),
+        description=(
+            "Embedded metadata names editing software; the receipt's "
+            "original capture may have been modified."
         ),
+        evidence={"software": software},
+    )
+
+
+def _aigc_claim_signal(tags: dict[str, Any]) -> ValidationSignal | None:
+    """China's TC260 mandatory AI-generated-content label (XMP-TC260 `Aigc`,
+    written by generators such as Qwen/Tongyi): a JSON blob whose `Label`
+    field is `"1"` for AI-generated content. `exiftool -json -n` flattens the
+    XMP-TC260 group into a bare `Aigc` tag on the object exactly like every
+    other tag here, so no group-qualified lookup is needed."""
+    raw = tags.get("Aigc")
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict) or str(parsed.get("Label", "")).strip() != "1":
+        return None
+    return ValidationSignal(
+        code=SignalCode.METADATA_AI_GENERATED_CLAIM,
+        category=SignalCategory.METADATA,
+        severity=Severity.CRITICAL,
+        confidence=Decimal("0.90"),
+        description=(
+            "Embedded metadata carries a TC260 AI-generated-content label "
+            "(Label=1) written by the generating tool itself."
+        ),
+        evidence={"contentProducer": str(parsed.get("ContentProducer", ""))},
+    )
+
+
+def _derive_signals(tags: dict[str, Any]) -> tuple[ValidationSignal, ...]:
+    return tuple(
+        signal
+        for signal in (_editor_software_signal(tags), _aigc_claim_signal(tags))
+        if signal is not None
     )
 
 
