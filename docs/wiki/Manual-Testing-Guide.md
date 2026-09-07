@@ -40,6 +40,11 @@ you think it did.
 - `METADATA_EDITOR_SOFTWARE`: not from a synthetic fixture — take any real photo and edit/re-save
   it in Photoshop, GIMP, or Canva (these tools write a `Software`/`CreatorTool` EXIF/XMP tag
   `exiftool` will pick up); no repo tooling generates this today.
+- `METADATA_AI_GENERATED_CLAIM`: **verified manually** — generate a fake receipt with Qwen
+  (Tongyi) and upload it as-is. Qwen writes an XMP-TC260 `Aigc` tag (`{"Label":"1",...}`, China's
+  mandatory AI-content-labeling standard) that survives a PNG round-trip; run
+  `exiftool -json -n -- <file>` yourself first if you want to confirm the tag is present before
+  uploading. No repo tooling generates this fixture today.
 - `AMOUNT_DATE_CONTRADICTION`: requires OCR to find two disagreeing occurrences of the same field
   in one image (e.g. two different dates printed on the receipt) — `samples/generate.py` has no
   parameter for this; would need manual image editing or an AI generator prompted specifically for

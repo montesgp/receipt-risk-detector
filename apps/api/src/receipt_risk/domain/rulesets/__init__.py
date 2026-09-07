@@ -15,12 +15,14 @@ from receipt_risk.domain.rulesets.v2026_09_01 import RULESET_2026_09_01
 from receipt_risk.domain.rulesets.v2026_09_04 import RULESET_2026_09_04
 from receipt_risk.domain.rulesets.v2026_09_05 import RULESET_2026_09_05
 from receipt_risk.domain.rulesets.v2026_09_06 import RULESET_2026_09_06
+from receipt_risk.domain.rulesets.v2026_09_07 import RULESET_2026_09_07
 
 RULESETS: Final[dict[str, ScoringRuleset]] = {
     RULESET_2026_09_01.version: RULESET_2026_09_01,
     RULESET_2026_09_04.version: RULESET_2026_09_04,
     RULESET_2026_09_05.version: RULESET_2026_09_05,
     RULESET_2026_09_06.version: RULESET_2026_09_06,
+    RULESET_2026_09_07.version: RULESET_2026_09_07,
 }
 
 __all__ = ["RULESETS"]

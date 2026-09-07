@@ -49,7 +49,7 @@ def test_version_endpoint_reports_active_ruleset_2026_09_06() -> None:
     response = client.get("/version")
 
     assert response.status_code == 200
-    assert response.json()["ruleset_version"] == "2026-09-06"
+    assert response.json()["ruleset_version"] == "2026-09-07"
 
 
 def test_lifespan_warms_ocr_and_vision_concurrently(monkeypatch: pytest.MonkeyPatch) -> None:
