@@ -19,7 +19,7 @@
 </script>
 
 <header class="border-b border-ui-line bg-ui-surface">
-  <div class="mx-auto flex max-w-content items-center justify-between gap-4 px-4 py-4">
+  <div class="app-header__inner mx-auto max-w-content gap-4 px-4 py-4">
     <a href="/" class="flex items-center gap-2 no-underline">
       <!-- ui-polish round 2, item 2: same mark as static/favicon.svg, but
            inline so it uses `currentColor` and adapts to the app's explicit
@@ -43,7 +43,7 @@
       </svg>
       <span class="app-header__brand">Receipt Risk Detector</span>
     </a>
-    <div class="flex items-center gap-4">
+    <div class="app-header__actions">
       <a href="/docs" class="text-sm font-medium text-ui-muted no-underline transition-colors hover:text-ui-fg">
         {i18n.t('docsPage.title')}
       </a>
@@ -60,6 +60,38 @@
 <style>
   .app-header__brand {
     font-weight: 600;
+  }
+
+  /* Mobile nav fix: a plain `flex justify-between` row (brand + docs link +
+     both switchers, each icon+label) is wider than a phone viewport (e.g.
+     iPhone 15 Pro, 393px), so the theme button got pushed outside the
+     header's bounds. Wrapping lets the actions cluster drop to its own
+     centered row instead of overflowing. */
+  .app-header__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    row-gap: var(--space-3);
+  }
+
+  .app-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-4);
+  }
+
+  @media (max-width: 640px) {
+    .app-header__inner {
+      justify-content: center;
+    }
+
+    .app-header__actions {
+      flex-basis: 100%;
+      justify-content: center;
+    }
   }
 
   .app-header__switchers {
