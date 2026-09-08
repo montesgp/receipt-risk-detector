@@ -50,7 +50,9 @@ def _source_fixtures() -> list[Path]:
 def build(model_dir: Path) -> dict[str, object]:
     from receipt_risk.adapters.vision.mobilenet_embedder import _load_embedder
 
-    embed = _load_embedder(model_dir)
+    # `_load_embedder` returns (embed, warm) since the mobilenet_embedder
+    # lazy-loading refactor; this script only ever needed the embed side.
+    embed, _warm = _load_embedder(model_dir)
     fixtures = _source_fixtures()
 
     embeddings: list[list[float]] = []
