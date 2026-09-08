@@ -444,6 +444,26 @@
         "vision": "completed"
       },
       "notes": "Vision reference-set image: 'dark_header' template, degraded variant."
+    },
+    {
+      "id": "reference_real_mp_bbva_redacted",
+      "path": "images/reference/reference_real_mp_bbva_redacted.jpg",
+      "sha256": "400540430cf6d8fe79b23856cb71e1ca8e093c0783c39c1b3e2164b6e441e322",
+      "provenance": {
+        "origin": "real_redacted",
+        "authored_by": "real Mercado Pago transfer receipt, PII manually redacted (name, CUIT/CUIL, CVU, CBU, operation number, identification code blacked out)",
+        "contains_real_data": false,
+        "bank_template": "mercado_pago"
+      },
+      "declared_fields": {},
+      "expected_signals": [],
+      "expected_analyzer_statuses": {
+        "ocr": "completed",
+        "metadata": "completed",
+        "provenance": "completed",
+        "vision": "completed"
+      },
+      "notes": "Vision reference-set image: the first real Mercado Pago render in the set (all prior reference images are fully synthetic renders from samples/generate.py, never validated against MP's actual layout). PII redacted with solid black boxes before committing -- see conversation history for the redaction step. declared_fields left empty since the redacted fields (CBU/CUIT) are unreadable by design."
     }
   ]
 }
