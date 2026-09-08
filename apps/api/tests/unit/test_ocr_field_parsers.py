@@ -337,6 +337,37 @@ def test_select_identifier_disambiguates_within_checksum_valid_subset() -> None:
     assert selected.value == valid_cuit
 
 
+def test_select_identifier_surfaces_tampered_destination_not_the_untouched_origin() -> None:
+    """Real-world regression: an AI editor asked to change the amount on a
+    receipt also corrupted one digit of the destination CBU by mistake,
+    breaking its check digit, while the origin CVU (same digit length, same
+    checksum algorithm) was left untouched and still valid. No "origen"/
+    "destino" keyword sits near either number (this receipt template names
+    the entities instead, e.g. 'Mercado Pago' / 'BBVA Banco Frances') --
+    with only 2 candidates and no keyword signal, position must win: the
+    second-in-reading-order candidate (the destination slot) has to be
+    surfaced *as the tampered value*, not silently swapped for the
+    checksum-valid but unrelated origin number. Checksum-preference
+    filtering *before* disambiguation was exactly this bug -- it discarded
+    the tampered destination and returned the origin instead, hiding the
+    tampering from `INVALID_CBU_CHECK_DIGIT` entirely."""
+    untouched_origin_cvu = "1000000300000000000000"
+    tampered_destination_cbu = "2850590940090418135202"  # 1 -> 2, check digit now wrong
+    boxes = [
+        _box(untouched_origin_cvu, top=40.0),
+        _box(tampered_destination_cbu, top=240.0),
+    ]
+    candidates = _scan_cbu_candidates(boxes)
+    selected = _select_identifier(candidates, boxes)
+    assert selected is not None
+    assert selected.value == tampered_destination_cbu
+
+    field = _make_extracted_field("destination_cbu", selected)
+    signals = validate_financials((field,))
+    codes = {s.code.value for s in signals}
+    assert "INVALID_CBU_CHECK_DIGIT" in codes
+
+
 def test_extract_core_fields_emits_at_most_one_field_per_name_and_no_contradictions() -> None:
     origin_cbu = "1000000300000000000000"
     origin_cuit = "20111111112"
