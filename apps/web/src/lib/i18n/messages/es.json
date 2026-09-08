@@ -136,7 +136,7 @@
   "errors.rejectedFile.malformedResponse": "El servidor devolvió una respuesta inesperada.",
   "errors.rejectedFile.generic": "Ocurrió un problema al procesar el comprobante. Elegí otro archivo.",
 
-  "legal.disclaimer": "Este análisis evalúa el comprobante presentado. Confirmá la acreditación en la cuenta beneficiaria antes de entregar productos o servicios.",
+  "legal.disclaimer": "Este análisis evalúa el comprobante presentado. Confirmá la acreditación en la cuenta beneficiaria antes de entregar productos o servicios. Un resultado de bajo riesgo no descarta una edición que no deje rastro detectable (sin metadata, sin errores de formato); para montos altos, confirmá siempre por otro canal.",
 
   "result.heading": "Resultado del análisis",
   "result.evidenceHeading": "Evidencia principal",

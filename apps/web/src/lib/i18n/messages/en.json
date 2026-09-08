@@ -136,7 +136,7 @@
   "errors.rejectedFile.malformedResponse": "The server returned an unexpected response.",
   "errors.rejectedFile.generic": "There was a problem processing the receipt. Choose another file.",
 
-  "legal.disclaimer": "This analysis evaluates the submitted receipt. Confirm the credit in the beneficiary account before delivering products or services.",
+  "legal.disclaimer": "This analysis evaluates the submitted receipt. Confirm the credit in the beneficiary account before delivering products or services. A low-risk result does not rule out an edit that leaves no detectable trace (no metadata, no format errors); for high amounts, always confirm through another channel.",
 
   "result.heading": "Analysis result",
   "result.evidenceHeading": "Key evidence",

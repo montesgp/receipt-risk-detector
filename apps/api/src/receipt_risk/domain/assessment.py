@@ -19,6 +19,21 @@ LIMITATION_STATEMENT = (
     "that a bank transfer exists or was credited."
 )
 
+# metadata-aigc-claim-detection follow-up: found via a real AI-edited receipt
+# (ChatGPT/gpt-image) that scored LOW_RISK once sent through WhatsApp, which
+# strips the C2PA manifest that made the same file score HIGH_RISK
+# unmodified. Provenance metadata and checksum tampering are the only signals
+# strong enough to force a verdict today; an edit that touches neither (no
+# metadata survives transport, no CBU/CUIT digit corrupted) leaves no signal
+# for this engine to detect. Always present, not just on LOW_RISK: the
+# absence of contrary evidence is exactly the blind spot, so there is no
+# reliable per-result condition to gate this on.
+DETECTION_CEILING_STATEMENT = (
+    "A LOW_RISK classification does not rule out an edit that leaves no "
+    "detectable trace (no surviving provenance metadata, no corrupted "
+    "check digit) -- confirm high-value transfers through another channel."
+)
+
 _ACTION_BY_CLASSIFICATION: dict[Classification, RecommendedAction] = {
     Classification.LOW_RISK: RecommendedAction.STANDARD_MANUAL_RECONCILIATION,
     Classification.REVIEW_RECOMMENDED: RecommendedAction.STANDARD_MANUAL_RECONCILIATION,
@@ -70,6 +85,6 @@ def assemble(
         recommended_action=_ACTION_BY_CLASSIFICATION[breakdown.classification],
         signals=scored_signals,
         analyzer_statuses=tuple(results),
-        limitations=(LIMITATION_STATEMENT,),
+        limitations=(LIMITATION_STATEMENT, DETECTION_CEILING_STATEMENT),
         duration_ms=duration_ms,
     )
