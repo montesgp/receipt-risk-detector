@@ -627,13 +627,22 @@ def _select_identifier(
     candidates: Sequence[_Candidate], ordered: Sequence[RawTextBox]
 ) -> _Candidate | None:
     """0 candidates -> omit field; 1 -> surface regardless of checksum
-    (locked rule, preserves `invalid_cbu_check_digit`); >=2 -> disambiguate
-    within the checksum-valid subset when one exists, else across all."""
+    (locked rule, preserves `invalid_cbu_check_digit`); exactly 2 ->
+    disambiguate by keyword/position first, checksum never overrides that
+    (a real-world regression: an AI-edited receipt corrupted the destination
+    CBU's check digit while leaving the origin CVU untouched -- checksum-
+    filtering *before* disambiguating silently substituted the untouched CVU
+    for the tampered CBU, hiding the exact tampering `INVALID_CBU_CHECK_DIGIT`
+    exists to catch); 3+ -> a decoy digit-run is plausible alongside the real
+    origin/destination pair, so disambiguate within the checksum-valid subset
+    when one exists, else across all."""
     deduped = _dedupe_candidates(candidates)
     if not deduped:
         return None
     if len(deduped) == 1:
         return deduped[0]
+    if len(deduped) == 2:
+        return _disambiguate_destination(deduped, ordered)
 
     valid = [candidate for candidate in deduped if candidate.checksum_valid]
     pool = valid if valid else deduped
